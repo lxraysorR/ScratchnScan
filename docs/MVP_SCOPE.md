@@ -1,29 +1,52 @@
-# ScratchNScan MVP Scope
+# Scan-Scratch MVP Scope
 
-## Goal
-Prove this end-to-end loop:
+## One-sentence MVP
+Scan-Scratch scans a UPC or reads a package label and creates a simple homemade version of the packaged food using everyday ingredients.
 
-**UPC/manual input or photo labels → product understanding → homemade alternative output**
+## Must-have demo flow
+1. User opens app.
+2. User scans UPC or enters barcode manually.
+3. App identifies packaged product when provider data exists.
+4. If UPC data is missing or incomplete, user can upload front label and ingredients/back-label photos.
+5. App extracts or interprets product name, food type, and ingredient signals.
+6. App explains the packaged product in plain English.
+7. App generates a cleaner homemade alternative with:
+   - recipe title
+   - everyday ingredients
+   - simple steps
+   - swaps/substitutions
+   - why it is less processed
+   - what it will and will not taste like compared with the package
+8. User can scan another item or save/share/copy the result later.
 
-## In scope
-- UPC scan/manual UPC entry
-- UPC lookup integration abstraction
-- Label photo fallback (front + ingredients/back)
-- AI summarization of product in plain English
-- AI-assisted homemade alternative generation
-- Result view including:
-  - what item is
-  - detected ingredients/signals
-  - homemade version
-  - ingredients list
-  - simple steps
-  - taste/texture expectations
-  - storage tips
-  - safety/no-medical-advice disclaimer
-- Restart loop to scan another item
+## MVP features
+- UPC scan/manual entry
+- basic provider lookup using inherited PantryPulse pipeline
+- product not found state
+- photo upload for front and ingredient/back label
+- thumbnail previews after image selection
+- AI product explanation
+- AI homemade alternative generation
+- simple result page
+- simple local history, optional for demo
+- mobile-responsive layout
 
-## Out of scope
-See `docs/BACKLOG.md` for deferred areas.
+## Explicitly out of scope for first version
+- paid subscriptions
+- household consensus
+- additive intelligence as a separate premium module
+- full pantry inventory
+- meal planning calendar
+- Instacart checkout
+- complex user profiles
+- complex store submission work
+- large database migrations unless required for the demo
 
-## Non-goals
-No subscriptions, pantry management, shopping integrations, or complex account systems in MVP.
+## Demo success criteria
+- The app can demo at least 5 packaged foods.
+- At least 2 demos should work through UPC lookup.
+- At least 2 demos should work through label-photo fallback.
+- At least 1 demo should show product-not-found recovery.
+- AI output must be structured, readable, and safe.
+- A user should understand the flow without instructions.
+
