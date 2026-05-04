@@ -1,0 +1,234 @@
+--- ./.agents/00-orchestrator/AGENT.md
+# 00 — Scan-Scratch Orchestrator Agent
+
+## Purpose
+Select the smallest safe path to move Scan-Scratch forward without drifting back into full PantryPulse scope.
+
+## Start every task by confirming
+- What is the primary task?
+- Does this directly support the UPC/label-to-homemade workflow?
+- Which PantryPulse code can be reused safely?
+- Which inherited features should be parked?
+
+## Output required before patching
+--- ./.agents/01-repo-inventory-and-scope/AGENT.md
+# 01 — Repo Inventory and Scope Agent
+
+## Purpose
+Map the inherited PantryPulse repo to the Scan-Scratch MVP.
+
+## Inspect
+- `package.json`
+- `AGENTS.md`
+- `CLAUDE.md`
+- `public/router.js`
+- `public/pages/*`
+- `src/app.js`
+--- ./.agents/02-upc-label-ai-pipeline/AGENT.md
+# 02 — UPC, Label, and AI Pipeline Agent
+
+## Purpose
+Build the core acquisition pipeline: UPC first, label/photo fallback second, AI interpretation third.
+
+## Required behavior
+- Barcode/manual entry normalizes input once.
+- Provider lookup returns a product snapshot or terminal not-found state.
+- Not-found/incomplete state offers direct label/ingredient photo upload.
+- Photo selections show thumbnails immediately.
+- Backend receives structured product context for AI generation.
+
+--- ./.agents/03-homemade-recipe-engine/AGENT.md
+# 03 — Homemade Recipe Engine Agent
+
+## Purpose
+Generate a cleaner homemade alternative from product/label context.
+
+## Required behavior
+The engine must return JSON matching `docs/AI_JSON_CONTRACT.md`.
+
+## Backend shape
+Prefer a service boundary such as:
+- `src/services/homemadeAlternativeService.js`
+- optional validator: `src/ai/scanScratchSchema.js`
+--- ./.agents/04-ux-and-mobile-flow/AGENT.md
+# 04 — UX and Mobile Flow Agent
+
+## Purpose
+Make the Scan-Scratch demo feel simple, clear, and mobile-first.
+
+## Primary screens
+- Home: one clear CTA to scan packaged food
+- Scan: camera/manual entry, direct fallback when needed
+- Fallback: upload front label and ingredient/back label with thumbnails
+- Result: explanation + homemade version + scan another item
+
+## UX rules
+--- ./.agents/05-testing-security-release/AGENT.md
+# 05 — Testing, Security, and Release Agent
+
+## Purpose
+Stabilize the hackathon demo and prevent unsafe AI/data handling.
+
+## Required checks
+- `npm test`
+- `npm run build`
+- targeted tests for changed files
+- manual mobile smoke test checklist if UI changed
+
+## Security checks
+--- ./.agents/06-final-review/AGENT.md
+# 06 — Final Review Agent
+
+## Purpose
+Perform senior-level review before calling a phase complete.
+
+## Review checklist
+- The change supports the Scan-Scratch MVP.
+- PantryPulse-only features were not expanded.
+- AI output follows `docs/AI_JSON_CONTRACT.md`.
+- UX is simple enough for a first-time user.
+- Not-found and AI-failure states are recoverable.
+- Mobile layout is acceptable.
+--- ./.agents/skills/scan-scratch-build/SKILL.md
+# Scan-Scratch Build Skill
+
+## When to use this skill
+Use this skill for every Scan-Scratch planning, coding, QA, or review task.
+
+## Product definition
+Scan-Scratch turns packaged foods into simple homemade alternatives. The app starts with a UPC scan. If UPC data is incomplete or unavailable, it reads front-label and ingredient-label photos. AI then identifies the food, explains the packaged product, and creates a cleaner homemade version using everyday ingredients.
+
+## Core workflow
+```text
+Open app
+  -> scan UPC or enter barcode
+--- ./AGENTS.md
+# Scan-Scratch Codex Agent Instructions
+
+These instructions apply to the entire Scan-Scratch repository.
+
+## Product mission
+Scan-Scratch helps people turn packaged foods into simple homemade alternatives. The app scans a UPC or reads product-label photos, identifies the packaged food, explains what it is in plain English, and creates a cleaner homemade version using everyday ingredients.
+
+## Primary build rule
+Keep the first version intentionally small. Do not rebuild all of PantryPulse. Reuse PantryPulse foundation only where it directly supports the MVP:
+
+1. barcode/manual UPC entry
+2. product lookup/provider fallback
+--- ./CLAUDE.md
+# Claude Instructions for Scan-Scratch
+
+You are reviewing or refining the Scan-Scratch repository.
+
+## Mandatory read order
+1. `AGENTS.md`
+2. `.agents/skills/scan-scratch-build/SKILL.md`
+3. `docs/SCAN_SCRATCH_IMPLEMENTATION_PLAN.md`
+4. `docs/MVP_SCOPE.md`
+5. `docs/AI_JSON_CONTRACT.md`
+6. The relevant `.agents/*/AGENT.md`
+7. The exact files being changed
+--- ./FILE_INDEX_PREVIEW.txt
+--- ./.agents/00-orchestrator/AGENT.md
+# 00 — Scan-Scratch Orchestrator Agent
+
+## Purpose
+Select the smallest safe path to move Scan-Scratch forward without drifting back into full PantryPulse scope.
+
+## Start every task by confirming
+- What is the primary task?
+- Does this directly support the UPC/label-to-homemade workflow?
+- Which PantryPulse code can be reused safely?
+- Which inherited features should be parked?
+
+--- ./docs/AI_JSON_CONTRACT.md
+# Scan-Scratch AI JSON Contract
+
+AI responses must be JSON. Do not render raw model prose directly to users.
+
+## Required response shape
+```json
+{
+  "product": {
+    "name": "string",
+    "foodType": "string",
+    "confidence": "high | medium | low",
+    "sourceBasis": ["upc", "front_label", "ingredients_label", "user_text"]
+--- ./docs/MVP_SCOPE.md
+# Scan-Scratch MVP Scope
+
+## One-sentence MVP
+Scan-Scratch scans a UPC or reads a package label and creates a simple homemade version of the packaged food using everyday ingredients.
+
+## Must-have demo flow
+1. User opens app.
+2. User scans UPC or enters barcode manually.
+3. App identifies packaged product when provider data exists.
+4. If UPC data is missing or incomplete, user can upload front label and ingredients/back-label photos.
+5. App extracts or interprets product name, food type, and ingredient signals.
+6. App explains the packaged product in plain English.
+--- ./docs/SCAN_SCRATCH_IMPLEMENTATION_PLAN.md
+# Scan-Scratch Implementation Plan
+
+## Build strategy
+Start from the PantryPulse codebase, but do not carry forward the full product. Treat PantryPulse as a foundation for scanning, UPC lookup, mobile layout, and provider wiring. Scan-Scratch should become a separate, focused app with a smaller promise.
+
+## Recommended sequencing
+
+### Phase 0 — Repo fork and safety setup
+- Create a new repo or branch named `scan-scratch`.
+- Keep PantryPulse private/protected.
+- Update project branding only in obvious user-facing places first.
+- Add this agent pack to the repo root.
+--- ./prompts/CLAUDE_REVIEW_PROMPT.md
+You are reviewing Scan-Scratch after Codex changes.
+
+Read first:
+1. AGENTS.md
+2. CLAUDE.md
+3. .agents/skills/scan-scratch-build/SKILL.md
+4. docs/MVP_SCOPE.md
+5. docs/AI_JSON_CONTRACT.md
+6. The changed files
+
+Review for:
+- MVP scope drift
+--- ./prompts/CODEX_PHASE_0_1_START_PROMPT.md
+You are working in the Scan-Scratch repo, forked from PantryPulse/NutraPlate.
+
+Primary task:
+Set up the Scan-Scratch project shell and MVP direction without implementing the full AI engine yet.
+
+Read first:
+1. AGENTS.md
+2. CLAUDE.md
+3. .agents/skills/scan-scratch-build/SKILL.md
+4. docs/MVP_SCOPE.md
+5. docs/SCAN_SCRATCH_IMPLEMENTATION_PLAN.md
+6. .agents/00-orchestrator/AGENT.md
+--- ./prompts/CODEX_PHASE_2_PIPELINE_PROMPT.md
+You are working in the Scan-Scratch repo.
+
+Primary task:
+Implement the first usable UPC/not-found/photo-fallback flow for Scan-Scratch.
+
+Read first:
+1. AGENTS.md
+2. .agents/skills/scan-scratch-build/SKILL.md
+3. docs/MVP_SCOPE.md
+4. docs/AI_JSON_CONTRACT.md
+5. .agents/02-upc-label-ai-pipeline/AGENT.md
+6. .agents/04-ux-and-mobile-flow/AGENT.md
+--- ./prompts/CODEX_PHASE_3_AI_ENGINE_PROMPT.md
+You are working in the Scan-Scratch repo.
+
+Primary task:
+Create the backend homemade alternative AI service and endpoint.
+
+Read first:
+1. AGENTS.md
+2. .agents/skills/scan-scratch-build/SKILL.md
+3. docs/AI_JSON_CONTRACT.md
+4. .agents/03-homemade-recipe-engine/AGENT.md
+5. .agents/05-testing-security-release/AGENT.md
+6. Existing src/ai provider files and exact route/service files
