@@ -1,0 +1,11 @@
+{
+  "name": "scratchnscan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ScratchNScan MVP shell",
+  "scripts": {
+    "test": "node scripts/test_app_shell.mjs",
+    "build": "node scripts/build_app_shell.mjs",
+    "start": "node scripts/serve_hint.mjs"
+  }
+}

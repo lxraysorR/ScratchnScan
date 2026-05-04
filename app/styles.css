@@ -1,0 +1,4 @@
+body { font-family: Arial, sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+main { max-width: 720px; margin: 2rem auto; padding: 1rem; background: white; border-radius: 12px; }
+button { margin-right: .5rem; margin-top: .5rem; padding: .6rem .9rem; }
+.disclaimer { font-size: .9rem; color: #334155; margin-top: 1rem; }
