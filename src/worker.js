@@ -60,12 +60,12 @@ function handleAdminStatus(request, env) {
   const auth = request.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token || token !== env.APP_ADMIN_TOKEN) {
-    return json({ error: "Unauthorized" }, 401);
+    return json({ ok: false, error: "Unauthorized" }, 401);
   }
   return json({
     ok: true,
     service: "scratchnscan",
-    timestamp: new Date().toISOString(),
+    admin: true,
     secrets: {
       APP_ADMIN_TOKEN: "set",
       SEARCHUPCDATA_API_KEY: env.SEARCHUPCDATA_API_KEY ? "set" : "missing",
