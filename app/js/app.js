@@ -3,6 +3,10 @@ import { initResultView } from "./result.js";
 
 const VIEWS = ["home", "scan", "result"];
 
+// Guards: each view is initialised at most once per page load.
+let scanViewReady = false;
+let resultViewReady = false;
+
 function showView(name) {
   const target = VIEWS.includes(name) ? name : "home";
   for (const id of VIEWS) {
@@ -17,7 +21,10 @@ async function route() {
 
   if (hash === "scan") {
     showView("scan");
-    await initScanView();
+    if (!scanViewReady) {
+      await initScanView();
+      scanViewReady = true;
+    }
     return;
   }
 
@@ -27,14 +34,16 @@ async function route() {
       return;
     }
     showView("result");
-    initResultView(lastLookupResult);
+    if (!resultViewReady) {
+      initResultView(lastLookupResult);
+      resultViewReady = true;
+    }
     return;
   }
 
   showView("home");
 }
 
-// Wire up home-page CTAs.
 document.getElementById("home-scan-btn")?.addEventListener("click", () => {
   window.location.hash = "#scan";
 });

@@ -75,21 +75,29 @@ function handleAdminStatus(request, env) {
 }
 
 async function handleLookupUpc(request, env) {
+  // Safe request identifier for logs — never log secrets or auth headers.
+  const reqId = request.headers.get("cf-ray") ?? "local";
+
   let body;
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Request body must be valid JSON" }, 400);
+    return json({ ok: false, error: "Invalid UPC" }, 400);
   }
 
-  const upc = (body?.upc ?? "").toString().trim();
-  if (!upc || !/^\d{6,14}$/.test(upc)) {
-    return json({ error: "Invalid UPC. Must be 6–14 digits." }, 400);
+  // Strip spaces/dashes and validate: digits only, lengths 8 / 12 / 13 / 14.
+  const upc = String(body?.upc ?? "").trim().replace(/[\s\-]/g, "");
+  const VALID_LENGTHS = new Set([8, 12, 13, 14]);
+  if (!upc || !/^\d+$/.test(upc) || !VALID_LENGTHS.has(upc.length)) {
+    return json({ ok: false, error: "Invalid UPC" }, 400);
   }
 
   if (!env.SEARCHUPCDATA_API_KEY) {
-    return json({ error: "UPC lookup service not configured" }, 502);
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "missing_key" }));
+    return json({ ok: false, error: "Search provider is not configured" }, 500);
   }
+
+  console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, step: "provider_call" }));
 
   let apiRes;
   try {
@@ -97,30 +105,37 @@ async function handleLookupUpc(request, env) {
       `https://api.searchupcdata.com/api/v1?upc=${encodeURIComponent(upc)}&apikey=${env.SEARCHUPCDATA_API_KEY}`,
       { headers: { Accept: "application/json" } }
     );
-  } catch (err) {
-    console.error("SearchUPCData network error:", err);
-    return json({ error: "UPC lookup provider unavailable" }, 502);
+  } catch {
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_network_error" }));
+    return json({ ok: false, error: "Lookup provider failed", providerStatus: 0 }, 502);
   }
 
   if (!apiRes.ok) {
-    console.error("SearchUPCData error status:", apiRes.status);
-    return json({ error: "UPC lookup provider returned an error" }, 502);
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_error", providerStatus: apiRes.status }));
+    return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
   }
 
   let raw;
   try {
     raw = await apiRes.json();
   } catch {
-    return json({ error: "UPC lookup provider returned invalid data" }, 502);
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_invalid_json" }));
+    return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
   }
 
-  // Normalize only the fields the frontend needs — never forward the raw key.
   const product = normalizeUpcData(raw, upc);
+
+  if (!product.name) {
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, result: "not_found" }));
+    return json({ ok: false, error: "Product not found" }, 404);
+  }
+
+  console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, result: "found" }));
   return json({ ok: true, product });
 }
 
 function normalizeUpcData(raw, upc) {
-  // SearchUPCData returns an object at the top level; field names may vary.
+  // Provider may return an array or a single object.
   const item = Array.isArray(raw) ? raw[0] : raw;
   return {
     upc,
@@ -128,9 +143,7 @@ function normalizeUpcData(raw, upc) {
     brand: item?.brand ?? item?.manufacturer ?? null,
     category: item?.category ?? null,
     ingredients: item?.ingredients ?? null,
-    nutrition: item?.nutrition ?? item?.nutritional_info ?? null,
     imageUrl: item?.image ?? item?.images?.[0] ?? null,
-    found: !!(item?.product_name ?? item?.title ?? item?.name),
   };
 }
 
@@ -312,14 +325,14 @@ export default {
       } else if (pathname === "/api/generate-scratch-recipe" && method === "POST") {
         response = await handleGenerateScratchRecipe(request, env);
       } else if (pathname.startsWith("/api/")) {
-        response = json({ error: "Not found" }, 404);
+        response = json({ ok: false, error: "Not found" }, 404);
       } else {
         // Serve static frontend assets via the ASSETS binding.
         return env.ASSETS.fetch(request);
       }
     } catch (err) {
-      console.error("Unhandled worker error:", err);
-      response = json({ error: "Internal server error" }, 500);
+      console.log(JSON.stringify({ path: pathname, error: "unhandled_exception", message: err?.message }));
+      response = json({ ok: false, error: "Internal server error" }, 500);
     }
 
     return withCors(request, response);
