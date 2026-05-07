@@ -6,6 +6,33 @@ Worker URL: `https://scratchnscan.layr-sor.workers.dev`
 
 ---
 
+## Testing manual UPC entry (frontend)
+
+1. Open the app: `https://scratchnscan.layr-sor.workers.dev` (or `http://localhost:8787` locally)
+2. Click **Scan / Enter UPC** on the home screen.
+3. If your device has no camera or `BarcodeDetector` support, manual entry appears automatically.
+4. Enter one of these test UPCs in the input field:
+   - `049000028904` — Coca-Cola Classic (12 fl oz can)
+   - `012000001772` — Pepsi Cola
+   - `028400064057` — Lay's Classic Potato Chips
+5. Click **Look up product**.
+6. On success, the product name, brand, UPC, and ingredients appear.
+7. A record is saved to browser IndexedDB with `inputMethod: "manual"`.
+8. Click **Make from scratch** — a placeholder note appears (recipe generation is the next phase).
+9. Click **Scan another item** to return to the scan view.
+
+### What to check
+| Scenario | Expected result |
+|---|---|
+| Valid 12-digit UPC | Product card shown |
+| UPC with spaces/dashes (e.g. `049000 028904`) | Stripped and accepted |
+| Letters in input (e.g. `abc123`) | Validation error before any API call |
+| Wrong digit count (e.g. `12345`) | Validation error before any API call |
+| UPC not in database | "Product not found" message with the UPC shown |
+| Network error | Error message with instructions to retry |
+
+---
+
 ## Testing the API
 
 ### /api/health — open in any browser
