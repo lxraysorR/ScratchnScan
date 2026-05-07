@@ -6,6 +6,11 @@
   "scripts": {
     "test": "node scripts/test_app_shell.mjs",
     "build": "node scripts/build_app_shell.mjs",
-    "start": "node scripts/serve_hint.mjs"
+    "start": "node scripts/serve_hint.mjs",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.88.0"
   }
 }
