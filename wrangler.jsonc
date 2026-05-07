@@ -1,14 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "scratchnscan",
+  "main": "src/worker.js",
   "compatibility_date": "2026-05-07",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "app"
+    "directory": "app",
+    "binding": "ASSETS"
   },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  // Secrets are NOT stored here. Set them with:
+  //   wrangler secret put APP_ADMIN_TOKEN
+  //   wrangler secret put SEARCHUPCDATA_API_KEY
+  //   wrangler secret put GEMINI_API_KEY
+  //
+  // Declared here only so wrangler type-checks them:
+  "vars": {}
 }
