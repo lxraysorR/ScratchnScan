@@ -314,8 +314,8 @@ export default {
       } else if (pathname.startsWith("/api/")) {
         response = json({ error: "Not found" }, 404);
       } else {
-        // Pass non-API requests through to static assets.
-        return fetch(request);
+        // Serve static frontend assets via the ASSETS binding.
+        return env.ASSETS.fetch(request);
       }
     } catch (err) {
       console.error("Unhandled worker error:", err);

@@ -7,25 +7,120 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <header class="app-header">
+      <a href="#home" class="app-logo">ScratchNScan</a>
+    </header>
+
     <main>
-      <h1>ScratchNScan</h1>
-      <p>Turn packaged foods into simple homemade alternatives.</p>
-      <nav aria-label="MVP flow">
-        <ol>
-          <li>Scan barcode or enter UPC</li>
-          <li>Or upload front + ingredients label photos</li>
-          <li>Understand product</li>
-          <li>Get homemade alternative</li>
-          <li>Scan another item</li>
-        </ol>
-      </nav>
-      <section>
-        <h2>MVP Navigation Shell</h2>
-        <button>Scan / Enter UPC</button>
-        <button>Upload Labels</button>
-        <button disabled>Generate Homemade Alternative</button>
+
+      <!-- ── HOME ─────────────────────────────────────────────────── -->
+      <section id="view-home" class="view">
+        <div class="hero">
+          <h1>Turn packaged food into something homemade.</h1>
+          <p class="hero-sub">Scan or enter a barcode to see what's inside — then get a simple recipe to make it yourself.</p>
+          <button id="home-scan-btn" class="btn btn-primary btn-lg">Scan / Enter UPC</button>
+        </div>
+        <p class="disclaimer">General food information only. Not medical advice.</p>
       </section>
-      <p class="disclaimer">General food information only. Not medical advice.</p>
+
+      <!-- ── SCAN ──────────────────────────────────────────────────── -->
+      <section id="view-scan" class="view" hidden>
+        <h2 class="view-title">Scan a product</h2>
+
+        <!-- Camera available hint (hidden when scanner is unavailable) -->
+        <div id="scan-camera-section" hidden>
+          <p class="hint">Camera scanning is available on this device.</p>
+          <button id="scan-use-manual-btn" class="btn btn-secondary">Enter UPC manually instead</button>
+          <hr class="divider" />
+        </div>
+
+        <!-- Manual UPC entry (shown immediately when scanner unavailable) -->
+        <div id="scan-manual-section">
+          <h3 class="manual-title">Enter UPC manually</h3>
+          <p class="hint">Use this when a camera or barcode scanner is unavailable, or if a scan fails.</p>
+
+          <form id="upc-form" class="upc-form" novalidate>
+            <label for="upc-input" class="label">Barcode / UPC</label>
+            <input
+              id="upc-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9\s\-]*"
+              placeholder="e.g. 049000028904"
+              autocomplete="off"
+              class="input"
+              aria-describedby="upc-hint"
+            />
+            <p id="upc-hint" class="field-hint">8, 12, 13, or 14 digits — spaces and dashes are stripped automatically.</p>
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Look up product</button>
+          </form>
+        </div>
+
+        <!-- Loading -->
+        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          Looking up product…
+        </div>
+
+        <!-- Error -->
+        <div id="scan-error" class="state-box state-error" hidden role="alert">
+          <strong>Something went wrong</strong>
+          <p id="scan-error-msg"></p>
+          <button class="btn btn-secondary" onclick="document.getElementById('scan-error').hidden=true">Dismiss</button>
+        </div>
+
+        <!-- Not found -->
+        <div id="scan-not-found" class="state-box state-warning" hidden>
+          <strong>Product not found</strong>
+          <p>No data was found for UPC <code id="scan-not-found-upc"></code>.</p>
+          <p>Try entering the number from the back of the package. Photo label lookup is coming soon.</p>
+        </div>
+
+        <div class="view-footer">
+          <a href="#home" class="back-link">← Back</a>
+        </div>
+      </section>
+
+      <!-- ── RESULT ─────────────────────────────────────────────────── -->
+      <section id="view-result" class="view" hidden>
+        <h2 class="view-title">Product found</h2>
+
+        <div class="result-card">
+          <img id="result-image" class="result-image" src="" alt="" hidden />
+          <h3 id="result-name" class="result-name"></h3>
+          <p id="result-brand" class="result-brand"></p>
+          <p id="result-upc" class="result-upc"></p>
+
+          <section id="result-ingredients-section" class="result-section" hidden>
+            <h4>Ingredients</h4>
+            <p id="result-ingredients" class="result-ingredients"></p>
+          </section>
+
+          <p id="result-source" class="result-source"></p>
+        </div>
+
+        <div class="result-actions">
+          <button id="result-scratch-btn" class="btn btn-primary">Make from scratch</button>
+          <button id="result-scan-another-btn" class="btn btn-secondary">Scan another item</button>
+        </div>
+
+        <!-- Placeholder until /api/generate-scratch-recipe UI is built -->
+        <div id="result-scratch-note" class="state-box state-info" hidden>
+          <strong>Coming soon</strong>
+          <p>The homemade recipe generator will appear here. The product data has been saved and is ready for the next step.</p>
+        </div>
+
+        <div class="view-footer">
+          <a href="#scan" class="back-link">← Scan another</a>
+        </div>
+      </section>
+
     </main>
+
+    <footer class="app-footer">
+      <p class="disclaimer">General food information only. Not medical advice. Check labels and consult a professional for allergies or dietary needs.</p>
+    </footer>
+
+    <script type="module" src="./js/app.js"></script>
   </body>
 </html>
