@@ -71,10 +71,49 @@
 
         <!-- Not found -->
         <div id="scan-not-found" class="state-box state-warning" hidden>
-          <strong>Product not found</strong>
-          <p>No data was found for UPC <code id="scan-not-found-upc"></code>.</p>
-          <p>Try entering the number from the back of the package. Photo label lookup is coming soon.</p>
+          <strong>No product details found for this barcode.</strong>
+          <p>Barcode entered: <code id="scan-not-found-upc"></code></p>
+          <p>You can add product information manually for this item.</p>
+          <button id="scan-rescue-open-btn" type="button" class="btn btn-secondary">Add Product Info</button>
         </div>
+
+        <!-- Product Rescue draft form -->
+        <form id="scan-rescue-form" class="rescue-form" hidden>
+          <h3 class="manual-title">Add product info</h3>
+          <p class="hint">Saved locally for now. Barcode: <code id="rescue-barcode-readout"></code></p>
+
+          <label for="rescue-name" class="label">Product name</label>
+          <input id="rescue-name" class="input" type="text" autocomplete="off" />
+
+          <label for="rescue-brand" class="label">Brand</label>
+          <input id="rescue-brand" class="input" type="text" autocomplete="off" />
+
+          <label for="rescue-ingredients" class="label">Ingredients (as printed)</label>
+          <textarea id="rescue-ingredients" class="input" rows="3"></textarea>
+
+          <label for="rescue-nutrition" class="label">Nutrition (optional)</label>
+          <textarea id="rescue-nutrition" class="input" rows="2"></textarea>
+
+          <label for="rescue-notes" class="label">Notes (optional)</label>
+          <textarea id="rescue-notes" class="input" rows="2"></textarea>
+
+          <div class="rescue-actions">
+            <button type="submit" class="btn btn-primary">Save draft</button>
+            <button id="scan-rescue-cancel-btn" type="button" class="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+
+        <div id="scan-rescue-saved" class="state-box state-info" hidden>
+          <strong>Draft saved locally.</strong>
+          <p>You can finish this entry later from your local history.</p>
+        </div>
+
+        <!-- Recent local history -->
+        <section id="scan-history-section" class="history-section">
+          <h3 class="history-title">Recent lookups</h3>
+          <ul id="scan-history-list" class="history-list"></ul>
+          <p id="scan-history-empty" class="hint" hidden>No lookups yet. Enter a UPC above to get started.</p>
+        </section>
 
         <div class="view-footer">
           <a href="#home" class="back-link">← Back</a>
