@@ -8,7 +8,10 @@
     "build": "node scripts/build_app_shell.mjs",
     "start": "node scripts/serve_hint.mjs",
     "deploy": "wrangler deploy",
-    "preview": "wrangler dev"
+    "preview": "wrangler dev",
+    "app:status": "node scripts/app-status.js",
+    "agent:next": "node scripts/agent-next-task.js",
+    "qa:smoke": "node scripts/qa-smoke.js"
   },
   "devDependencies": {
     "wrangler": "^4.88.0"
