@@ -12,153 +12,85 @@
     </header>
 
     <main>
-
-      <!-- ── HOME ─────────────────────────────────────────────────── -->
       <section id="view-home" class="view">
         <div class="hero">
           <h1>Turn packaged food into something homemade.</h1>
-          <p class="hero-sub">Scan or enter a barcode to see what's inside — then get a simple recipe to make it yourself.</p>
+          <p class="hero-sub">Enter a UPC, product name, or label text to get a simple homemade alternative.</p>
           <button id="home-scan-btn" class="btn btn-primary btn-lg">Scan / Enter UPC</button>
         </div>
-        <p class="disclaimer">General food information only. Not medical advice.</p>
       </section>
 
-      <!-- ── SCAN ──────────────────────────────────────────────────── -->
       <section id="view-scan" class="view" hidden>
-        <h2 class="view-title">Scan a product</h2>
+        <h2 class="view-title">Manual product lookup</h2>
+        <p class="hint">Add Product Info</p>
+        <div id="scan-camera-section" hidden><p class="hint">Camera scanning exists but manual entry is the MVP path for now.</p></div>
 
-        <!-- Camera available hint (hidden when scanner is unavailable) -->
-        <div id="scan-camera-section" hidden>
-          <p class="hint">Camera scanning is available on this device.</p>
-          <button id="scan-use-manual-btn" class="btn btn-secondary">Enter UPC manually instead</button>
-          <hr class="divider" />
-        </div>
+        <form id="manual-lookup-form" class="upc-form" novalidate>
+          <label for="upc-input" class="label">UPC / barcode</label>
+          <input id="upc-input" type="text" inputmode="numeric" class="input" placeholder="e.g. 049000028904" />
 
-        <!-- Manual UPC entry (shown immediately when scanner unavailable) -->
-        <div id="scan-manual-section">
-          <h3 class="manual-title">Enter UPC manually</h3>
-          <p class="hint">Use this when a camera or barcode scanner is unavailable, or if a scan fails.</p>
+          <label for="product-name-input" class="label">Product name</label>
+          <input id="product-name-input" type="text" class="input" placeholder="e.g. boxed mac and cheese" />
 
-          <form id="upc-form" class="upc-form" novalidate>
-            <label for="upc-input" class="label">Barcode / UPC</label>
-            <input
-              id="upc-input"
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9\s\-]*"
-              placeholder="e.g. 049000028904"
-              autocomplete="off"
-              class="input"
-              aria-describedby="upc-hint"
-            />
-            <p id="upc-hint" class="field-hint">8, 12, 13, or 14 digits — spaces and dashes are stripped automatically.</p>
-            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Look up product</button>
-          </form>
-        </div>
-
-        <!-- Loading -->
-        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite">
-          <span class="spinner" aria-hidden="true"></span>
-          Looking up product…
-        </div>
-
-        <!-- Error -->
-        <div id="scan-error" class="state-box state-error" hidden role="alert">
-          <strong>Something went wrong</strong>
-          <p id="scan-error-msg"></p>
-          <button class="btn btn-secondary" onclick="document.getElementById('scan-error').hidden=true">Dismiss</button>
-        </div>
-
-        <!-- Not found -->
-        <div id="scan-not-found" class="state-box state-warning" hidden>
-          <strong>No product details found for this barcode.</strong>
-          <p>Barcode entered: <code id="scan-not-found-upc"></code></p>
-          <p>You can add product information manually for this item.</p>
-          <button id="scan-rescue-open-btn" type="button" class="btn btn-secondary">Add Product Info</button>
-        </div>
-
-        <!-- Product Rescue draft form -->
-        <form id="scan-rescue-form" class="rescue-form" hidden>
-          <h3 class="manual-title">Add product info</h3>
-          <p class="hint">Saved locally for now. Barcode: <code id="rescue-barcode-readout"></code></p>
-
-          <label for="rescue-name" class="label">Product name</label>
-          <input id="rescue-name" class="input" type="text" autocomplete="off" />
-
-          <label for="rescue-brand" class="label">Brand</label>
-          <input id="rescue-brand" class="input" type="text" autocomplete="off" />
-
-          <label for="rescue-ingredients" class="label">Ingredients (as printed)</label>
-          <textarea id="rescue-ingredients" class="input" rows="3"></textarea>
-
-          <label for="rescue-nutrition" class="label">Nutrition (optional)</label>
-          <textarea id="rescue-nutrition" class="input" rows="2"></textarea>
-
-          <label for="rescue-notes" class="label">Notes (optional)</label>
-          <textarea id="rescue-notes" class="input" rows="2"></textarea>
+          <label for="ingredients-input" class="label">Ingredients or label text</label>
+          <textarea id="ingredients-input" class="input" rows="4" placeholder="Paste ingredient list or label text"></textarea>
 
           <div class="rescue-actions">
-            <button type="submit" class="btn btn-primary">Save draft</button>
-            <button id="scan-rescue-cancel-btn" type="button" class="btn btn-secondary">Cancel</button>
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate from scratch idea</button>
+            <button id="manual-clear-btn" type="button" class="btn btn-secondary">Clear</button>
           </div>
         </form>
 
-        <div id="scan-rescue-saved" class="state-box state-info" hidden>
-          <strong>Draft saved locally.</strong>
-          <p>You can finish this entry later from your local history.</p>
+        <div id="scan-empty" class="state-box state-info" hidden>Enter details above to begin.</div>
+        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite"><span class="spinner" aria-hidden="true"></span>Working on your result…</div>
+
+        <div id="scan-error" class="state-box state-error" hidden role="alert">
+          <strong>Something went wrong</strong>
+          <p id="scan-error-msg"></p>
         </div>
 
-        <!-- Recent local history -->
         <section id="scan-history-section" class="history-section">
           <h3 class="history-title">Recent lookups</h3>
           <ul id="scan-history-list" class="history-list"></ul>
-          <p id="scan-history-empty" class="hint" hidden>No lookups yet. Enter a UPC above to get started.</p>
+          <p id="scan-history-empty" class="hint" hidden>No lookups yet.</p>
         </section>
-
-        <div class="view-footer">
-          <a href="#home" class="back-link">← Back</a>
-        </div>
       </section>
 
-      <!-- ── RESULT ─────────────────────────────────────────────────── -->
       <section id="view-result" class="view" hidden>
-        <h2 class="view-title">Product found</h2>
-
+        <h2 class="view-title">Manual lookup result</h2>
         <div class="result-card">
-          <img id="result-image" class="result-image" src="" alt="" hidden />
           <h3 id="result-name" class="result-name"></h3>
-          <p id="result-brand" class="result-brand"></p>
           <p id="result-upc" class="result-upc"></p>
+          <p id="result-source" class="result-source"></p>
 
-          <section id="result-ingredients-section" class="result-section" hidden>
-            <h4>Ingredients</h4>
-            <p id="result-ingredients" class="result-ingredients"></p>
+          <section class="result-section">
+            <h4>What this appears to be</h4>
+            <p id="result-summary"></p>
           </section>
 
-          <p id="result-source" class="result-source"></p>
+          <section class="result-section">
+            <h4>Why make it from scratch?</h4>
+            <p id="result-concerns"></p>
+          </section>
+
+          <section class="result-section">
+            <h4 id="result-recipe-title">Simple homemade alternative</h4>
+            <h5>Ingredients</h5>
+            <ul id="result-homemade-ingredients"></ul>
+            <h5>Steps</h5>
+            <ol id="result-homemade-steps"></ol>
+          </section>
+
+          <p id="result-confidence" class="result-source"></p>
+          <p id="result-note" class="hint" hidden></p>
         </div>
 
         <div class="result-actions">
-          <button id="result-scratch-btn" class="btn btn-primary">Make from scratch</button>
-          <button id="result-scan-another-btn" class="btn btn-secondary">Scan another item</button>
-        </div>
-
-        <!-- Placeholder until /api/generate-scratch-recipe UI is built -->
-        <div id="result-scratch-note" class="state-box state-info" hidden>
-          <strong>Coming soon</strong>
-          <p>The homemade recipe generator will appear here. The product data has been saved and is ready for the next step.</p>
-        </div>
-
-        <div class="view-footer">
-          <a href="#scan" class="back-link">← Scan another</a>
+          <button id="result-scan-another-btn" class="btn btn-secondary">Try another item</button>
         </div>
       </section>
-
     </main>
-
-    <footer class="app-footer">
-      <p class="disclaimer">General food information only. Not medical advice. Check labels and consult a professional for allergies or dietary needs.</p>
-    </footer>
+    <footer class="app-footer"><p class="disclaimer">General food information only. Not medical advice.</p></footer>
 
     <script type="module" src="./js/app.js"></script>
   </body>

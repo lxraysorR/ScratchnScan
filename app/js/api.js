@@ -1,11 +1,5 @@
 const WORKER_BASE = "https://scratchnscan.layr-sor.workers.dev";
 
-/**
- * POST /api/lookup-upc
- * upc must be a string to preserve leading zeroes.
- * Returns the worker's { ok, product } payload on success.
- * Throws an Error with a user-facing .message on failure.
- */
 export async function lookupUpc(upc) {
   let res;
   try {
@@ -32,14 +26,36 @@ export async function lookupUpc(upc) {
   return body;
 }
 
-/**
- * Normalise the raw product object from the worker into the app's
- * internal product result model.
- */
+export async function generateScratchRecipe(payload) {
+  let res;
+  try {
+    res = await fetch(`${WORKER_BASE}/api/generate-scratch-recipe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error("Could not reach the AI service.");
+  }
+
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    throw new Error("AI service returned an unexpected response.");
+  }
+
+  if (!res.ok) {
+    throw new Error(body?.error ?? `AI service error (${res.status}).`);
+  }
+
+  return body;
+}
+
 export function normalizeProduct(raw, upc) {
   const p = raw?.product ?? raw ?? {};
   return {
-    upc: String(p.upc ?? upc),
+    upc: String(p.upc ?? upc ?? ""),
     productName: p.name ?? p.productName ?? null,
     brand: p.brand ?? null,
     category: p.category ?? null,

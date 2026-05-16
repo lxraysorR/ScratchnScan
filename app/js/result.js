@@ -1,49 +1,47 @@
 import { lastLookupResult } from "./scan.js";
 
-function el(id) {
-  return document.getElementById(id);
-}
+function el(id) { return document.getElementById(id); }
 
 export function initResultView(product) {
   const p = product ?? lastLookupResult;
   if (!p) {
-    // No product in memory — send user back to scan.
     window.location.hash = "#scan";
     return;
   }
 
-  el("result-name").textContent = p.productName ?? "Unknown product";
-  el("result-brand").textContent = p.brand ? `by ${p.brand}` : "";
-  el("result-upc").textContent = `UPC: ${p.upc}`;
+  el("result-name").textContent = p.manualLookup?.productTitle || p.productName || "Unknown product";
+  el("result-upc").textContent = p.upc ? `UPC: ${p.upc}` : "Manual entry";
+  el("result-source").textContent = `Source: ${p.manualLookup?.source || p.source || "unknown"}`;
 
-  const img = el("result-image");
-  if (p.imageUrl) {
-    img.src = p.imageUrl;
-    img.alt = p.productName ?? "Product image";
-    img.hidden = false;
-  } else {
-    img.hidden = true;
+  el("result-summary").textContent = p.manualLookup?.productSummary || "Packaged product identified.";
+  const concerns = p.manualLookup?.concerns?.length
+    ? p.manualLookup.concerns.join(" ")
+    : "Packaged versions may include extra additives compared with homemade options.";
+  el("result-concerns").textContent = concerns;
+  el("result-recipe-title").textContent = p.manualLookup?.homemadeAlternativeTitle || "Simple homemade alternative";
+
+  const ingredients = p.manualLookup?.homemadeIngredients || [];
+  const ingList = el("result-homemade-ingredients");
+  ingList.innerHTML = "";
+  for (const item of ingredients) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    ingList.appendChild(li);
   }
 
-  const ingredientsSection = el("result-ingredients-section");
-  if (p.ingredients) {
-    el("result-ingredients").textContent = p.ingredients;
-    ingredientsSection.hidden = false;
-  } else {
-    ingredientsSection.hidden = true;
+  const steps = p.manualLookup?.homemadeSteps || [];
+  const stepsList = el("result-homemade-steps");
+  stepsList.innerHTML = "";
+  for (const item of steps) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    stepsList.appendChild(li);
   }
 
-  el("result-source").textContent = p.source ? `Source: ${p.source}` : "";
+  const note = p.manualLookup?.note;
+  el("result-confidence").textContent = `Confidence: ${p.manualLookup?.confidenceLevel || "medium"}`;
+  el("result-note").textContent = note || "";
+  el("result-note").hidden = !note;
 
-  // "Make from scratch" stores the product on the window so the recipe
-  // flow can pick it up when that route is built.
-  el("result-scratch-btn").addEventListener("click", () => {
-    window._pendingProduct = p;
-    // Recipe route is not built yet — show a placeholder message.
-    el("result-scratch-note").hidden = false;
-  });
-
-  el("result-scan-another-btn").addEventListener("click", () => {
-    window.location.hash = "#scan";
-  });
+  el("result-scan-another-btn").onclick = () => { window.location.hash = "#scan"; };
 }
