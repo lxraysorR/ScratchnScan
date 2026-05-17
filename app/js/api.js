@@ -16,10 +16,10 @@ const WORKER_BASE = import.meta.env?.VITE_SCAN_SCRATCH_API_BASE ?? "";
 export async function lookupUpc(upc) {
   let res;
   try {
-    res = await fetch(`${WORKER_BASE}/api/lookup-upc`, {
+    res = await fetch(`${WORKER_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ upc: String(upc) }),
+      body: JSON.stringify(payload),
     });
   } catch {
     const err = new Error("Could not reach the server. Check your connection and try again.");

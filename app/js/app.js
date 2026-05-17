@@ -1,23 +1,23 @@
-import { initScanView, lastLookupResult } from "./scan.js";
-import { initResultView } from "./result.js";
+import { initManualView, renderHistoryView, openHistoryItem } from "./result.js";
+import { initDatabase } from "./localDb.js";
 
-const VIEWS = ["home", "scan", "result"];
+const views = ["home", "manual", "history"];
 
 // Guards: each view is initialised at most once per page load.
 let scanViewReady = false;
 let resultViewReady = false;
 
 function showView(name) {
-  const target = VIEWS.includes(name) ? name : "home";
-  for (const id of VIEWS) {
+  const view = views.includes(name) ? name : "home";
+  for (const id of views) {
     const el = document.getElementById(`view-${id}`);
-    if (el) el.hidden = id !== target;
+    if (el) el.hidden = id !== view;
   }
-  return target;
 }
 
 async function route() {
   const hash = window.location.hash.replace(/^#\/?/, "") || "home";
+  const [page, id] = hash.split("/");
 
   if (hash === "scan") {
     showView("scan");
@@ -49,4 +49,6 @@ document.getElementById("home-scan-btn")?.addEventListener("click", () => {
 });
 
 window.addEventListener("hashchange", route);
+
+await initDatabase();
 route();

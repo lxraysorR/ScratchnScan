@@ -1,0 +1,12 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    environment:
+      groups:
+        - PantryPulse ios and android
+
+  android-workflow:
+    name: Android Workflow
+    environment:
+      groups:
+        - PantryPulse ios and android

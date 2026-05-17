@@ -118,6 +118,11 @@ function userMessage(err) {
   return err.message ?? "Something went wrong. Please try again.";
 }
 
+function finishLookup(submitBtn) {
+  setHidden(el("scan-loading"), true);
+  if (submitBtn) submitBtn.disabled = false;
+}
+
 function showError(message) {
   el("scan-error-msg").textContent = message;
   el("scan-error").hidden = false;
