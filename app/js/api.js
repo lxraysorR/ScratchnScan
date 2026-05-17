@@ -1,29 +1,45 @@
-const WORKER_BASE = "https://scratchnscan.layr-sor.workers.dev";
+// Use VITE_SCAN_SCRATCH_API_BASE when running under Vite (cross-origin dev).
+// Falls back to "" (relative URLs) so the same code works when the worker
+// serves both the frontend and the API from the same origin.
+const WORKER_BASE = import.meta.env?.VITE_SCAN_SCRATCH_API_BASE ?? "";
 
 export async function lookupUpc(upc) {
   let res;
   try {
-    res = await fetch(`${WORKER_BASE}/api/lookup-upc`, {
+    res = await fetch(`${WORKER_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ upc: String(upc) }),
+      body: JSON.stringify(payload),
     });
   } catch {
-    throw new Error("Could not reach the server. Check your internet connection and try again.");
+    const err = new Error("Could not reach the server. Check your connection and try again.");
+    err.status = 0;
+    throw err;
   }
 
   let body;
   try {
     body = await res.json();
   } catch {
-    throw new Error("Server returned an unexpected response. Please try again.");
+    const err = new Error("The server returned an unexpected response. Please try again.");
+    err.status = res.status;
+    throw err;
+  }
+
+  if (res.status === 404) {
+    const err = new Error(body?.error ?? "Product not found");
+    err.status = 404;
+    err.notFound = true;
+    throw err;
   }
 
   if (!res.ok) {
-    throw new Error(body?.error ?? `Server error (${res.status}). Please try again.`);
+    const err = new Error(body?.error ?? `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
   }
 
-  return body;
+  return normalizeProduct(body, upc);
 }
 
 export async function generateScratchRecipe(payload) {
@@ -59,9 +75,8 @@ export function normalizeProduct(raw, upc) {
     productName: p.name ?? p.productName ?? null,
     brand: p.brand ?? null,
     category: p.category ?? null,
-    imageUrl: p.imageUrl ?? p.image ?? null,
+    imageUrl: p.imageUrl ?? null,
     ingredients: p.ingredients ?? null,
     source: p.source ?? "SearchUPCData",
-    found: p.found !== false && !!(p.name ?? p.productName),
   };
 }

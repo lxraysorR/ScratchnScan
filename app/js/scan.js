@@ -109,6 +109,10 @@ function inferIngredients(text) {
 
 async function handleManualSubmit(e) {
   e.preventDefault();
+
+  // Hard guard: ignore if a request is already in flight.
+  if (requestInFlight) return;
+
   clearStates();
 
   const input = readManualInputs();

@@ -80,6 +80,63 @@ Expected response (HTTP 200):
 }
 ```
 
+### /api/lookup-upc — valid UPC
+
+```bash
+curl -X POST https://scratchnscan.layr-sor.workers.dev/api/lookup-upc \
+     -H "Content-Type: application/json" \
+     -d '{"upc":"049000028904"}'
+```
+
+Expected response (HTTP 200):
+```json
+{
+  "ok": true,
+  "product": {
+    "upc": "049000028904",
+    "name": "Coca-Cola Classic",
+    "brand": "Coca-Cola",
+    "category": "...",
+    "ingredients": "...",
+    "imageUrl": "..."
+  }
+}
+```
+
+### /api/lookup-upc — invalid UPC (wrong digit count)
+
+```bash
+curl -X POST https://scratchnscan.layr-sor.workers.dev/api/lookup-upc \
+     -H "Content-Type: application/json" \
+     -d '{"upc":"12345"}'
+```
+
+Expected response (HTTP 400):
+```json
+{ "ok": false, "error": "Invalid UPC" }
+```
+
+### /api/lookup-upc — UPC not in database
+
+Expected response (HTTP 404):
+```json
+{ "ok": false, "error": "Product not found" }
+```
+
+### /api/lookup-upc — provider key missing (misconfiguration)
+
+Expected response (HTTP 500):
+```json
+{ "ok": false, "error": "Search provider is not configured" }
+```
+
+### /api/lookup-upc — provider unreachable or error
+
+Expected response (HTTP 502):
+```json
+{ "ok": false, "error": "Lookup provider failed", "providerStatus": 503 }
+```
+
 ---
 
 ## Required Cloudflare secrets
@@ -100,6 +157,13 @@ Create `.dev.vars` in the repo root (already gitignored):
 APP_ADMIN_TOKEN=your-local-token
 SEARCHUPCDATA_API_KEY=your-key
 GEMINI_API_KEY=your-key
+```
+
+The frontend API client uses relative URLs by default (`/api/...`), so it works with `wrangler dev` at `localhost:8787` without any extra configuration.
+
+If you run the frontend on a separate port (e.g. Vite on `:5173`), create a Vite `.env.local` file pointing at the deployed worker:
+```
+VITE_SCAN_SCRATCH_API_BASE=https://scratchnscan.layr-sor.workers.dev
 ```
 
 ```bash
