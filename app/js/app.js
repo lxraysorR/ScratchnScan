@@ -1,11 +1,11 @@
-import { initManualView, renderHistoryView, openHistoryItem } from "./result.js";
+import { initScanView } from "./scan.js";
+import * as scanModule from "./scan.js";
+import { initResultView } from "./result.js";
 import { initDatabase } from "./localDb.js";
 
-const views = ["home", "manual", "history"];
+const views = ["home", "scan", "result"];
 
-// Guards: each view is initialised at most once per page load.
 let scanViewReady = false;
-let resultViewReady = false;
 
 function showView(name) {
   const view = views.includes(name) ? name : "home";
@@ -17,7 +17,6 @@ function showView(name) {
 
 async function route() {
   const hash = window.location.hash.replace(/^#\/?/, "") || "home";
-  const [page, id] = hash.split("/");
 
   if (hash === "scan") {
     showView("scan");
@@ -29,15 +28,12 @@ async function route() {
   }
 
   if (hash === "result") {
-    if (!lastLookupResult) {
+    if (!scanModule.lastLookupResult) {
       window.location.hash = "#scan";
       return;
     }
     showView("result");
-    if (!resultViewReady) {
-      initResultView(lastLookupResult);
-      resultViewReady = true;
-    }
+    initResultView(scanModule.lastLookupResult);
     return;
   }
 

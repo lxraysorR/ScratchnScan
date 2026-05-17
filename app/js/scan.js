@@ -13,6 +13,7 @@ import {
 
 export let lastLookupResult = null;
 let viewInitialized = false;
+let requestInFlight = false;
 
 function el(id) { return document.getElementById(id); }
 function setHidden(element, hidden) { if (element) element.hidden = hidden; }
@@ -112,6 +113,7 @@ async function handleManualSubmit(e) {
 
   // Hard guard: ignore if a request is already in flight.
   if (requestInFlight) return;
+  requestInFlight = true;
 
   clearStates();
 
@@ -183,6 +185,7 @@ async function handleManualSubmit(e) {
   } catch (err) {
     showError(err?.message || "Lookup failed. Please try again.");
   } finally {
+    requestInFlight = false;
     setHidden(el("scan-loading"), true);
     if (submitBtn) submitBtn.disabled = false;
     await renderHistory();
