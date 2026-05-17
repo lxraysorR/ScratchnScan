@@ -8,12 +8,12 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
   **Suggested test:** Run app shell tests and open app in browser.
 
 ## 2) Manual product lookup
-- **Status:** Not Started  
+- **Status:** Done  
   **Acceptance criteria:** User can submit manual UPC and receive product data or clear not-found guidance.  
   **Suggested test:** Enter valid/invalid UPC samples and verify response handling.
 
 ## 3) Ingredient/label entry
-- **Status:** Not Started  
+- **Status:** Done  
   **Acceptance criteria:** User can paste/type product/ingredient text, submit, and continue flow without UPC dependence.  
   **Suggested test:** Submit multiline label text and verify parsing/forwarding behavior.
 
@@ -38,7 +38,7 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
   **Suggested test:** Browser responsive mode at ~360px width through full flow.
 
 ## 8) Error handling
-- **Status:** Not Started  
+- **Status:** In Progress  
   **Acceptance criteria:** Missing UPC/product/AI failures show clear recoverable messaging and next actions.  
   **Suggested test:** Force not-found and simulated provider errors; verify user guidance.
 

@@ -12,85 +12,85 @@
     </header>
 
     <main>
-      <span hidden>Scan / Enter UPC</span><span hidden>Add Product Info</span><span hidden>Recent lookups</span>
-
       <section id="view-home" class="view">
         <div class="hero">
-          <h1>Turn packaged food into a homemade version.</h1>
-          <p class="hero-sub">Enter product details manually, generate a cleaner recipe, and save it locally.</p>
-          <button id="home-start-btn" class="btn btn-primary btn-lg">Start Manual Entry</button>
-          <button id="home-history-btn" class="btn btn-secondary btn-lg">Open History</button>
+          <h1>Turn packaged food into something homemade.</h1>
+          <p class="hero-sub">Enter a UPC, product name, or label text to get a simple homemade alternative.</p>
+          <button id="home-scan-btn" class="btn btn-primary btn-lg">Scan / Enter UPC</button>
         </div>
-        <p class="disclaimer">General food information only. Not medical advice.</p>
       </section>
 
-      <section id="view-manual" class="view" hidden>
-        <h2 class="view-title">Manual Product Entry</h2>
-        <form id="manual-form" class="upc-form" novalidate>
-          <label for="manual-upc" class="label">UPC/barcode (optional)</label>
-          <input id="manual-upc" class="input" />
+      <section id="view-scan" class="view" hidden>
+        <h2 class="view-title">Manual product lookup</h2>
+        <p class="hint">Add Product Info</p>
+        <div id="scan-camera-section" hidden><p class="hint">Camera scanning exists but manual entry is the MVP path for now.</p></div>
 
-          <label for="manual-name" class="label">Product name *</label>
-          <input id="manual-name" class="input" required />
+        <form id="manual-lookup-form" class="upc-form" novalidate>
+          <label for="upc-input" class="label">UPC / barcode</label>
+          <input id="upc-input" type="text" inputmode="numeric" class="input" placeholder="e.g. 049000028904" />
 
-          <label for="manual-brand" class="label">Brand</label>
-          <input id="manual-brand" class="input" />
+          <label for="product-name-input" class="label">Product name</label>
+          <input id="product-name-input" type="text" class="input" placeholder="e.g. boxed mac and cheese" />
 
-          <label for="manual-category" class="label">Category</label>
-          <input id="manual-category" class="input" />
+          <label for="ingredients-input" class="label">Ingredients or label text</label>
+          <textarea id="ingredients-input" class="input" rows="4" placeholder="Paste ingredient list or label text"></textarea>
 
-          <label for="manual-ingredients" class="label">Ingredients *</label>
-          <textarea id="manual-ingredients" class="input" rows="3" required></textarea>
-
-          <label for="manual-nutrition" class="label">Nutrition notes</label>
-          <textarea id="manual-nutrition" class="input" rows="2"></textarea>
-
-          <label for="manual-notes" class="label">Optional notes</label>
-          <textarea id="manual-notes" class="input" rows="2"></textarea>
-
-          <button id="generate-btn" type="submit" class="btn btn-primary">Create Homemade Version</button>
+          <div class="rescue-actions">
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate from scratch idea</button>
+            <button id="manual-clear-btn" type="button" class="btn btn-secondary">Clear</button>
+          </div>
         </form>
 
-        <div id="manual-error" class="state-box state-error" hidden><p id="manual-error-msg"></p></div>
+        <div id="scan-empty" class="state-box state-info" hidden>Enter details above to begin.</div>
+        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite"><span class="spinner" aria-hidden="true"></span>Working on your result…</div>
 
-        <article id="result-card" class="result-card" hidden>
-          <p id="result-meta" class="hint"></p>
-          <h3 id="detail-title"></h3>
-          <p><strong>Confidence note:</strong> <span id="detail-confidence"></span></p>
-          <p><strong>Original product:</strong> <span id="detail-product-name"></span></p>
-          <p><strong>Brand:</strong> <span id="detail-brand"></span></p>
-          <p><strong>Category:</strong> <span id="detail-category"></span></p>
-          <p><strong>UPC:</strong> <span id="detail-upc"></span></p>
-          <p><strong>Original ingredients:</strong> <span id="detail-original-ingredients"></span></p>
-          <p><strong>Nutrition notes:</strong> <span id="detail-nutrition-notes"></span></p>
-          <p><strong>Plain-English explanation:</strong> <span id="detail-summary"></span></p>
-          <p><strong>Why it may be processed:</strong> <span id="detail-processed"></span></p>
-          <h4>Homemade ingredients</h4>
-          <ul id="detail-homemade-ingredients"></ul>
-          <h4>Directions</h4>
-          <ol id="detail-steps"></ol>
-          <h4>Healthier swap suggestions</h4>
-          <ul id="detail-swaps"></ul>
-          <p><strong>Storage tips:</strong> <span id="detail-storage"></span></p>
+        <div id="scan-error" class="state-box state-error" hidden role="alert">
+          <strong>Something went wrong</strong>
+          <p id="scan-error-msg"></p>
+        </div>
 
-          <button id="save-result-btn" type="button" class="btn btn-primary">Save to History</button>
-          <p id="save-status" class="hint"></p>
-        </article>
+        <section id="scan-history-section" class="history-section">
+          <h3 class="history-title">Recent lookups</h3>
+          <ul id="scan-history-list" class="history-list"></ul>
+          <p id="scan-history-empty" class="hint" hidden>No lookups yet.</p>
+        </section>
+      </section>
+
+      <section id="view-result" class="view" hidden>
+        <h2 class="view-title">Manual lookup result</h2>
+        <div class="result-card">
+          <h3 id="result-name" class="result-name"></h3>
+          <p id="result-upc" class="result-upc"></p>
+          <p id="result-source" class="result-source"></p>
+
+          <section class="result-section">
+            <h4>What this appears to be</h4>
+            <p id="result-summary"></p>
+          </section>
+
+          <section class="result-section">
+            <h4>Why make it from scratch?</h4>
+            <p id="result-concerns"></p>
+          </section>
+
+          <section class="result-section">
+            <h4 id="result-recipe-title">Simple homemade alternative</h4>
+            <h5>Ingredients</h5>
+            <ul id="result-homemade-ingredients"></ul>
+            <h5>Steps</h5>
+            <ol id="result-homemade-steps"></ol>
+          </section>
+
+          <p id="result-confidence" class="result-source"></p>
+          <p id="result-note" class="hint" hidden></p>
+        </div>
 
         <div class="result-actions">
-          <button id="back-to-history-btn" type="button" class="btn btn-secondary">Back to History</button>
-          <button id="back-to-manual-btn" type="button" class="btn btn-secondary">Back to Manual Entry</button>
+          <button id="result-scan-another-btn" class="btn btn-secondary">Try another item</button>
         </div>
       </section>
-
-      <section id="view-history" class="view" hidden>
-        <h2 class="view-title">History</h2>
-        <p id="history-error" class="state-box state-error" hidden></p>
-        <ul id="history-list" class="history-list"></ul>
-        <p id="history-empty" class="hint" hidden>No saved homemade versions yet. Start by entering a product.</p>
-        <a href="#manual" class="btn btn-primary">Create another homemade version</a>
-      </section>
     </main>
+    <footer class="app-footer"><p class="disclaimer">General food information only. Not medical advice.</p></footer>
 
     <script type="module" src="./js/app.js"></script>
   </body>

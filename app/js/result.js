@@ -1,138 +1,51 @@
 import { generateHomemadeAlternative } from "./api.js";
 import { saveMvpRecipe, getMvpHistory, getMvpRecipeById, deleteMvpRecipe, toggleMvpFavorite } from "./localDb.js";
 
-const el = (id) => document.getElementById(id);
-let currentDraft = null;
-let currentSavedId = null;
-let bound = false;
+function el(id) { return document.getElementById(id); }
 
-function showError(message) {
-  el("manual-error-msg").textContent = message;
-  el("manual-error").hidden = false;
-}
-
-function clearError() {
-  el("manual-error").hidden = true;
-}
-
-function readManualForm() {
-  return {
-    upc: el("manual-upc").value.trim(),
-    productName: el("manual-name").value.trim(),
-    brand: el("manual-brand").value.trim(),
-    category: el("manual-category").value.trim(),
-    ingredients: el("manual-ingredients").value.trim(),
-    nutritionNotes: el("manual-nutrition").value.trim(),
-    userNotes: el("manual-notes").value.trim(),
-  };
-}
-
-function validateManualInput(input) {
-  if (!input.productName) return "Please enter a product name.";
-  if (!input.ingredients) return "Please add ingredients so we can create a homemade version.";
-  return "";
-}
-
-function renderGeneratedResult(record, source) {
-  currentDraft = record;
-  currentSavedId = record.id || null;
-  const generated = record.generatedResult;
-
-  el("result-meta").textContent = source === "fallback" ? "Generated with temporary local fallback." : "Generated with AI recipe service.";
-  el("detail-product-name").textContent = record.productName;
-  el("detail-brand").textContent = record.brand || "—";
-  el("detail-category").textContent = record.category || "—";
-  el("detail-upc").textContent = record.upc || "—";
-  el("detail-original-ingredients").textContent = record.ingredients;
-  el("detail-nutrition-notes").textContent = record.nutritionNotes || "—";
-  el("detail-summary").textContent = generated.plainEnglishExplanation || "";
-  el("detail-processed").textContent = (generated.homemadeAlternative?.whyLessProcessed || []).join(" ");
-  el("detail-title").textContent = generated.homemadeAlternative?.title || "Homemade alternative";
-  el("detail-confidence").textContent = `Confidence: ${generated.product?.confidence || "unknown"}`;
-
-  el("detail-homemade-ingredients").innerHTML = (generated.homemadeAlternative?.ingredients || [])
-    .map((item) => `<li>${item.amount || ""} ${item.item || ""} ${item.notes ? `(${item.notes})` : ""}</li>`)
-    .join("");
-
-  el("detail-steps").innerHTML = (generated.homemadeAlternative?.steps || []).map((step) => `<li>${step}</li>`).join("");
-
-  el("detail-swaps").innerHTML = (generated.homemadeAlternative?.simpleSwaps || [])
-    .map((swap) => `<li><strong>${swap.insteadOf}</strong> → ${swap.use}: ${swap.why}</li>`)
-    .join("");
-
-  el("detail-storage").textContent = generated.homemadeAlternative?.storageTips || "Store in an airtight container.";
-  el("result-card").hidden = false;
-}
-
-async function handleGenerate(event) {
-  event.preventDefault();
-  clearError();
-  el("result-card").hidden = true;
-  el("save-status").textContent = "";
-
-  const input = readManualForm();
-  const validationError = validateManualInput(input);
-  if (validationError) {
-    showError(validationError);
+export function initResultView(product) {
+  const p = product ?? lastLookupResult;
+  if (!p) {
+    window.location.hash = "#scan";
     return;
   }
 
-  const button = el("generate-btn");
-  button.disabled = true;
-  button.textContent = "Generating…";
+  el("result-name").textContent = p.manualLookup?.productTitle || p.productName || "Unknown product";
+  el("result-upc").textContent = p.upc ? `UPC: ${p.upc}` : "Manual entry";
+  el("result-source").textContent = `Source: ${p.manualLookup?.source || p.source || "unknown"}`;
 
-  try {
-    const { recipe, source } = await generateHomemadeAlternative(input);
-    renderGeneratedResult({ ...input, generatedResult: recipe, favorite: false }, source);
-  } catch (err) {
-    console.error("Unexpected generation error", err);
-    showError("We could not generate a homemade version right now. Please try again.");
-  } finally {
-    button.disabled = false;
-    button.textContent = "Create Homemade Version";
+  el("result-summary").textContent = p.manualLookup?.productSummary || "Packaged product identified.";
+  const concerns = p.manualLookup?.concerns?.length
+    ? p.manualLookup.concerns.join(" ")
+    : "Packaged versions may include extra additives compared with homemade options.";
+  el("result-concerns").textContent = concerns;
+  el("result-recipe-title").textContent = p.manualLookup?.homemadeAlternativeTitle || "Simple homemade alternative";
+
+  const ingredients = p.manualLookup?.homemadeIngredients || [];
+  const ingList = el("result-homemade-ingredients");
+  ingList.innerHTML = "";
+  for (const item of ingredients) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    ingList.appendChild(li);
   }
 }
 
-async function handleSaveResult() {
-  if (!currentDraft) {
-    showError("Please generate a homemade version first.");
-    return;
+  const steps = p.manualLookup?.homemadeSteps || [];
+  const stepsList = el("result-homemade-steps");
+  stepsList.innerHTML = "";
+  for (const item of steps) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    stepsList.appendChild(li);
   }
 
-  if (currentSavedId) {
-    el("save-status").textContent = "Already saved to History.";
-    return;
-  }
+  const note = p.manualLookup?.note;
+  el("result-confidence").textContent = `Confidence: ${p.manualLookup?.confidenceLevel || "medium"}`;
+  el("result-note").textContent = note || "";
+  el("result-note").hidden = !note;
 
-  try {
-    const id = await saveMvpRecipe(currentDraft);
-    if (!id) {
-      el("save-status").textContent = "Could not save right now. Please try again.";
-      return;
-    }
-    currentSavedId = id;
-    currentDraft.id = id;
-    el("save-status").textContent = "Saved to History.";
-  } catch (err) {
-    console.error("Save failed", err);
-    el("save-status").textContent = "Could not save right now. Please try again.";
-  }
-}
-
-export function initManualView() {
-  if (bound) return;
-  bound = true;
-
-  el("manual-form")?.addEventListener("submit", handleGenerate);
-  el("save-result-btn")?.addEventListener("click", handleSaveResult);
-  el("back-to-history-btn")?.addEventListener("click", () => { window.location.hash = "#history"; });
-  el("back-to-manual-btn")?.addEventListener("click", () => {
-    el("manual-form").reset();
-    el("result-card").hidden = true;
-    el("save-status").textContent = "";
-    currentDraft = null;
-    currentSavedId = null;
-  });
+  el("result-scan-another-btn").onclick = () => { window.location.hash = "#scan"; };
 }
 
 export async function renderHistoryView() {

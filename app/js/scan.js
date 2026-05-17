@@ -1,68 +1,112 @@
 import { validateAndNormalizeUpc } from "./upc.js";
-import { lookupUpc } from "./api.js";
-import { saveScan } from "./storage.js";
+import { lookupUpc, normalizeProduct, generateScratchRecipe } from "./api.js";
+import {
+  initDatabase,
+  normalizeBarcode,
+  saveScanHistory,
+  getScanHistory,
+  saveProductCache,
+  getProductByBarcode,
+  saveHomemadeRecipe,
+  logAppEvent,
+} from "./localDb.js";
 
-// Published to app.js so the result view can read it.
 export let lastLookupResult = null;
+let viewInitialized = false;
 
-// Prevents concurrent requests from the same form.
-let requestInFlight = false;
+function el(id) { return document.getElementById(id); }
+function setHidden(element, hidden) { if (element) element.hidden = hidden; }
 
-// ---------------------------------------------------------------------------
-// Camera / BarcodeDetector support check
-// ---------------------------------------------------------------------------
+function clearStates() {
+  setHidden(el("scan-loading"), true);
+  setHidden(el("scan-error"), true);
+  setHidden(el("scan-empty"), true);
+}
+
 async function isScannerAvailable() {
-  if (!navigator.mediaDevices?.getUserMedia) return false;
-  if (!window.BarcodeDetector) return false;
+  if (!navigator.mediaDevices?.getUserMedia || !window.BarcodeDetector) return false;
   try {
     const formats = await BarcodeDetector.getSupportedFormats();
     return formats.some((f) => ["ean_13", "ean_8", "upc_a", "upc_e"].includes(f));
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
-// ---------------------------------------------------------------------------
-// DOM helpers
-// ---------------------------------------------------------------------------
-function el(id) {
-  return document.getElementById(id);
-}
-
-function clearStates() {
-  el("scan-loading").hidden = true;
-  el("scan-error").hidden = true;
-  el("scan-not-found").hidden = true;
-}
-
-// ---------------------------------------------------------------------------
-// Init — called exactly once by app.js
-// ---------------------------------------------------------------------------
 export async function initScanView() {
-  const scannerSupported = await isScannerAvailable();
-  const cameraSection = el("scan-camera-section");
-  const manualSection = el("scan-manual-section");
+  await initDatabase();
+  if (!viewInitialized) {
+    const scannerSupported = await isScannerAvailable();
+    setHidden(el("scan-camera-section"), !scannerSupported);
 
-  if (scannerSupported) {
-    cameraSection.hidden = false;
-    manualSection.hidden = true;
-    el("scan-use-manual-btn").addEventListener("click", () => {
-      cameraSection.hidden = true;
-      manualSection.hidden = false;
-      el("upc-input").focus();
+    el("manual-lookup-form")?.addEventListener("submit", handleManualSubmit);
+    el("manual-clear-btn")?.addEventListener("click", handleClear);
+    ["upc-input", "product-name-input", "ingredients-input"].forEach((id) => {
+      el(id)?.addEventListener("input", clearStates);
     });
-  } else {
-    cameraSection.hidden = true;
-    manualSection.hidden = false;
+    viewInitialized = true;
   }
-
-  el("upc-form").addEventListener("submit", handleManualSubmit);
-  el("upc-input").addEventListener("input", clearStates);
+  await renderHistory();
 }
 
-// ---------------------------------------------------------------------------
-// Manual UPC submission
-// ---------------------------------------------------------------------------
+function readManualInputs() {
+  return {
+    upc: (el("upc-input")?.value ?? "").trim(),
+    productName: (el("product-name-input")?.value ?? "").trim(),
+    labelText: (el("ingredients-input")?.value ?? "").trim(),
+  };
+}
+
+function validateManualInputs(input) {
+  if (!input.upc && !input.productName && !input.labelText) {
+    return { ok: false, error: "Enter a UPC, product name, or label text to continue." };
+  }
+  if (input.upc) {
+    const upcValidation = validateAndNormalizeUpc(input.upc);
+    if (!upcValidation.ok) return { ok: false, error: upcValidation.error };
+    return { ok: true, normalizedUpc: upcValidation.upc, upcNumeric: /^\d+$/.test(upcValidation.upc) };
+  }
+  return { ok: true, normalizedUpc: "", upcNumeric: false };
+}
+
+function buildLocalFallbackResult({ upc, productName, labelText }, message) {
+  const title = productName || inferTitleFromText(labelText) || (upc ? `Packaged item (${upc})` : "Packaged food item");
+  const ingredients = inferIngredients(labelText);
+  return {
+    upc: upc || "manual-entry",
+    productName: title,
+    brand: null,
+    source: "local-fallback",
+    found: true,
+    manualLookup: {
+      productTitle: title,
+      productSummary: `${title} appears to be a packaged food. We can still build a cleaner homemade version from the details you entered.`,
+      concerns: ["Packaged versions often include additives, extra sweeteners, or stabilizers."],
+      homemadeAlternativeTitle: `Simple homemade ${title}`,
+      homemadeIngredients: ingredients,
+      homemadeSteps: [
+        "Mix the base ingredients until evenly combined.",
+        "Cook or chill depending on the food type until texture is right.",
+        "Taste and adjust salt, sweetness, or seasoning before serving."
+      ],
+      confidenceLevel: labelText || productName ? "medium" : "low",
+      source: "local-fallback",
+      note: message || null,
+    }
+  };
+}
+
+function inferTitleFromText(text) {
+  if (!text) return "";
+  const head = text.split(/[\n,.]/).map((s) => s.trim()).find(Boolean);
+  return head ? head.slice(0, 50) : "";
+}
+
+function inferIngredients(text) {
+  const cleaned = (text || "").replace(/ingredients:?/i, "");
+  const items = cleaned.split(/[\n,]/).map((s) => s.trim()).filter(Boolean).slice(0, 6);
+  if (items.length) return items;
+  return ["Flour or oats", "Simple fat (olive oil or butter)", "Salt", "Water or milk", "Optional seasoning"];
+}
+
 async function handleManualSubmit(e) {
   e.preventDefault();
 
@@ -71,59 +115,106 @@ async function handleManualSubmit(e) {
 
   clearStates();
 
-  const raw = el("upc-input").value;
-  const validation = validateAndNormalizeUpc(raw);
-  if (!validation.ok) {
-    showError(validation.error);
-    return;
-  }
+  const input = readManualInputs();
+  const check = validateManualInputs(input);
+  if (!check.ok) return showError(check.error);
 
-  const { upc } = validation;
   const submitBtn = el("scan-submit-btn");
+  setHidden(el("scan-loading"), false);
+  if (submitBtn) submitBtn.disabled = true;
 
-  requestInFlight = true;
-  submitBtn.disabled = true;
-  el("scan-loading").hidden = false;
+  const req = {
+    upc: check.normalizedUpc || null,
+    upcNumeric: check.upcNumeric,
+    productName: input.productName || null,
+    ingredientsText: input.labelText || null,
+  };
 
   try {
-    const product = await lookupUpc(upc);
+    let result = null;
+    if (req.upc) {
+      const cached = await getProductByBarcode(normalizeBarcode(req.upc));
+      if (cached?.productName) {
+        result = { ...cached, upc: req.upc, found: true, source: cached.source || "cache" };
+      } else {
+        const body = await lookupUpc(req.upc);
+        const product = normalizeProduct(body, req.upc);
+        if (!product.found) {
+          showError("We could not identify this product yet, but you can still paste ingredients or label text.");
+          result = buildLocalFallbackResult(input);
+        } else {
+          result = product;
+          await saveProductCache({ ...product, barcode: req.upc, normalizedBarcode: normalizeBarcode(req.upc), raw: body?.product ?? null });
+        }
+      }
+    } else {
+      result = buildLocalFallbackResult(input);
+    }
 
-    // Persist before navigating so the result view always has data.
-    await saveScan({ ...product, inputMethod: "manual" }).catch(() => {});
+    if (!result.manualLookup) {
+      try {
+        const ai = await generateScratchRecipe({
+          productName: req.productName || result.productName || "Packaged food",
+          brand: result.brand || "",
+          ingredients: req.ingredientsText || result.ingredients || "",
+          nutrition: null,
+        });
+        result.manualLookup = {
+          productTitle: ai?.recipe?.product?.name || result.productName || "Packaged food",
+          productSummary: ai?.recipe?.plainEnglishExplanation || "This appears to be a packaged food product.",
+          concerns: (ai?.recipe?.ingredientSignals || []).map((x) => `${x.name}: ${x.reason}`).slice(0, 4),
+          homemadeAlternativeTitle: ai?.recipe?.homemadeAlternative?.title || "Simple homemade version",
+          homemadeIngredients: (ai?.recipe?.homemadeAlternative?.ingredients || []).map((x) => x.item || x),
+          homemadeSteps: ai?.recipe?.homemadeAlternative?.steps || [],
+          confidenceLevel: ai?.recipe?.product?.confidence || "medium",
+          source: "ai-service",
+        };
+      } catch {
+        result = buildLocalFallbackResult(input, "AI service is not configured, showing a local starter version.");
+      }
+    }
 
-    lastLookupResult = product;
+    await saveScanHistory({ barcode: result.upc, normalizedBarcode: normalizeBarcode(result.upc), source: result.source, status: "found", productName: result.productName, brand: result.brand });
+    await saveHomemadeRecipe({ barcode: result.upc, normalizedBarcode: normalizeBarcode(result.upc), productName: result.productName, title: result.manualLookup.homemadeAlternativeTitle, ingredients: result.manualLookup.homemadeIngredients, steps: result.manualLookup.homemadeSteps });
+    await logAppEvent({ eventType: "manual_lookup_submitted", barcode: normalizeBarcode(result.upc), details: req });
+
+    lastLookupResult = result;
     window.location.hash = "#result";
   } catch (err) {
-    if (err.notFound) {
-      el("scan-not-found").hidden = false;
-      el("scan-not-found-upc").textContent = upc;
-    } else {
-      showError(userMessage(err));
-    }
+    showError(err?.message || "Lookup failed. Please try again.");
   } finally {
-    requestInFlight = false;
-    submitBtn.disabled = false;
-    el("scan-loading").hidden = true;
+    setHidden(el("scan-loading"), true);
+    if (submitBtn) submitBtn.disabled = false;
+    await renderHistory();
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-function userMessage(err) {
-  // Translate provider/config failures into a single clean sentence.
-  if (err.status === 502 || err.status === 500) {
-    return "Product lookup is temporarily unavailable. Please try again.";
-  }
-  return err.message ?? "Something went wrong. Please try again.";
-}
-
-function finishLookup(submitBtn) {
-  setHidden(el("scan-loading"), true);
-  if (submitBtn) submitBtn.disabled = false;
+function handleClear() {
+  el("manual-lookup-form")?.reset();
+  clearStates();
+  setHidden(el("scan-empty"), false);
 }
 
 function showError(message) {
   el("scan-error-msg").textContent = message;
-  el("scan-error").hidden = false;
+  setHidden(el("scan-error"), false);
+}
+
+async function renderHistory() {
+  const listEl = el("scan-history-list");
+  const emptyEl = el("scan-history-empty");
+  if (!listEl) return;
+  const records = await getScanHistory(10);
+  listEl.innerHTML = "";
+  if (!records.length) {
+    setHidden(emptyEl, false);
+    return;
+  }
+  setHidden(emptyEl, true);
+  for (const r of records) {
+    const li = document.createElement("li");
+    li.className = "history-item";
+    li.innerHTML = `<div class="history-top"><span class="history-name">${r.productName ?? "(no product name)"}</span><span class="history-status history-status-${r.status}">${r.status}</span></div><div class="history-meta"><code>${r.barcode ?? ""}</code></div>`;
+    listEl.appendChild(li);
+  }
 }
