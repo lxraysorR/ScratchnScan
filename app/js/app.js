@@ -1,43 +1,45 @@
-import { initScanView, lastLookupResult } from "./scan.js";
-import { initResultView } from "./result.js";
+import { initManualView, renderHistoryView, openHistoryItem } from "./result.js";
+import { initDatabase } from "./localDb.js";
 
-const VIEWS = ["home", "scan", "result"];
+const views = ["home", "manual", "history"];
 
 function showView(name) {
-  const target = VIEWS.includes(name) ? name : "home";
-  for (const id of VIEWS) {
+  const view = views.includes(name) ? name : "home";
+  for (const id of views) {
     const el = document.getElementById(`view-${id}`);
-    if (el) el.hidden = id !== target;
+    if (el) el.hidden = id !== view;
   }
-  return target;
 }
 
 async function route() {
   const hash = window.location.hash.replace(/^#\/?/, "") || "home";
+  const [page, id] = hash.split("/");
 
-  if (hash === "scan") {
-    showView("scan");
-    await initScanView();
+  if (page === "manual") {
+    showView("manual");
+    initManualView();
+    if (id) await openHistoryItem(id);
     return;
   }
 
-  if (hash === "result") {
-    if (!lastLookupResult) {
-      window.location.hash = "#scan";
-      return;
-    }
-    showView("result");
-    initResultView(lastLookupResult);
+  if (page === "history") {
+    showView("history");
+    await renderHistoryView();
     return;
   }
 
   showView("home");
 }
 
-// Wire up home-page CTAs.
-document.getElementById("home-scan-btn")?.addEventListener("click", () => {
-  window.location.hash = "#scan";
+document.getElementById("home-start-btn")?.addEventListener("click", () => {
+  window.location.hash = "#manual";
+});
+
+document.getElementById("home-history-btn")?.addEventListener("click", () => {
+  window.location.hash = "#history";
 });
 
 window.addEventListener("hashchange", route);
+
+await initDatabase();
 route();
