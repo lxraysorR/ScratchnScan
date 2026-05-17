@@ -3,6 +3,10 @@ import { initDatabase } from "./localDb.js";
 
 const views = ["home", "manual", "history"];
 
+// Guards: each view is initialised at most once per page load.
+let scanViewReady = false;
+let resultViewReady = false;
+
 function showView(name) {
   const view = views.includes(name) ? name : "home";
   for (const id of views) {
@@ -15,28 +19,33 @@ async function route() {
   const hash = window.location.hash.replace(/^#\/?/, "") || "home";
   const [page, id] = hash.split("/");
 
-  if (page === "manual") {
-    showView("manual");
-    initManualView();
-    if (id) await openHistoryItem(id);
+  if (hash === "scan") {
+    showView("scan");
+    if (!scanViewReady) {
+      await initScanView();
+      scanViewReady = true;
+    }
     return;
   }
 
-  if (page === "history") {
-    showView("history");
-    await renderHistoryView();
+  if (hash === "result") {
+    if (!lastLookupResult) {
+      window.location.hash = "#scan";
+      return;
+    }
+    showView("result");
+    if (!resultViewReady) {
+      initResultView(lastLookupResult);
+      resultViewReady = true;
+    }
     return;
   }
 
   showView("home");
 }
 
-document.getElementById("home-start-btn")?.addEventListener("click", () => {
-  window.location.hash = "#manual";
-});
-
-document.getElementById("home-history-btn")?.addEventListener("click", () => {
-  window.location.hash = "#history";
+document.getElementById("home-scan-btn")?.addEventListener("click", () => {
+  window.location.hash = "#scan";
 });
 
 window.addEventListener("hashchange", route);
