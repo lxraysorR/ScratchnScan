@@ -1,9 +1,10 @@
 // Use VITE_SCAN_SCRATCH_API_BASE when running under Vite (cross-origin dev).
 // Falls back to "" (relative URLs) so the same code works when the worker
 // serves both the frontend and the API from the same origin.
-const WORKER_BASE = import.meta.env?.VITE_SCAN_SCRATCH_API_BASE ?? "";
+const WORKER_BASE =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_SCAN_SCRATCH_API_BASE) || "";
 
-export async function lookupUpc(upc) {
+async function postJson(path, payload) {
   let res;
   try {
     res = await fetch(`${WORKER_BASE}${path}`, {
@@ -39,7 +40,11 @@ export async function lookupUpc(upc) {
     throw err;
   }
 
-  return normalizeProduct(body, upc);
+  return body;
+}
+
+export async function lookupUpc(upc) {
+  return postJson("/api/lookup-upc", { upc });
 }
 
 export async function generateScratchRecipe(payload) {
@@ -78,5 +83,6 @@ export function normalizeProduct(raw, upc) {
     imageUrl: p.imageUrl ?? null,
     ingredients: p.ingredients ?? null,
     source: p.source ?? "SearchUPCData",
+    found: Boolean(p.name ?? p.productName),
   };
 }
