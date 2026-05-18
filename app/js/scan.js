@@ -3,11 +3,10 @@ import { lookupUpc, normalizeProduct, generateScratchRecipe } from "./api.js";
 import {
   initDatabase,
   normalizeBarcode,
-  saveScanHistory,
-  getScanHistory,
+  saveMvpRecipe,
+  getMvpHistory,
   saveProductCache,
   getProductByBarcode,
-  saveHomemadeRecipe,
   logAppEvent,
 } from "./localDb.js";
 
@@ -119,7 +118,10 @@ async function handleManualSubmit(e) {
 
   const input = readManualInputs();
   const check = validateManualInputs(input);
-  if (!check.ok) return showError(check.error);
+  if (!check.ok) {
+    requestInFlight = false;
+    return showError(check.error);
+  }
 
   const submitBtn = el("scan-submit-btn");
   setHidden(el("scan-loading"), false);
@@ -176,8 +178,13 @@ async function handleManualSubmit(e) {
       }
     }
 
-    await saveScanHistory({ barcode: result.upc, normalizedBarcode: normalizeBarcode(result.upc), source: result.source, status: "found", productName: result.productName, brand: result.brand });
-    await saveHomemadeRecipe({ barcode: result.upc, normalizedBarcode: normalizeBarcode(result.upc), productName: result.productName, title: result.manualLookup.homemadeAlternativeTitle, ingredients: result.manualLookup.homemadeIngredients, steps: result.manualLookup.homemadeSteps });
+    await saveMvpRecipe({
+      upc: result.upc,
+      productName: result.productName,
+      brand: result.brand,
+      ingredients: req.ingredientsText,
+      generatedResult: result.manualLookup,
+    });
     await logAppEvent({ eventType: "manual_lookup_submitted", barcode: normalizeBarcode(result.upc), details: req });
 
     lastLookupResult = result;
@@ -207,7 +214,7 @@ async function renderHistory() {
   const listEl = el("scan-history-list");
   const emptyEl = el("scan-history-empty");
   if (!listEl) return;
-  const records = await getScanHistory(10);
+  const records = (await getMvpHistory()).slice(0, 10);
   listEl.innerHTML = "";
   if (!records.length) {
     setHidden(emptyEl, false);
@@ -217,7 +224,9 @@ async function renderHistory() {
   for (const r of records) {
     const li = document.createElement("li");
     li.className = "history-item";
-    li.innerHTML = `<div class="history-top"><span class="history-name">${r.productName ?? "(no product name)"}</span><span class="history-status history-status-${r.status}">${r.status}</span></div><div class="history-meta"><code>${r.barcode ?? ""}</code></div>`;
+    const name = r.productName || "(no product name)";
+    const upcText = r.upc ? `UPC: ${r.upc}` : "Manual entry";
+    li.innerHTML = `<div class="history-head"><span class="history-name">${name}</span></div><div class="history-sub">${upcText}</div>`;
     listEl.appendChild(li);
   }
 }
