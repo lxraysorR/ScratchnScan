@@ -213,20 +213,35 @@ function showError(message) {
 async function renderHistory() {
   const listEl = el("scan-history-list");
   const emptyEl = el("scan-history-empty");
+  const allLink = el("scan-history-all-link");
   if (!listEl) return;
-  const records = (await getMvpHistory()).slice(0, 10);
+  const records = (await getMvpHistory()).slice(0, 5);
   listEl.innerHTML = "";
   if (!records.length) {
     setHidden(emptyEl, false);
+    if (allLink) allLink.hidden = true;
     return;
   }
   setHidden(emptyEl, true);
+  if (allLink) allLink.hidden = false;
   for (const r of records) {
     const li = document.createElement("li");
     li.className = "history-item";
-    const name = r.productName || "(no product name)";
-    const upcText = r.upc ? `UPC: ${r.upc}` : "Manual entry";
-    li.innerHTML = `<div class="history-head"><span class="history-name">${name}</span></div><div class="history-sub">${upcText}</div>`;
+
+    const head = document.createElement("div");
+    head.className = "history-head";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "history-name";
+    nameSpan.textContent = r.productName || "(no product name)";
+
+    const sub = document.createElement("div");
+    sub.className = "history-sub";
+    sub.textContent = r.upc ? `UPC: ${r.upc}` : "Manual entry";
+
+    head.appendChild(nameSpan);
+    li.appendChild(head);
+    li.appendChild(sub);
     listEl.appendChild(li);
   }
 }
