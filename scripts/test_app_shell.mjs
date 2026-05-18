@@ -7,6 +7,8 @@ const required = [
   'app/styles.css',
   'app/js/localDb.js',
   'app/js/scan.js',
+  'app/js/history.js',
+  'app/js/details.js',
   'AGENTS.md',
   'docs/MVP_SCOPE.md',
 ];
@@ -22,6 +24,10 @@ const htmlChecks = [
   'Add Product Info',
   'Recent lookups',
   'Not medical advice',
+  'view-history',
+  'view-details',
+  'details-favorite-btn',
+  'details-delete-btn',
 ];
 for (const token of htmlChecks) {
   if (!html.includes(token)) throw new Error(`Missing token in app/index.html: ${token}`);

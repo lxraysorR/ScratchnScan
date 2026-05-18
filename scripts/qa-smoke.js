@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
-const pkgPath = path.join(process.cwd(), 'package.json');
+const cwd = process.cwd();
+const pkgPath = join(cwd, 'package.json');
 const requiredFiles = [
   'app/index.html',
   'app/js/app.js',
@@ -25,14 +26,14 @@ function check(label, ok, detail = '') {
 
 let pkg = null;
 try {
-  pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
   check('package.json parse', true);
 } catch (err) {
   check('package.json parse', false, err.message);
 }
 
 for (const file of requiredFiles) {
-  check(`file exists: ${file}`, fs.existsSync(path.join(process.cwd(), file)));
+  check(`file exists: ${file}`, existsSync(join(cwd, file)));
 }
 
 if (pkg && pkg.scripts) {

@@ -1,9 +1,12 @@
 import { initScanView } from "./scan.js";
 import * as scanModule from "./scan.js";
 import { initResultView } from "./result.js";
+import { initHistoryView } from "./history.js";
+import * as historyModule from "./history.js";
+import { initDetailsView } from "./details.js";
 import { initDatabase } from "./localDb.js";
 
-const views = ["home", "scan", "result"];
+const views = ["home", "scan", "result", "history", "details"];
 
 let scanViewReady = false;
 
@@ -34,6 +37,22 @@ async function route() {
     }
     showView("result");
     initResultView(scanModule.lastLookupResult);
+    return;
+  }
+
+  if (hash === "history") {
+    showView("history");
+    await initHistoryView();
+    return;
+  }
+
+  if (hash === "details") {
+    if (!historyModule.selectedId) {
+      window.location.hash = "#history";
+      return;
+    }
+    showView("details");
+    await initDetailsView(historyModule.selectedId);
     return;
   }
 
