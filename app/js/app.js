@@ -3,6 +3,7 @@ import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
 import { initDatabase } from "./localDb.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 
 const VIEWS = ["home", "scan", "manual", "result", "history", "details"];
 const NAV_TARGETS = new Set(["home", "scan", "manual", "history"]);
@@ -37,10 +38,12 @@ async function route() {
   if (name === "manual") {
     showView("manual");
     await initScanView();
+    refreshBarcodeBanner();
     return;
   }
   if (name === "scan") {
     showView("scan");
+    initPackageEntry();
     return;
   }
   if (name === "result") {
@@ -103,10 +106,6 @@ function wireGlobalActions() {
 
   document.getElementById("topbar-action")?.addEventListener("click", () => {
     showToast("More options coming after MVP polish");
-  });
-
-  document.getElementById("scan-coming-soon")?.addEventListener("click", () => {
-    showToast("Camera scanner coming next. Use manual entry for now.");
   });
 }
 

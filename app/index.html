@@ -118,10 +118,11 @@
               <div class="scan-line"></div>
             </div>
             <div class="scan-actions">
-              <button class="btn btn-primary" type="button" id="scan-coming-soon">Open scanner</button>
-              <button class="btn btn-ghost" type="button" data-go="manual">Enter manually</button>
+              <button class="btn btn-primary" type="button" id="scan-start-btn">Scan package</button>
+              <button class="btn btn-ghost" type="button" data-go="manual">Enter manually instead</button>
             </div>
-            <p class="helper">Granting camera permission will auto-start scanning in the production app. Manual entry stays available as a fallback.</p>
+            <div id="scan-status" class="scan-status" role="status" aria-live="polite" hidden></div>
+            <p class="helper">Tap Scan package to use your camera. When scanning isn't available, manual entry stays open as a fallback.</p>
           </div>
 
           <div class="section-head">
@@ -155,6 +156,17 @@
           <div class="section-head">
             <h2>Show us the package</h2>
             <p>Photo capture is coming next. For this MVP, type the item name and any details below.</p>
+          </div>
+
+          <div id="draft-barcode" class="barcode-banner" hidden>
+            <div class="barcode-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14M7 5v14M11 5v14M15 5v14M19 5v14" /></svg>
+            </div>
+            <div class="barcode-body">
+              <strong>Barcode captured</strong>
+              <span id="draft-barcode-value" class="barcode-value"></span>
+            </div>
+            <button id="draft-barcode-clear" class="barcode-clear" type="button" aria-label="Clear captured barcode">Clear</button>
           </div>
 
           <form id="manual-lookup-form" class="form-card" novalidate>

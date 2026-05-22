@@ -12,6 +12,11 @@ const required = [
   'app/js/history.js',
   'app/js/details.js',
   'app/js/manualRecipe.js',
+  'app/js/platform.js',
+  'app/js/scannerService.js',
+  'app/js/scanCoordinator.js',
+  'app/js/capacitorBarcodeScannerAdapter.js',
+  'app/js/packageEntry.js',
   'AGENTS.md',
   'docs/MVP_SCOPE.md',
 ];
@@ -45,6 +50,11 @@ const htmlChecks = [
   'data-target="scan"',
   'data-target="manual"',
   'data-target="history"',
+  'scan-start-btn',
+  'scan-status',
+  'draft-barcode',
+  'Scan package',
+  'Enter manually instead',
 ];
 for (const token of htmlChecks) {
   if (!html.includes(token)) throw new Error(`Missing token in app/index.html: ${token}`);
@@ -139,4 +149,55 @@ if (!veganMayo.tips.some((t) => /aquafaba|plant/i.test(t))) {
   throw new Error('vegan dietary tip should appear');
 }
 
-console.log('App shell + localDb tests passed.');
+// Scanner service: behaves in a non-Capacitor (web) environment.
+const platformMod = await import(pathToFileURL(resolve('app/js/platform.js')).href);
+if (platformMod.isNativePlatform() !== false) {
+  throw new Error('isNativePlatform() should be false in Node test environment');
+}
+if (platformMod.getPlatform() !== 'web') {
+  throw new Error('getPlatform() should be "web" in Node test environment');
+}
+
+// Provide a sessionStorage shim so scannerService can run under Node.
+const memory = new Map();
+globalThis.sessionStorage = {
+  getItem: (k) => (memory.has(k) ? memory.get(k) : null),
+  setItem: (k, v) => { memory.set(k, String(v)); },
+  removeItem: (k) => { memory.delete(k); },
+  clear: () => memory.clear(),
+};
+
+const scanner = await import(pathToFileURL(resolve('app/js/scannerService.js')).href);
+const webScan = await scanner.startScan();
+if (webScan.status !== 'unsupported') {
+  throw new Error(`expected web startScan to return unsupported, got ${webScan.status}`);
+}
+if (scanner.normalizeBarcode(' 012-000-001772 ') !== '012000001772') {
+  throw new Error('scannerService.normalizeBarcode should strip non-digit characters');
+}
+scanner.setDraftBarcode('012000001772');
+if (scanner.getDraftBarcode() !== '012000001772') {
+  throw new Error('draft barcode round-trip failed');
+}
+scanner.clearDraftBarcode();
+if (scanner.getDraftBarcode() !== '') {
+  throw new Error('clearDraftBarcode should empty the draft');
+}
+
+// Scan coordinator guard rails.
+const coord = await import(pathToFileURL(resolve('app/js/scanCoordinator.js')).href);
+coord.resetScanState();
+if (!coord.beginScan()) throw new Error('beginScan should succeed when idle');
+if (coord.beginScan()) throw new Error('beginScan should reject while a scan is in flight');
+coord.endScan();
+if (!coord.beginScan()) throw new Error('beginScan should succeed after endScan');
+coord.endScan();
+coord.setCooldownMs(50);
+if (!coord.shouldAcceptBarcode('111')) throw new Error('first barcode should be accepted');
+if (coord.shouldAcceptBarcode('111')) throw new Error('duplicate barcode inside cooldown should be rejected');
+if (!coord.shouldAcceptBarcode('222')) throw new Error('different barcode should be accepted');
+await new Promise((r) => setTimeout(r, 80));
+if (!coord.shouldAcceptBarcode('111')) throw new Error('same barcode after cooldown should be accepted');
+coord.resetScanState();
+
+console.log('App shell + localDb + scanner tests passed.');

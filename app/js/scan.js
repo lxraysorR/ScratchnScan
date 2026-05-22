@@ -1,6 +1,8 @@
 import { generateScratchRecipe } from "./api.js";
 import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 import { showToast } from "./app.js";
+import { getDraftBarcode, clearDraftBarcode } from "./scannerService.js";
+import { refreshBarcodeBanner } from "./packageEntry.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -125,8 +127,10 @@ async function handleSubmit(event) {
       });
     }
 
+    const barcode = getDraftBarcode();
     lastGeneratedRecord = {
-      source: "manual",
+      source: barcode ? "scan+manual" : "manual",
+      upc: barcode,
       productName,
       ingredientsText: inputIngredients,
       inputIngredients,
@@ -142,6 +146,8 @@ async function handleSubmit(event) {
       favorite: false,
       isFavorite: false,
     };
+    clearDraftBarcode();
+    refreshBarcodeBanner();
 
     sessionStorage.setItem(
       "scratchnscan:lastGenerated",
