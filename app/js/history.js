@@ -1,4 +1,4 @@
-import { getMvpHistory } from "./localDb.js";
+import { getMvpHistory, toggleMvpFavorite, deleteMvpRecipe } from "./localDb.js";
 
 export let selectedId = null;
 
@@ -29,33 +29,53 @@ async function renderHistoryList() {
     const head = document.createElement("div");
     head.className = "history-head";
 
-    const nameBtn = document.createElement("button");
-    nameBtn.className = "link-btn history-name";
-    nameBtn.textContent = r.productName || "(no product name)";
-    nameBtn.addEventListener("click", () => {
-      selectedId = r.id;
-      window.location.hash = "#details";
-    });
+    const name = document.createElement("span");
+    name.className = "history-name";
+    name.textContent = r.productName || "(no product name)";
 
     const favMark = document.createElement("span");
     favMark.className = r.favorite ? "fav-star fav-on" : "fav-star";
     favMark.textContent = r.favorite ? "★" : "☆";
-    favMark.setAttribute("aria-label", r.favorite ? "Favorited" : "Not favorited");
 
-    head.appendChild(nameBtn);
-    head.appendChild(favMark);
+    const date = new Date(r.createdAt).toLocaleDateString();
+    const summary = r.generatedResult?.homemadeAlternativeTitle || "Simple homemade alternative";
 
     const sub = document.createElement("div");
     sub.className = "history-sub";
-    sub.textContent = r.upc ? `UPC: ${r.upc}` : "Manual entry";
+    sub.textContent = `${date} • ${summary}`;
 
-    const date = document.createElement("div");
-    date.className = "history-sub";
-    date.textContent = new Date(r.createdAt).toLocaleDateString();
+    const actions = document.createElement("div");
+    actions.className = "history-actions";
 
-    li.appendChild(head);
-    li.appendChild(sub);
-    li.appendChild(date);
+    const viewBtn = document.createElement("button");
+    viewBtn.className = "btn btn-secondary";
+    viewBtn.textContent = "View Details";
+    viewBtn.addEventListener("click", () => {
+      selectedId = r.id;
+      window.location.hash = "#details";
+    });
+
+    const favBtn = document.createElement("button");
+    favBtn.className = "btn btn-secondary";
+    favBtn.textContent = r.favorite ? "Unfavorite" : "Favorite";
+    favBtn.addEventListener("click", async () => {
+      await toggleMvpFavorite(r.id, !r.favorite);
+      await renderHistoryList();
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn btn-danger";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", async () => {
+      const ok = window.confirm("Delete this saved homemade recipe?");
+      if (!ok) return;
+      await deleteMvpRecipe(r.id);
+      await renderHistoryList();
+    });
+
+    actions.append(viewBtn, favBtn, delBtn);
+    head.append(name, favMark);
+    li.append(head, sub, actions);
     listEl.appendChild(li);
   }
 }
