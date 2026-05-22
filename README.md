@@ -1,53 +1,20 @@
-# ScratchNScan MVP
-
-ScratchNScan helps users manually enter packaged food information and get a homemade alternative, then save results locally.
+# ScratchNScan MVP (Manual Entry First)
 
 ## Run locally
+- `npm install`
+- `npm start` (local serve hint)
+- `npm run preview` (Cloudflare worker preview, if needed)
 
-```bash
-npm install
-npm run preview
-```
+## Manual-entry MVP flow
+1. Open the app and click **Start Manual Entry**.
+2. Enter a packaged product name (ingredients and notes are optional).
+3. Click **Generate scratch recipe**.
+4. On the result screen, click **Save to history**.
+5. Open **History** to view saved recipes.
+6. Open any item for **Details**, then favorite/unfavorite or delete.
 
-Open `http://localhost:8787`.
+## No AI key behavior
+If no AI provider/key is configured or API is unavailable, the app uses a deterministic local fallback recipe generator so the manual-entry flow still works.
 
-## MVP flow implemented
-
-- Manual product entry (product name + ingredients required, UPC optional, notes optional)
-- Homemade version generation via `/api/generate-scratch-recipe`
-- Graceful local fallback recipe when AI is unavailable
-- Save results to IndexedDB
-- History list from IndexedDB
-- Details view
-- Favorite/unfavorite persistence
-- Delete with confirmation
-
-## IndexedDB usage
-
-Data is stored in `app/js/localDb.js` under store `mvp_history` with these fields:
-- `id`
-- `productName`
-- `upc`
-- `ingredients`
-- `generatedResult` (generated homemade recipe payload)
-- `createdAt`
-- `favorite`
-- `userNotes`
-
-The UI uses the local DB abstraction functions (`saveMvpRecipe`, `getMvpHistory`, `getMvpRecipeById`, `toggleMvpFavorite`, `deleteMvpRecipe`) so a future Supabase adapter can be added without rewriting view logic.
-
-## What is intentionally postponed
-
-- Supabase/cloud persistence
-- Login/auth
-- Billing/payments
-- Camera scanning as primary path
-- Non-MVP PantryPulse feature expansions
-
-## Checks
-
-```bash
-npm test
-npm run build
-node scripts/test_manual_mvp_generated.mjs
-```
+## Local persistence
+Saved MVP recipes are persisted locally in browser IndexedDB (`scan_scratch_local_db`, `mvp_history` store).
