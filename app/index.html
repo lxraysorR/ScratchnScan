@@ -33,19 +33,23 @@
           <input id="upc-input" type="text" inputmode="numeric" class="input" placeholder="e.g. 049000028904" />
 
           <label for="product-name-input" class="label">Product name</label>
-          <input id="product-name-input" type="text" class="input" placeholder="e.g. boxed mac and cheese" />
+          <input id="product-name-input" type="text" class="input" placeholder="e.g. boxed mac and cheese" required />
 
           <label for="ingredients-input" class="label">Ingredients or label text</label>
-          <textarea id="ingredients-input" class="input" rows="4" placeholder="Paste ingredient list or label text"></textarea>
+          <textarea id="ingredients-input" class="input" rows="4" placeholder="Paste ingredient list or label text" required></textarea>
+
+          <label for="notes-input" class="label">Notes (optional)</label>
+          <textarea id="notes-input" class="input" rows="2" placeholder="Anything else to remember?"></textarea>
 
           <div class="rescue-actions">
-            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate from scratch idea</button>
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Create Homemade Version</button>
             <button id="manual-clear-btn" type="button" class="btn btn-secondary">Clear</button>
           </div>
         </form>
 
         <div id="scan-empty" class="state-box state-info" hidden>Enter details above to begin.</div>
-        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite"><span class="spinner" aria-hidden="true"></span>Working on your result…</div>
+        <div id="scan-loading" class="state-box state-loading" hidden aria-live="polite"><span class="spinner" aria-hidden="true"></span>Analyzing and generating your homemade version…</div>
+        <div id="scan-fallback-note" class="state-box state-info" hidden>AI unavailable fallback used.</div>
 
         <div id="scan-error" class="state-box state-error" hidden role="alert">
           <strong>Something went wrong</strong>
@@ -66,6 +70,11 @@
           <h3 id="result-name" class="result-name"></h3>
           <p id="result-upc" class="result-upc"></p>
           <p id="result-source" class="result-source"></p>
+
+          <section class="result-section">
+            <h4>Original ingredients / label text</h4>
+            <p id="details-source-ingredients"></p>
+          </section>
 
           <section class="result-section">
             <h4>What this appears to be</h4>
@@ -108,6 +117,12 @@
           <h3 id="details-name" class="result-name"></h3>
           <p id="details-upc" class="result-upc"></p>
           <p id="details-date" class="result-source"></p>
+          <p id="details-notes" class="hint"></p>
+
+          <section class="result-section">
+            <h4>Original ingredients / label text</h4>
+            <p id="details-source-ingredients"></p>
+          </section>
 
           <section class="result-section">
             <h4>What this appears to be</h4>
@@ -132,6 +147,7 @@
           <button id="details-favorite-btn" class="btn btn-secondary">☆ Favorite</button>
           <button id="details-delete-btn" class="btn btn-danger">Delete</button>
           <button id="details-back-btn" class="btn btn-secondary">← History</button>
+          <button id="details-new-btn" class="btn btn-secondary">+ Manual Entry</button>
         </div>
       </section>
 

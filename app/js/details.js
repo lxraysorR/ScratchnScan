@@ -16,9 +16,8 @@ export async function initDetailsView(id) {
 
   renderRecord(record);
 
-  el("details-back-btn").onclick = () => {
-    window.location.hash = "#history";
-  };
+  el("details-back-btn").onclick = () => { window.location.hash = "#history"; };
+  el("details-new-btn").onclick = () => { window.location.hash = "#scan"; };
 
   el("details-favorite-btn").onclick = async () => {
     const current = await getMvpRecipeById(id);
@@ -29,6 +28,8 @@ export async function initDetailsView(id) {
   };
 
   el("details-delete-btn").onclick = async () => {
+    const ok = window.confirm("Delete this saved homemade recipe?");
+    if (!ok) return;
     await deleteMvpRecipe(id);
     window.location.hash = "#history";
   };
@@ -36,16 +37,14 @@ export async function initDetailsView(id) {
 
 function renderRecord(record) {
   const r = record.generatedResult || {};
-
   el("details-name").textContent = r.productTitle || record.productName || "Saved item";
   el("details-upc").textContent = record.upc ? `UPC: ${record.upc}` : "Manual entry";
-  el("details-date").textContent = `Saved: ${new Date(record.createdAt).toLocaleDateString()}`;
-
+  el("details-date").textContent = `Saved: ${new Date(record.createdAt).toLocaleString()}`;
+  el("details-source-ingredients").textContent = record.ingredients || "No ingredients/label text saved.";
+  el("details-notes").textContent = record.userNotes || "No notes.";
   el("details-summary").textContent = r.productSummary || "";
-
   const concerns = Array.isArray(r.concerns) ? r.concerns.join(" ") : (r.concerns || "");
   el("details-concerns").textContent = concerns || "Packaged versions may include extra additives compared with homemade options.";
-
   el("details-recipe-title").textContent = r.homemadeAlternativeTitle || "Simple homemade alternative";
 
   const ingList = el("details-ingredients");

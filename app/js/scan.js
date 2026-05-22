@@ -52,13 +52,13 @@ function readManualInputs() {
     upc: (el("upc-input")?.value ?? "").trim(),
     productName: (el("product-name-input")?.value ?? "").trim(),
     labelText: (el("ingredients-input")?.value ?? "").trim(),
+    notes: (el("notes-input")?.value ?? "").trim(),
   };
 }
 
 function validateManualInputs(input) {
-  if (!input.upc && !input.productName && !input.labelText) {
-    return { ok: false, error: "Enter a UPC, product name, or label text to continue." };
-  }
+  if (!input.productName) return { ok: false, error: "Product name is required." };
+  if (!input.labelText) return { ok: false, error: "Ingredients or label text is required." };
   if (input.upc) {
     const upcValidation = validateAndNormalizeUpc(input.upc);
     if (!upcValidation.ok) return { ok: false, error: upcValidation.error };
@@ -125,7 +125,8 @@ async function handleManualSubmit(e) {
 
   const submitBtn = el("scan-submit-btn");
   setHidden(el("scan-loading"), false);
-  if (submitBtn) submitBtn.disabled = true;
+  el("scan-fallback-note").hidden = true;
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Analyzing…"; }
 
   const req = {
     upc: check.normalizedUpc || null,
@@ -174,7 +175,9 @@ async function handleManualSubmit(e) {
           source: "ai-service",
         };
       } catch {
-        result = buildLocalFallbackResult(input, "AI service is not configured, showing a local starter version.");
+        result = buildLocalFallbackResult(input, "AI service is unavailable; using a local fallback recipe.");
+        const fallback = el("scan-fallback-note");
+        if (fallback) fallback.hidden = false;
       }
     }
 
@@ -184,6 +187,7 @@ async function handleManualSubmit(e) {
       brand: result.brand,
       ingredients: req.ingredientsText,
       generatedResult: result.manualLookup,
+      userNotes: input.notes,
     });
     await logAppEvent({ eventType: "manual_lookup_submitted", barcode: normalizeBarcode(result.upc), details: req });
 
@@ -194,7 +198,7 @@ async function handleManualSubmit(e) {
   } finally {
     requestInFlight = false;
     setHidden(el("scan-loading"), true);
-    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Create Homemade Version"; }
     await renderHistory();
   }
 }
