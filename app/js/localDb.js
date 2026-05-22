@@ -109,6 +109,10 @@ export function saveMvpRecipe(input) {
     inputIngredients: ingredientsText,
     dietaryPreference: normalizeText(input.dietaryPreference),
     notes: normalizeText(input.notes || input.userNotes),
+    frontImagePlaceholder: !!input.frontImagePlaceholder,
+    backImagePlaceholder: !!input.backImagePlaceholder,
+    frontImageLocalRef: input.frontImageLocalRef || null,
+    backImageLocalRef: input.backImageLocalRef || null,
     scratchRecipe,
     recipeTitle: normalizeText(input.recipeTitle || scratchRecipe?.title),
     recipeIngredients: Array.isArray(input.recipeIngredients)
@@ -117,6 +121,9 @@ export function saveMvpRecipe(input) {
     recipeSteps: Array.isArray(input.recipeSteps)
       ? input.recipeSteps
       : (scratchRecipe?.steps || []),
+    recipeTips: Array.isArray(input.recipeTips)
+      ? input.recipeTips
+      : (scratchRecipe?.tips || []),
     fallbackUsed: !!input.fallbackUsed,
     favorite,
     isFavorite: favorite,

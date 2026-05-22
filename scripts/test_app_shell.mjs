@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 const required = [
   'app/index.html',
   'app/styles.css',
+  'app/js/app.js',
   'app/js/localDb.js',
   'app/js/scan.js',
   'app/js/result.js',
@@ -21,23 +22,40 @@ for (const file of required) {
 // HTML tokens — keep this list aligned with what the MVP actually renders.
 const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
-  'ScratchNScan',
-  'Start Manual Entry',
-  'Generate Scratch Version',
+  'ScratchnScan',
+  'Start with a packaged food',
+  'Create Homemade Version',
   'Save to history',
+  'view-home',
+  'view-scan',
   'view-manual',
+  'view-result',
   'view-history',
   'view-details',
   'product-name-input',
-  'brand-input',
-  'category-input',
   'ingredients-input',
   'dietary-input',
+  'photo-tile',
+  'data-photo="front"',
+  'data-photo="back"',
   'details-favorite-btn',
   'details-delete-btn',
+  'bottom-nav',
+  'data-target="home"',
+  'data-target="scan"',
+  'data-target="manual"',
+  'data-target="history"',
 ];
 for (const token of htmlChecks) {
   if (!html.includes(token)) throw new Error(`Missing token in app/index.html: ${token}`);
+}
+
+// Brand and category should NOT appear as primary form inputs anymore.
+const removedFormInputs = ['id="brand-input"', 'id="category-input"', 'id="notes-input"'];
+for (const token of removedFormInputs) {
+  if (html.includes(token)) {
+    throw new Error(`Unexpected legacy input still present in app/index.html: ${token}`);
+  }
 }
 
 // localDb.js sanity — required exports.
@@ -65,6 +83,18 @@ const requiredExports = [
 for (const name of requiredExports) {
   if (!new RegExp(`export\\s+(?:async\\s+)?(?:function|const)\\s+${name}\\b`).test(localDb)) {
     throw new Error(`Missing exported symbol in app/js/localDb.js: ${name}`);
+  }
+}
+
+// New persistence fields for the photo-first MVP layout.
+const localDbFields = [
+  'frontImagePlaceholder',
+  'backImagePlaceholder',
+  'recipeTips',
+];
+for (const field of localDbFields) {
+  if (!localDb.includes(field)) {
+    throw new Error(`Missing field in app/js/localDb.js payload: ${field}`);
   }
 }
 
