@@ -1,10 +1,23 @@
 import { generateScratchRecipe } from "./api.js";
 import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 import { showToast } from "./app.js";
+import {
+  canGenerate,
+  recordSuccessfulGeneration,
+  refreshUsageStrips,
+} from "./usage.js";
+import { compressImageFile } from "./packageImages.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
 let submitting = false;
+
+// In-memory package draft state for the current entry session.
+// Persisted to IndexedDB only when the user saves the result.
+const draft = {
+  frontImagePreviewDataUrl: null,
+  backImagePreviewDataUrl: null,
+};
 
 const SAMPLES = {
   Mayonnaise: {
@@ -31,23 +44,99 @@ const SAMPLES = {
 
 function el(id) { return document.getElementById(id); }
 
+function applyThumbToTile(which, dataUrl) {
+  const slot = document.querySelector(`.photo-slot[data-photo="${which}"]`);
+  if (!slot) return;
+  const tile = slot.querySelector(".photo-tile");
+  const img = slot.querySelector(".photo-thumb");
+  const actions = slot.querySelector(`[data-photo-actions="${which}"]`);
+  if (dataUrl) {
+    if (img) {
+      img.src = dataUrl;
+      img.alt = which === "front" ? "Front package preview" : "Back label preview";
+      img.hidden = false;
+    }
+    tile?.classList.add("has-photo");
+    tile?.setAttribute("aria-label", which === "front" ? "Replace front package photo" : "Replace back label photo");
+    if (actions) actions.hidden = false;
+  } else {
+    if (img) {
+      img.removeAttribute("src");
+      img.alt = "";
+      img.hidden = true;
+    }
+    tile?.classList.remove("has-photo");
+    tile?.setAttribute("aria-label", which === "front" ? "Add front package photo" : "Add back label photo");
+    if (actions) actions.hidden = true;
+  }
+}
+
+function resetDraftUi() {
+  draft.frontImagePreviewDataUrl = null;
+  draft.backImagePreviewDataUrl = null;
+  applyThumbToTile("front", null);
+  applyThumbToTile("back", null);
+}
+
+async function handlePhotoSelected(which, file) {
+  if (!file) return;
+  try {
+    const dataUrl = await compressImageFile(file);
+    if (which === "front") draft.frontImagePreviewDataUrl = dataUrl;
+    if (which === "back") draft.backImagePreviewDataUrl = dataUrl;
+    applyThumbToTile(which, dataUrl);
+    showToast(which === "front" ? "Front photo added" : "Back label photo added");
+  } catch (err) {
+    showToast(err?.message || "Could not use that photo. Try another.");
+  }
+}
+
+function wirePhotoControls() {
+  document.querySelectorAll("[data-photo-trigger]").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      const which = tile.dataset.photoTrigger;
+      const input = document.querySelector(`[data-photo-input="${which}"]`);
+      input?.click();
+    });
+  });
+  document.querySelectorAll("[data-photo-input]").forEach((input) => {
+    input.addEventListener("change", async (event) => {
+      const which = event.currentTarget.dataset.photoInput;
+      const file = event.currentTarget.files?.[0];
+      await handlePhotoSelected(which, file);
+      event.currentTarget.value = "";
+    });
+  });
+  document.querySelectorAll("[data-photo-replace]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      const which = event.currentTarget.dataset.photoReplace;
+      const input = document.querySelector(`[data-photo-input="${which}"]`);
+      input?.click();
+    });
+  });
+  document.querySelectorAll("[data-photo-remove]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      const which = event.currentTarget.dataset.photoRemove;
+      if (which === "front") draft.frontImagePreviewDataUrl = null;
+      if (which === "back") draft.backImagePreviewDataUrl = null;
+      applyThumbToTile(which, null);
+      showToast(which === "front" ? "Front photo removed" : "Back photo removed");
+    });
+  });
+}
+
 export async function initScanView() {
+  await refreshUsageStrips();
   if (initialized) return;
   el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
   el("manual-clear-btn")?.addEventListener("click", () => {
     el("manual-lookup-form")?.reset();
     el("scan-error").hidden = true;
-    document.querySelectorAll(".photo-tile").forEach((tile) => tile.classList.remove("has-photo"));
+    resetDraftUi();
     showToast("Form cleared");
   });
 
-  document.querySelectorAll(".photo-tile[data-photo]").forEach((tile) => {
-    tile.addEventListener("click", () => {
-      const which = tile.dataset.photo === "back" ? "back label" : "front package";
-      tile.classList.add("has-photo");
-      showToast(`Photo capture coming next. For now, type the ${which} details below.`);
-    });
-  });
+  wirePhotoControls();
 
   initialized = true;
 }
@@ -86,6 +175,13 @@ async function handleSubmit(event) {
     return;
   }
 
+  // Gate before doing any generation work.
+  const allowed = await canGenerate();
+  if (!allowed) {
+    window.location.hash = "#upgrade";
+    return;
+  }
+
   submitting = true;
   const submitBtn = el("scan-submit-btn");
   if (submitBtn) {
@@ -96,6 +192,7 @@ async function handleSubmit(event) {
 
   let scratchRecipe;
   let fallbackUsed = false;
+  let recipeError = null;
   try {
     let aiRecipe = null;
     try {
@@ -125,6 +222,9 @@ async function handleSubmit(event) {
       });
     }
 
+    const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl;
+    const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
+
     lastGeneratedRecord = {
       source: "manual",
       productName,
@@ -136,8 +236,10 @@ async function handleSubmit(event) {
       recipeIngredients: scratchRecipe.ingredients,
       recipeSteps: scratchRecipe.steps,
       recipeTips: scratchRecipe.tips || [],
-      frontImagePlaceholder: true,
-      backImagePlaceholder: true,
+      frontImagePlaceholder: !frontImagePreviewDataUrl,
+      backImagePlaceholder: !backImagePreviewDataUrl,
+      frontImagePreviewDataUrl: frontImagePreviewDataUrl || null,
+      backImagePreviewDataUrl: backImagePreviewDataUrl || null,
       fallbackUsed,
       favorite: false,
       isFavorite: false,
@@ -147,8 +249,14 @@ async function handleSubmit(event) {
       "scratchnscan:lastGenerated",
       JSON.stringify({ ...lastGeneratedRecord, fallbackUsed }),
     );
+
+    // Only count this generation now that we have a real result.
+    await recordSuccessfulGeneration();
+    await refreshUsageStrips();
+
     window.location.hash = "#result";
   } catch (err) {
+    recipeError = err;
     showError(err?.message || "Could not generate a homemade version. Please try again.");
   } finally {
     el("scan-loading").hidden = true;
@@ -158,4 +266,6 @@ async function handleSubmit(event) {
     }
     submitting = false;
   }
+  // Unused but kept for clarity; thrown errors are surfaced above.
+  void recipeError;
 }

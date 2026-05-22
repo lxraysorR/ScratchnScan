@@ -773,6 +773,196 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
 }
 .toast.is-show { opacity: 1; transform: translate(-50%, 0); }
 
+/* USAGE STRIP */
+.hero-usage {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 253, 248, 0.78);
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.01em;
+}
+
+.usage-strip {
+  margin: 0 4px 12px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(31, 107, 84, 0.07);
+  border: 1px solid rgba(31, 107, 84, 0.12);
+  border-radius: 999px;
+  text-align: center;
+}
+.usage-strip[hidden] { display: none; }
+.usage-strip.is-warn {
+  color: #79490a;
+  background: rgba(217, 154, 50, 0.14);
+  border-color: rgba(217, 154, 50, 0.24);
+}
+.usage-strip.is-blocked {
+  color: #8a2b20;
+  background: rgba(185, 66, 50, 0.10);
+  border-color: rgba(185, 66, 50, 0.22);
+}
+.usage-strip.is-unlocked {
+  color: var(--green);
+  background: linear-gradient(145deg, rgba(202, 168, 93, 0.20), rgba(223, 242, 182, 0.55));
+  border-color: rgba(202, 168, 93, 0.35);
+}
+
+/* PHOTO SLOTS */
+.photo-slot { display: grid; gap: 8px; }
+
+.photo-tile {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.photo-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}
+.photo-thumb[hidden] { display: none; }
+
+.photo-tile.has-photo .photo-icon,
+.photo-tile.has-photo strong,
+.photo-tile.has-photo em {
+  display: none;
+}
+
+.photo-tile.has-photo {
+  padding: 0;
+  border-style: solid;
+  border-color: rgba(31, 107, 84, 0.35);
+  min-height: 132px;
+}
+
+.photo-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.photo-actions[hidden] { display: none; }
+
+.photo-action-btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--green);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 36px;
+}
+.photo-action-btn.is-danger { color: var(--red); }
+
+/* UPGRADE */
+.upgrade-card {
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: 12px;
+}
+
+.upgrade-title {
+  margin: 4px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  color: var(--ink);
+}
+.upgrade-body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.upgrade-offer {
+  margin-top: 8px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(145deg, rgba(202, 168, 93, 0.18), rgba(223, 242, 182, 0.45));
+  border: 1px solid rgba(202, 168, 93, 0.35);
+  display: grid;
+  gap: 6px;
+}
+.upgrade-offer-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--green);
+  font-size: 15px;
+}
+.upgrade-offer-row strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.upgrade-offer-row.subtle strong { font-size: 18px; }
+.upgrade-offer-row.subtle { color: var(--muted); }
+.upgrade-offer-note { margin: 4px 0 0; }
+
+/* DETAILS PHOTOS */
+.details-photo-row {
+  margin: 14px 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.details-photo-row[hidden] { display: none; }
+.details-photo {
+  margin: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.details-photo[hidden] { display: none; }
+.details-photo img {
+  display: block;
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+.details-photo figcaption {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 10px;
+  text-align: center;
+}
+
+/* HISTORY THUMBNAIL OVERRIDE */
+.food-thumb.has-photo {
+  background: none;
+  padding: 0;
+  overflow: hidden;
+}
+.food-thumb.has-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.food-thumb svg { display: block; }
+
 /* RESPONSIVE: desktop preview */
 @media (min-width: 720px) {
   body { padding: 24px 0; }

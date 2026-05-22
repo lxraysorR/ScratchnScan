@@ -68,6 +68,33 @@ export async function initDetailsView(id) {
   el("details-meta").textContent = `Based on: ${record.productName || "untitled product"}`;
   el("details-date").textContent = record.createdAt ? `Saved ${formatDate(record.createdAt)}` : "";
 
+  const photoRow = el("details-photo-row");
+  const frontFig = el("details-front-photo");
+  const backFig = el("details-back-photo");
+  const frontImg = frontFig?.querySelector("img");
+  const backImg = backFig?.querySelector("img");
+  const frontSrc = record.frontImagePreviewDataUrl;
+  const backSrc = record.backImagePreviewDataUrl;
+  if (frontImg && frontFig) {
+    if (frontSrc) {
+      frontImg.src = frontSrc;
+      frontFig.hidden = false;
+    } else {
+      frontImg.removeAttribute("src");
+      frontFig.hidden = true;
+    }
+  }
+  if (backImg && backFig) {
+    if (backSrc) {
+      backImg.src = backSrc;
+      backFig.hidden = false;
+    } else {
+      backImg.removeAttribute("src");
+      backFig.hidden = true;
+    }
+  }
+  if (photoRow) photoRow.hidden = !(frontSrc || backSrc);
+
   renderMetrics(el("details-metrics"), { ingredients: ingredientsList, steps: stepsList });
 
   el("details-summary").textContent = record.scratchRecipe?.summary || "";

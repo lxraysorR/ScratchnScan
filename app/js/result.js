@@ -1,6 +1,7 @@
 import { lastGeneratedRecord } from "./scan.js";
 import { saveMvpRecipe } from "./localDb.js";
 import { showToast } from "./app.js";
+import { refreshUsageStrips } from "./usage.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -29,6 +30,7 @@ export function initResultView() {
     window.location.hash = "#manual";
     return;
   }
+  refreshUsageStrips();
 
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
   renderBadges(fallbackUsed);

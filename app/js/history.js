@@ -67,9 +67,14 @@ export async function initHistoryView() {
     const fallbackBadge = r.fallbackUsed
       ? `<span class="badge warm">Starter</span>` : `<span class="badge">AI</span>`;
 
+    const photoSrc = r.frontImagePreviewDataUrl || r.backImagePreviewDataUrl || "";
+    const thumbInner = photoSrc
+      ? `<img src="${escapeHtml(photoSrc)}" alt="" />`
+      : THUMB_SVG;
+    const thumbClass = photoSrc ? "food-thumb has-photo" : "food-thumb";
     li.innerHTML = `
       <div class="history-top">
-        <div class="food-thumb" aria-hidden="true">${THUMB_SVG}</div>
+        <div class="${thumbClass}" aria-hidden="true">${thumbInner}</div>
         <div style="min-width:0; flex:1;">
           <h3>${escapeHtml(r.productName || "Untitled")}</h3>
           <p>${escapeHtml(recipeTitle)}</p>
