@@ -7,6 +7,7 @@ const required = [
   'app/styles.css',
   'app/js/localDb.js',
   'app/js/scan.js',
+  'app/js/result.js',
   'app/js/history.js',
   'app/js/details.js',
   'app/js/manualRecipe.js',
@@ -22,11 +23,16 @@ const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
   'ScratchNScan',
   'Start Manual Entry',
-  'Generate scratch recipe',
+  'Generate Scratch Version',
   'Save to history',
   'view-manual',
   'view-history',
   'view-details',
+  'product-name-input',
+  'brand-input',
+  'category-input',
+  'ingredients-input',
+  'dietary-input',
   'details-favorite-btn',
   'details-delete-btn',
 ];
@@ -39,6 +45,12 @@ const localDb = readFileSync('app/js/localDb.js', 'utf8');
 const requiredExports = [
   'initDatabase',
   'normalizeBarcode',
+  'saveMvpRecipe',
+  'getMvpHistory',
+  'getMvpRecipeById',
+  'updateMvpRecipe',
+  'deleteMvpRecipe',
+  'toggleMvpFavorite',
   'saveScanHistory',
   'getScanHistory',
   'saveProductCache',
@@ -73,6 +85,28 @@ for (const [input, expected] of cases) {
   if (got !== expected) {
     throw new Error(`normalizeBarcode(${JSON.stringify(input)}) returned ${JSON.stringify(got)}, expected ${JSON.stringify(expected)}`);
   }
+}
+
+// manualRecipe.js fallback: targeted product names should pick a category-aware template.
+const recipeMod = await import(pathToFileURL(resolve('app/js/manualRecipe.js')).href);
+const mayo = recipeMod.buildDeterministicScratchRecipe({ productName: 'Mayonnaise' });
+if (!/mayonnaise/i.test(mayo.title)) {
+  throw new Error(`mayonnaise fallback title unexpected: ${mayo.title}`);
+}
+const mayoIngText = mayo.ingredients.join('\n').toLowerCase();
+if (!mayoIngText.includes('oil') || !(mayoIngText.includes('egg') || mayoIngText.includes('aquafaba'))) {
+  throw new Error(`mayonnaise fallback ingredients missing oil/egg: ${mayoIngText}`);
+}
+const generic = recipeMod.buildDeterministicScratchRecipe({ productName: '' });
+if (!generic.ingredients.length || !generic.steps.length) {
+  throw new Error('generic fallback should still return ingredients and steps');
+}
+const veganMayo = recipeMod.buildDeterministicScratchRecipe({
+  productName: 'mayo',
+  dietaryPreference: 'vegan',
+});
+if (!veganMayo.tips.some((t) => /aquafaba|plant/i.test(t))) {
+  throw new Error('vegan dietary tip should appear');
 }
 
 console.log('App shell + localDb tests passed.');

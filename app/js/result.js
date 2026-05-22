@@ -3,18 +3,23 @@ import { saveMvpRecipe } from "./localDb.js";
 
 function el(id) { return document.getElementById(id); }
 
+let saving = false;
+
 export function initResultView() {
   const sessionRecord = sessionStorage.getItem("scratchnscan:lastGenerated");
   const parsed = sessionRecord ? JSON.parse(sessionRecord) : null;
   const record = parsed || lastGeneratedRecord;
-  if (!record) {
+  if (!record || !record.scratchRecipe) {
     window.location.hash = "#manual";
     return;
   }
 
+  const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
   el("result-name").textContent = record.scratchRecipe.title;
   el("result-summary").textContent = record.scratchRecipe.summary;
-  el("result-note").textContent = parsed?.fallbackUsed ? "AI unavailable; deterministic local fallback recipe was used." : "Generated from available provider data.";
+  el("result-note").textContent = fallbackUsed
+    ? "No AI provider available - this is a starter suggestion built from common ingredients. Tweak to taste."
+    : "Generated from the configured AI provider. Tweak to taste.";
 
   const ingredients = el("result-homemade-ingredients");
   ingredients.innerHTML = "";
@@ -27,8 +32,29 @@ export function initResultView() {
     const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
   }
 
-  el("result-save-btn").onclick = async () => {
-    const id = await saveMvpRecipe(record);
-    if (id) window.location.hash = "#history";
+  const saveBtn = el("result-save-btn");
+  if (!saveBtn) return;
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Save to history";
+  saveBtn.onclick = async () => {
+    if (saving) return;
+    saving = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+    try {
+      const id = await saveMvpRecipe({ ...record, fallbackUsed });
+      sessionStorage.removeItem("scratchnscan:lastGenerated");
+      if (id) {
+        window.location.hash = `#details/${id}`;
+      } else {
+        saveBtn.textContent = "Save failed - try again";
+        saveBtn.disabled = false;
+        saving = false;
+      }
+    } catch {
+      saveBtn.textContent = "Save failed - try again";
+      saveBtn.disabled = false;
+      saving = false;
+    }
   };
 }
