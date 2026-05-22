@@ -1,247 +1,60 @@
-import { validateAndNormalizeUpc } from "./upc.js";
-import { lookupUpc, normalizeProduct, generateScratchRecipe } from "./api.js";
-import {
-  initDatabase,
-  normalizeBarcode,
-  saveMvpRecipe,
-  getMvpHistory,
-  saveProductCache,
-  getProductByBarcode,
-  logAppEvent,
-} from "./localDb.js";
+import { generateScratchRecipe } from "./api.js";
+import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 
-export let lastLookupResult = null;
-let viewInitialized = false;
-let requestInFlight = false;
+export let lastGeneratedRecord = null;
+let initialized = false;
 
 function el(id) { return document.getElementById(id); }
-function setHidden(element, hidden) { if (element) element.hidden = hidden; }
-
-function clearStates() {
-  setHidden(el("scan-loading"), true);
-  setHidden(el("scan-error"), true);
-  setHidden(el("scan-empty"), true);
-}
-
-async function isScannerAvailable() {
-  if (!navigator.mediaDevices?.getUserMedia || !window.BarcodeDetector) return false;
-  try {
-    const formats = await BarcodeDetector.getSupportedFormats();
-    return formats.some((f) => ["ean_13", "ean_8", "upc_a", "upc_e"].includes(f));
-  } catch { return false; }
-}
 
 export async function initScanView() {
-  await initDatabase();
-  if (!viewInitialized) {
-    const scannerSupported = await isScannerAvailable();
-    setHidden(el("scan-camera-section"), !scannerSupported);
-
-    el("manual-lookup-form")?.addEventListener("submit", handleManualSubmit);
-    el("manual-clear-btn")?.addEventListener("click", handleClear);
-    ["upc-input", "product-name-input", "ingredients-input"].forEach((id) => {
-      el(id)?.addEventListener("input", clearStates);
-    });
-    viewInitialized = true;
-  }
-  await renderHistory();
+  if (initialized) return;
+  el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
+  el("manual-clear-btn")?.addEventListener("click", () => el("manual-lookup-form")?.reset());
+  initialized = true;
 }
 
-function readManualInputs() {
-  return {
-    upc: (el("upc-input")?.value ?? "").trim(),
-    productName: (el("product-name-input")?.value ?? "").trim(),
-    labelText: (el("ingredients-input")?.value ?? "").trim(),
-  };
-}
+async function handleSubmit(event) {
+  event.preventDefault();
+  el("scan-error").hidden = true;
+  el("scan-loading").hidden = false;
+  const productName = (el("product-name-input")?.value || "").trim();
+  const inputIngredients = (el("ingredients-input")?.value || "").trim();
+  const notes = (el("notes-input")?.value || "").trim();
 
-function validateManualInputs(input) {
-  if (!input.upc && !input.productName && !input.labelText) {
-    return { ok: false, error: "Enter a UPC, product name, or label text to continue." };
-  }
-  if (input.upc) {
-    const upcValidation = validateAndNormalizeUpc(input.upc);
-    if (!upcValidation.ok) return { ok: false, error: upcValidation.error };
-    return { ok: true, normalizedUpc: upcValidation.upc, upcNumeric: /^\d+$/.test(upcValidation.upc) };
-  }
-  return { ok: true, normalizedUpc: "", upcNumeric: false };
-}
-
-function buildLocalFallbackResult({ upc, productName, labelText }, message) {
-  const title = productName || inferTitleFromText(labelText) || (upc ? `Packaged item (${upc})` : "Packaged food item");
-  const ingredients = inferIngredients(labelText);
-  return {
-    upc: upc || "manual-entry",
-    productName: title,
-    brand: null,
-    source: "local-fallback",
-    found: true,
-    manualLookup: {
-      productTitle: title,
-      productSummary: `${title} appears to be a packaged food. We can still build a cleaner homemade version from the details you entered.`,
-      concerns: ["Packaged versions often include additives, extra sweeteners, or stabilizers."],
-      homemadeAlternativeTitle: `Simple homemade ${title}`,
-      homemadeIngredients: ingredients,
-      homemadeSteps: [
-        "Mix the base ingredients until evenly combined.",
-        "Cook or chill depending on the food type until texture is right.",
-        "Taste and adjust salt, sweetness, or seasoning before serving."
-      ],
-      confidenceLevel: labelText || productName ? "medium" : "low",
-      source: "local-fallback",
-      note: message || null,
-    }
-  };
-}
-
-function inferTitleFromText(text) {
-  if (!text) return "";
-  const head = text.split(/[\n,.]/).map((s) => s.trim()).find(Boolean);
-  return head ? head.slice(0, 50) : "";
-}
-
-function inferIngredients(text) {
-  const cleaned = (text || "").replace(/ingredients:?/i, "");
-  const items = cleaned.split(/[\n,]/).map((s) => s.trim()).filter(Boolean).slice(0, 6);
-  if (items.length) return items;
-  return ["Flour or oats", "Simple fat (olive oil or butter)", "Salt", "Water or milk", "Optional seasoning"];
-}
-
-async function handleManualSubmit(e) {
-  e.preventDefault();
-
-  // Hard guard: ignore if a request is already in flight.
-  if (requestInFlight) return;
-  requestInFlight = true;
-
-  clearStates();
-
-  const input = readManualInputs();
-  const check = validateManualInputs(input);
-  if (!check.ok) {
-    requestInFlight = false;
-    return showError(check.error);
-  }
-
-  const submitBtn = el("scan-submit-btn");
-  setHidden(el("scan-loading"), false);
-  if (submitBtn) submitBtn.disabled = true;
-
-  const req = {
-    upc: check.normalizedUpc || null,
-    upcNumeric: check.upcNumeric,
-    productName: input.productName || null,
-    ingredientsText: input.labelText || null,
-  };
-
-  try {
-    let result = null;
-    if (req.upc) {
-      const cached = await getProductByBarcode(normalizeBarcode(req.upc));
-      if (cached?.productName) {
-        result = { ...cached, upc: req.upc, found: true, source: cached.source || "cache" };
-      } else {
-        const body = await lookupUpc(req.upc);
-        const product = normalizeProduct(body, req.upc);
-        if (!product.found) {
-          showError("We could not identify this product yet, but you can still paste ingredients or label text.");
-          result = buildLocalFallbackResult(input);
-        } else {
-          result = product;
-          await saveProductCache({ ...product, barcode: req.upc, normalizedBarcode: normalizeBarcode(req.upc), raw: body?.product ?? null });
-        }
-      }
-    } else {
-      result = buildLocalFallbackResult(input);
-    }
-
-    if (!result.manualLookup) {
-      try {
-        const ai = await generateScratchRecipe({
-          productName: req.productName || result.productName || "Packaged food",
-          brand: result.brand || "",
-          ingredients: req.ingredientsText || result.ingredients || "",
-          nutrition: null,
-        });
-        result.manualLookup = {
-          productTitle: ai?.recipe?.product?.name || result.productName || "Packaged food",
-          productSummary: ai?.recipe?.plainEnglishExplanation || "This appears to be a packaged food product.",
-          concerns: (ai?.recipe?.ingredientSignals || []).map((x) => `${x.name}: ${x.reason}`).slice(0, 4),
-          homemadeAlternativeTitle: ai?.recipe?.homemadeAlternative?.title || "Simple homemade version",
-          homemadeIngredients: (ai?.recipe?.homemadeAlternative?.ingredients || []).map((x) => x.item || x),
-          homemadeSteps: ai?.recipe?.homemadeAlternative?.steps || [],
-          confidenceLevel: ai?.recipe?.product?.confidence || "medium",
-          source: "ai-service",
-        };
-      } catch {
-        result = buildLocalFallbackResult(input, "AI service is not configured, showing a local starter version.");
-      }
-    }
-
-    await saveMvpRecipe({
-      upc: result.upc,
-      productName: result.productName,
-      brand: result.brand,
-      ingredients: req.ingredientsText,
-      generatedResult: result.manualLookup,
-    });
-    await logAppEvent({ eventType: "manual_lookup_submitted", barcode: normalizeBarcode(result.upc), details: req });
-
-    lastLookupResult = result;
-    window.location.hash = "#result";
-  } catch (err) {
-    showError(err?.message || "Lookup failed. Please try again.");
-  } finally {
-    requestInFlight = false;
-    setHidden(el("scan-loading"), true);
-    if (submitBtn) submitBtn.disabled = false;
-    await renderHistory();
-  }
-}
-
-function handleClear() {
-  el("manual-lookup-form")?.reset();
-  clearStates();
-  setHidden(el("scan-empty"), false);
-}
-
-function showError(message) {
-  el("scan-error-msg").textContent = message;
-  setHidden(el("scan-error"), false);
-}
-
-async function renderHistory() {
-  const listEl = el("scan-history-list");
-  const emptyEl = el("scan-history-empty");
-  const allLink = el("scan-history-all-link");
-  if (!listEl) return;
-  const records = (await getMvpHistory()).slice(0, 5);
-  listEl.innerHTML = "";
-  if (!records.length) {
-    setHidden(emptyEl, false);
-    if (allLink) allLink.hidden = true;
+  if (!productName && !inputIngredients && !notes) {
+    el("scan-loading").hidden = true;
+    el("scan-error-msg").textContent = "Enter at least product name, ingredients, or notes.";
+    el("scan-error").hidden = false;
     return;
   }
-  setHidden(emptyEl, true);
-  if (allLink) allLink.hidden = false;
-  for (const r of records) {
-    const li = document.createElement("li");
-    li.className = "history-item";
 
-    const head = document.createElement("div");
-    head.className = "history-head";
-
-    const nameSpan = document.createElement("span");
-    nameSpan.className = "history-name";
-    nameSpan.textContent = r.productName || "(no product name)";
-
-    const sub = document.createElement("div");
-    sub.className = "history-sub";
-    sub.textContent = r.upc ? `UPC: ${r.upc}` : "Manual entry";
-
-    head.appendChild(nameSpan);
-    li.appendChild(head);
-    li.appendChild(sub);
-    listEl.appendChild(li);
+  let scratchRecipe;
+  let fallbackUsed = false;
+  try {
+    const ai = await generateScratchRecipe({ productName, ingredients: inputIngredients, notes });
+    const aiRecipe = ai?.recipe?.homemadeAlternative;
+    scratchRecipe = aiRecipe ? {
+      title: aiRecipe.title || `Simple homemade ${productName || "alternative"}`,
+      summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
+      ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
+      steps: aiRecipe.steps || [],
+      tips: aiRecipe.tips || [],
+    } : buildDeterministicScratchRecipe({ productName, inputIngredients, notes });
+  } catch {
+    fallbackUsed = true;
+    scratchRecipe = buildDeterministicScratchRecipe({ productName, inputIngredients, notes });
   }
+
+  lastGeneratedRecord = {
+    source: "manual",
+    productName: productName || "Manual packaged item",
+    inputIngredients,
+    notes,
+    scratchRecipe,
+    favorite: false,
+  };
+
+  sessionStorage.setItem("scratchnscan:lastGenerated", JSON.stringify({ ...lastGeneratedRecord, fallbackUsed }));
+  el("scan-loading").hidden = true;
+  window.location.hash = "#result";
 }

@@ -1,14 +1,10 @@
 import { initScanView } from "./scan.js";
-import * as scanModule from "./scan.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
-import * as historyModule from "./history.js";
 import { initDetailsView } from "./details.js";
 import { initDatabase } from "./localDb.js";
 
-const views = ["home", "scan", "result", "history", "details"];
-
-let scanViewReady = false;
+const views = ["home", "manual", "result", "history", "details"];
 
 function showView(name) {
   const view = views.includes(name) ? name : "home";
@@ -20,50 +16,40 @@ function showView(name) {
 
 async function route() {
   const hash = window.location.hash.replace(/^#\/?/, "") || "home";
+  const [routeName, routeArg] = hash.split("/");
 
-  if (hash === "scan") {
-    showView("scan");
-    if (!scanViewReady) {
-      await initScanView();
-      scanViewReady = true;
-    }
+  if (routeName === "manual") {
+    showView("manual");
+    await initScanView();
     return;
   }
-
-  if (hash === "result") {
-    if (!scanModule.lastLookupResult) {
-      window.location.hash = "#scan";
-      return;
-    }
+  if (routeName === "result") {
     showView("result");
-    initResultView(scanModule.lastLookupResult);
+    initResultView();
     return;
   }
-
-  if (hash === "history") {
+  if (routeName === "history") {
     showView("history");
     await initHistoryView();
     return;
   }
-
-  if (hash === "details") {
-    if (!historyModule.selectedId) {
+  if (routeName === "details") {
+    if (!routeArg) {
       window.location.hash = "#history";
       return;
     }
     showView("details");
-    await initDetailsView(historyModule.selectedId);
+    await initDetailsView(routeArg);
     return;
   }
 
   showView("home");
 }
 
-document.getElementById("home-scan-btn")?.addEventListener("click", () => {
-  window.location.hash = "#scan";
+document.getElementById("home-manual-btn")?.addEventListener("click", () => {
+  window.location.hash = "#manual";
 });
 
 window.addEventListener("hashchange", route);
-
 await initDatabase();
 route();

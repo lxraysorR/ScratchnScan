@@ -1,61 +1,25 @@
-import { getMvpHistory } from "./localDb.js";
-
-export let selectedId = null;
+import { getMvpHistory, toggleMvpFavorite, deleteMvpRecipe } from "./localDb.js";
 
 function el(id) { return document.getElementById(id); }
 
 export async function initHistoryView() {
-  await renderHistoryList();
-}
-
-async function renderHistoryList() {
-  const listEl = el("history-list");
-  const emptyEl = el("history-empty");
-  if (!listEl) return;
-
   const records = await getMvpHistory();
-  listEl.innerHTML = "";
-
-  if (!records.length) {
-    if (emptyEl) emptyEl.hidden = false;
-    return;
-  }
-  if (emptyEl) emptyEl.hidden = true;
+  const list = el("history-list");
+  const empty = el("history-empty");
+  list.innerHTML = "";
+  if (!records.length) { empty.hidden = false; return; }
+  empty.hidden = true;
 
   for (const r of records) {
-    const li = document.createElement("li");
-    li.className = "history-item";
-
-    const head = document.createElement("div");
-    head.className = "history-head";
-
-    const nameBtn = document.createElement("button");
-    nameBtn.className = "link-btn history-name";
-    nameBtn.textContent = r.productName || "(no product name)";
-    nameBtn.addEventListener("click", () => {
-      selectedId = r.id;
-      window.location.hash = "#details";
-    });
-
-    const favMark = document.createElement("span");
-    favMark.className = r.favorite ? "fav-star fav-on" : "fav-star";
-    favMark.textContent = r.favorite ? "★" : "☆";
-    favMark.setAttribute("aria-label", r.favorite ? "Favorited" : "Not favorited");
-
-    head.appendChild(nameBtn);
-    head.appendChild(favMark);
-
-    const sub = document.createElement("div");
-    sub.className = "history-sub";
-    sub.textContent = r.upc ? `UPC: ${r.upc}` : "Manual entry";
-
-    const date = document.createElement("div");
-    date.className = "history-sub";
-    date.textContent = new Date(r.createdAt).toLocaleDateString();
-
-    li.appendChild(head);
-    li.appendChild(sub);
-    li.appendChild(date);
-    listEl.appendChild(li);
+    const li = document.createElement("li"); li.className = "history-item";
+    li.innerHTML = `<div class="history-head"><button class="link-btn history-name">${r.productName || "Untitled"}</button><span class="fav-star ${r.favorite ? "fav-on" : ""}">${r.favorite ? "★" : "☆"}</span></div>
+    <div class="history-sub">Saved: ${new Date(r.createdAt).toLocaleString()}</div>
+    <div class="history-summary">${r.scratchRecipe?.summary || "No summary"}</div>`;
+    li.querySelector(".history-name").addEventListener("click", () => { window.location.hash = `#details/${r.id}`; });
+    li.querySelector(".fav-star").addEventListener("click", async () => { await toggleMvpFavorite(r.id, !r.favorite); await initHistoryView(); });
+    const del = document.createElement("button"); del.className = "btn btn-danger btn-small"; del.textContent = "Delete";
+    del.addEventListener("click", async () => { await deleteMvpRecipe(r.id); await initHistoryView(); });
+    li.appendChild(del);
+    list.appendChild(li);
   }
 }
