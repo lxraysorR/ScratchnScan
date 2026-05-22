@@ -91,6 +91,11 @@ function safe(promise, fallback, context) {
 export function saveMvpRecipe(input) {
   const createdAt = input.createdAt || nowIso();
   const id = input.id || crypto.randomUUID();
+  const scratchRecipe = input.scratchRecipe || input.generatedResult || null;
+  const favorite = !!(input.favorite ?? input.isFavorite);
+  const ingredientsText = normalizeText(
+    input.ingredientsText || input.inputIngredients || input.ingredients,
+  );
   const payload = {
     id,
     source: input.source || "manual",
@@ -98,12 +103,31 @@ export function saveMvpRecipe(input) {
     updatedAt: nowIso(),
     upc: normalizeBarcode(input.upc),
     productName: normalizeText(input.productName),
-    inputIngredients: normalizeText(input.inputIngredients || input.ingredients),
+    brand: normalizeText(input.brand),
+    category: normalizeText(input.category),
+    ingredientsText,
+    inputIngredients: ingredientsText,
+    dietaryPreference: normalizeText(input.dietaryPreference),
     notes: normalizeText(input.notes || input.userNotes),
-    scratchRecipe: input.scratchRecipe || input.generatedResult || null,
-    favorite: !!input.favorite,
+    scratchRecipe,
+    recipeTitle: normalizeText(input.recipeTitle || scratchRecipe?.title),
+    recipeIngredients: Array.isArray(input.recipeIngredients)
+      ? input.recipeIngredients
+      : (scratchRecipe?.ingredients || []),
+    recipeSteps: Array.isArray(input.recipeSteps)
+      ? input.recipeSteps
+      : (scratchRecipe?.steps || []),
+    fallbackUsed: !!input.fallbackUsed,
+    favorite,
+    isFavorite: favorite,
   };
   return safe(withStore(STORES.mvpHistory, "readwrite", (store) => runRequest(store.put(payload)).then(() => payload.id)), null, "saveMvpRecipe");
+}
+
+export async function updateMvpRecipe(id, updates) {
+  const existing = await getMvpRecipeById(id);
+  if (!existing) return null;
+  return saveMvpRecipe({ ...existing, ...updates, id });
 }
 
 export function getMvpHistory() {

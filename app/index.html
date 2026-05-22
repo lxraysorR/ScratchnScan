@@ -26,14 +26,41 @@
       <section id="view-manual" class="view" hidden>
         <h2 class="view-title">Manual Entry</h2>
         <form id="manual-lookup-form" class="upc-form" novalidate>
-          <label for="product-name-input" class="label">Packaged product name</label>
-          <input id="product-name-input" type="text" class="input" placeholder="e.g. boxed mac and cheese" />
+          <label for="product-name-input" class="label">Packaged product name <span aria-hidden="true">*</span></label>
+          <input id="product-name-input" type="text" class="input" placeholder="e.g. mayonnaise, boxed mac and cheese" required />
+          <label for="brand-input" class="label">Brand (optional)</label>
+          <input id="brand-input" type="text" class="input" placeholder="e.g. Hellmann's" />
+          <label for="category-input" class="label">Category (optional)</label>
+          <select id="category-input" class="input">
+            <option value="">Choose a category…</option>
+            <option value="condiment">Condiment / Sauce</option>
+            <option value="dressing">Salad dressing</option>
+            <option value="snack">Snack / Chips</option>
+            <option value="bakery">Bakery / Bread</option>
+            <option value="cereal">Cereal / Granola</option>
+            <option value="dairy">Dairy / Yogurt</option>
+            <option value="frozen-meal">Frozen meal</option>
+            <option value="beverage">Beverage</option>
+            <option value="soup">Soup / Broth</option>
+            <option value="pasta">Pasta / Boxed mix</option>
+            <option value="dessert">Dessert</option>
+            <option value="other">Other</option>
+          </select>
           <label for="ingredients-input" class="label">Ingredients (optional)</label>
-          <textarea id="ingredients-input" class="input" rows="4"></textarea>
+          <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste the label ingredients if you have them."></textarea>
+          <label for="dietary-input" class="label">Dietary preference (optional)</label>
+          <select id="dietary-input" class="input">
+            <option value="">No preference</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="gluten-free">Gluten-free</option>
+            <option value="dairy-free">Dairy-free</option>
+            <option value="low-sugar">Low-sugar</option>
+          </select>
           <label for="notes-input" class="label">Notes (optional)</label>
-          <textarea id="notes-input" class="input" rows="3"></textarea>
+          <textarea id="notes-input" class="input" rows="2"></textarea>
           <div class="rescue-actions">
-            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate scratch recipe</button>
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate Scratch Version</button>
             <button id="manual-clear-btn" type="button" class="btn btn-secondary">Clear</button>
           </div>
         </form>
@@ -63,11 +90,15 @@
         <h2 class="view-title">Details</h2>
         <div class="result-card">
           <h3 id="details-name" class="result-name"></h3>
+          <p id="details-meta" class="result-source"></p>
           <p id="details-date" class="result-source"></p>
           <p id="details-input" class="history-summary"></p>
           <p id="details-summary"></p>
-          <h4>Ingredients</h4><ul id="details-ingredients"></ul>
-          <h4>Steps</h4><ol id="details-steps"></ol>
+          <h4 id="details-recipe-title"></h4>
+          <h5>Ingredients</h5><ul id="details-ingredients"></ul>
+          <h5>Steps</h5><ol id="details-steps"></ol>
+          <p id="details-fallback-note" class="hint" hidden></p>
+          <p class="hint">General food information only. Not medical or dietary advice.</p>
         </div>
         <div class="result-actions">
           <button id="details-favorite-btn" class="btn btn-secondary">☆ Favorite</button>
