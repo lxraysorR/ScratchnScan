@@ -1,53 +1,34 @@
+import { lastGeneratedRecord } from "./scan.js";
+import { saveMvpRecipe } from "./localDb.js";
+
 function el(id) { return document.getElementById(id); }
 
-export function initResultView(product) {
-  if (!product) {
-    window.location.hash = "#scan";
+export function initResultView() {
+  const sessionRecord = sessionStorage.getItem("scratchnscan:lastGenerated");
+  const parsed = sessionRecord ? JSON.parse(sessionRecord) : null;
+  const record = parsed || lastGeneratedRecord;
+  if (!record) {
+    window.location.hash = "#manual";
     return;
   }
 
-  el("result-name").textContent =
-    product.manualLookup?.productTitle || product.productName || "Unknown product";
-  el("result-upc").textContent = product.upc ? `UPC: ${product.upc}` : "Manual entry";
-  el("result-source").textContent =
-    `Source: ${product.manualLookup?.source || product.source || "unknown"}`;
+  el("result-name").textContent = record.scratchRecipe.title;
+  el("result-summary").textContent = record.scratchRecipe.summary;
+  el("result-note").textContent = parsed?.fallbackUsed ? "AI unavailable; deterministic local fallback recipe was used." : "Generated from available provider data.";
 
-  el("result-summary").textContent =
-    product.manualLookup?.productSummary || "Packaged product identified.";
-
-  const concerns = product.manualLookup?.concerns?.length
-    ? product.manualLookup.concerns.join(" ")
-    : "Packaged versions may include extra additives compared with homemade options.";
-  el("result-concerns").textContent = concerns;
-
-  el("result-recipe-title").textContent =
-    product.manualLookup?.homemadeAlternativeTitle || "Simple homemade alternative";
-
-  const ingredients = product.manualLookup?.homemadeIngredients || [];
-  const ingList = el("result-homemade-ingredients");
-  ingList.innerHTML = "";
-  for (const item of ingredients) {
-    const li = document.createElement("li");
-    li.textContent = item;
-    ingList.appendChild(li);
+  const ingredients = el("result-homemade-ingredients");
+  ingredients.innerHTML = "";
+  for (const item of record.scratchRecipe.ingredients || []) {
+    const li = document.createElement("li"); li.textContent = item; ingredients.appendChild(li);
+  }
+  const steps = el("result-homemade-steps");
+  steps.innerHTML = "";
+  for (const item of record.scratchRecipe.steps || []) {
+    const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
   }
 
-  const steps = product.manualLookup?.homemadeSteps || [];
-  const stepsList = el("result-homemade-steps");
-  stepsList.innerHTML = "";
-  for (const item of steps) {
-    const li = document.createElement("li");
-    li.textContent = item;
-    stepsList.appendChild(li);
-  }
-
-  const note = product.manualLookup?.note;
-  el("result-confidence").textContent =
-    `Confidence: ${product.manualLookup?.confidenceLevel || "medium"}`;
-  el("result-note").textContent = note || "";
-  el("result-note").hidden = !note;
-
-  el("result-scan-another-btn").onclick = () => {
-    window.location.hash = "#scan";
+  el("result-save-btn").onclick = async () => {
+    const id = await saveMvpRecipe(record);
+    if (id) window.location.hash = "#history";
   };
 }

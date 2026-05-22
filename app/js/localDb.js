@@ -1,5 +1,5 @@
 const DB_NAME = "scan_scratch_local_db";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const STORES = {
   mvpHistory: "mvp_history",
@@ -93,16 +93,14 @@ export function saveMvpRecipe(input) {
   const id = input.id || crypto.randomUUID();
   const payload = {
     id,
+    source: input.source || "manual",
     createdAt,
     updatedAt: nowIso(),
     upc: normalizeBarcode(input.upc),
     productName: normalizeText(input.productName),
-    brand: normalizeText(input.brand),
-    category: normalizeText(input.category),
-    ingredients: normalizeText(input.ingredients),
-    nutritionNotes: normalizeText(input.nutritionNotes),
-    userNotes: normalizeText(input.userNotes),
-    generatedResult: input.generatedResult || null,
+    inputIngredients: normalizeText(input.inputIngredients || input.ingredients),
+    notes: normalizeText(input.notes || input.userNotes),
+    scratchRecipe: input.scratchRecipe || input.generatedResult || null,
     favorite: !!input.favorite,
   };
   return safe(withStore(STORES.mvpHistory, "readwrite", (store) => runRequest(store.put(payload)).then(() => payload.id)), null, "saveMvpRecipe");
@@ -141,13 +139,13 @@ export async function toggleMvpFavorite(id, favorite) {
 
 export const saveScanHistory = async () => null;
 export const getScanHistory = async () => [];
-export const saveProductCache = async () => null;
+export const saveProductCache = async (row) => row || null;
 export const getProductByBarcode = async () => null;
-export const saveProductRescueDraft = async () => null;
+export const saveProductRescueDraft = async (row) => row || null;
 export const getProductRescueDrafts = async () => [];
-export const saveHomemadeRecipe = async () => null;
+export const saveHomemadeRecipe = async (row) => row || null;
 export const getHomemadeRecipes = async () => [];
-export const logAppEvent = async () => null;
+export const logAppEvent = async () => true;
 export async function clearLocalData() {
   return safe(withStore(STORES.mvpHistory, "readwrite", (store) => runRequest(store.clear()).then(() => true)), false, "clearLocalData");
 }

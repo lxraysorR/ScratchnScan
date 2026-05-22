@@ -7,6 +7,9 @@ const required = [
   'app/styles.css',
   'app/js/localDb.js',
   'app/js/scan.js',
+  'app/js/history.js',
+  'app/js/details.js',
+  'app/js/manualRecipe.js',
   'AGENTS.md',
   'docs/MVP_SCOPE.md',
 ];
@@ -18,10 +21,14 @@ for (const file of required) {
 const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
   'ScratchNScan',
-  'Scan / Enter UPC',
-  'Add Product Info',
-  'Recent lookups',
-  'Not medical advice',
+  'Start Manual Entry',
+  'Generate scratch recipe',
+  'Save to history',
+  'view-manual',
+  'view-history',
+  'view-details',
+  'details-favorite-btn',
+  'details-delete-btn',
 ];
 for (const token of htmlChecks) {
   if (!html.includes(token)) throw new Error(`Missing token in app/index.html: ${token}`);
