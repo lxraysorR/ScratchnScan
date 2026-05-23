@@ -154,7 +154,23 @@ window.scratchnscan = {
 };
 
 window.addEventListener("hashchange", route);
-await initDatabase();
-await refreshUsageStrips();
+
+// Wire up UI listeners synchronously, before any async work. Buttons must
+// always respond even if IndexedDB init is slow, fails, or is blocked by
+// another open tab during an upgrade.
 wireGlobalActions();
 route();
+
+// Kick off async setup; if it fails we log it but the app stays usable.
+(async () => {
+  try {
+    await initDatabase();
+  } catch (err) {
+    console.warn("initDatabase rejected", err);
+  }
+  try {
+    await refreshUsageStrips();
+  } catch (err) {
+    console.warn("refreshUsageStrips rejected", err);
+  }
+})();
