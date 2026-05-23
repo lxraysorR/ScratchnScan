@@ -126,19 +126,23 @@ function wirePhotoControls() {
 }
 
 export async function initScanView() {
-  await refreshUsageStrips();
-  if (initialized) return;
-  el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
-  el("manual-clear-btn")?.addEventListener("click", () => {
-    el("manual-lookup-form")?.reset();
-    el("scan-error").hidden = true;
-    resetDraftUi();
-    showToast("Form cleared");
-  });
-
-  wirePhotoControls();
-
-  initialized = true;
+  // Wire listeners first so the form always works even if IDB is slow/failing.
+  if (!initialized) {
+    el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
+    el("manual-clear-btn")?.addEventListener("click", () => {
+      el("manual-lookup-form")?.reset();
+      el("scan-error").hidden = true;
+      resetDraftUi();
+      showToast("Form cleared");
+    });
+    wirePhotoControls();
+    initialized = true;
+  }
+  try {
+    await refreshUsageStrips();
+  } catch (err) {
+    console.warn("refreshUsageStrips (manual) failed", err);
+  }
 }
 
 export function applySample(name) {
