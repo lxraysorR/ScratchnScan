@@ -3,9 +3,15 @@ import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
 import { initDatabase } from "./localDb.js";
-import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
+import {
+  refreshUsageStrips,
+  resetUsageForDev,
+  setLocalPremiumUnlockedForDev,
+  getUsageState,
+  canGenerate,
+} from "./usage.js";
 
-const VIEWS = ["home", "scan", "manual", "result", "history", "details"];
+const VIEWS = ["home", "scan", "manual", "result", "upgrade", "history", "details"];
 const NAV_TARGETS = new Set(["home", "scan", "manual", "history"]);
 
 function showView(name) {
@@ -51,6 +57,11 @@ async function route() {
     initResultView();
     return;
   }
+  if (name === "upgrade") {
+    showView("upgrade");
+    await refreshUsageStrips();
+    return;
+  }
   if (name === "history") {
     showView("history");
     await initHistoryView();
@@ -66,6 +77,7 @@ async function route() {
     return;
   }
   showView("home");
+  await refreshUsageStrips();
 }
 
 let toastTimer;
@@ -97,6 +109,10 @@ function wireGlobalActions() {
     btn.addEventListener("click", async () => {
       const name = btn.dataset.sample;
       if (!name) return;
+      if (!(await canGenerate())) {
+        goto("upgrade");
+        return;
+      }
       goto("manual");
       await initScanView();
       applySample(name);
@@ -104,14 +120,41 @@ function wireGlobalActions() {
     });
   });
 
+  document.getElementById("upgrade-coming-soon-btn")?.addEventListener("click", () => {
+    showToast("Upgrade is coming soon. No payment is collected today.");
+  });
+
   document.getElementById("topbar-action")?.addEventListener("click", () => {
     showToast("More options coming after MVP polish");
   });
 }
 
-window.scratchnscan = { goto, showToast };
+// Dev-only helpers — intentionally not surfaced in the customer UI.
+// Use in DevTools: scratchnscan.dev.resetUsage() / scratchnscan.dev.unlockPremium(true)
+window.scratchnscan = {
+  goto,
+  showToast,
+  dev: {
+    async resetUsage() {
+      const state = await resetUsageForDev();
+      await refreshUsageStrips();
+      console.log("ScratchnScan usage reset", state);
+      return state;
+    },
+    async unlockPremium(unlocked = true) {
+      const state = await setLocalPremiumUnlockedForDev(unlocked);
+      await refreshUsageStrips();
+      console.log("ScratchnScan dev premium unlocked:", state);
+      return state;
+    },
+    async getUsage() {
+      return getUsageState();
+    },
+  },
+};
 
 window.addEventListener("hashchange", route);
 await initDatabase();
+await refreshUsageStrips();
 wireGlobalActions();
 route();

@@ -1,5 +1,5 @@
 const DB_NAME = "scan_scratch_local_db";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const STORES = {
   mvpHistory: "mvp_history",
@@ -8,7 +8,11 @@ const STORES = {
   productRescue: "product_rescue",
   homemadeRecipes: "homemade_recipes",
   appEvents: "app_events",
+  usageMeter: "scratchnscan_usage_meter",
 };
+
+export const FREE_GENERATION_LIMIT = 10;
+const USAGE_KEY = "singleton";
 
 let dbPromise;
 
@@ -42,6 +46,9 @@ function openDb() {
       }
       for (const name of [STORES.scanHistory, STORES.productCache, STORES.productRescue, STORES.homemadeRecipes, STORES.appEvents]) {
         if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: "id", autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains(STORES.usageMeter)) {
+        db.createObjectStore(STORES.usageMeter, { keyPath: "id" });
       }
     };
     req.onsuccess = (event) => resolve(event.target.result);
@@ -113,6 +120,8 @@ export function saveMvpRecipe(input) {
     backImagePlaceholder: !!input.backImagePlaceholder,
     frontImageLocalRef: input.frontImageLocalRef || null,
     backImageLocalRef: input.backImageLocalRef || null,
+    frontImagePreviewDataUrl: input.frontImagePreviewDataUrl || null,
+    backImagePreviewDataUrl: input.backImagePreviewDataUrl || null,
     scratchRecipe,
     recipeTitle: normalizeText(input.recipeTitle || scratchRecipe?.title),
     recipeIngredients: Array.isArray(input.recipeIngredients)
@@ -179,4 +188,70 @@ export const getHomemadeRecipes = async () => [];
 export const logAppEvent = async () => true;
 export async function clearLocalData() {
   return safe(withStore(STORES.mvpHistory, "readwrite", (store) => runRequest(store.clear()).then(() => true)), false, "clearLocalData");
+}
+
+function defaultUsageState() {
+  return {
+    id: USAGE_KEY,
+    freeGenerationLimit: FREE_GENERATION_LIMIT,
+    successfulGenerationCount: 0,
+    firstUsedAt: null,
+    lastGeneratedAt: null,
+    isLocalPremiumUnlocked: false,
+    updatedAt: null,
+  };
+}
+
+export async function getUsageState() {
+  const stored = await safe(
+    withStore(STORES.usageMeter, "readonly", (store) => runRequest(store.get(USAGE_KEY))),
+    null,
+    "getUsageState",
+  );
+  const merged = { ...defaultUsageState(), ...(stored || {}) };
+  // Always enforce the canonical limit if it drifts.
+  merged.freeGenerationLimit = FREE_GENERATION_LIMIT;
+  return merged;
+}
+
+async function putUsageState(state) {
+  return safe(
+    withStore(STORES.usageMeter, "readwrite", (store) => runRequest(store.put(state)).then(() => state)),
+    state,
+    "putUsageState",
+  );
+}
+
+export async function canGenerate() {
+  const state = await getUsageState();
+  if (state.isLocalPremiumUnlocked) return true;
+  return state.successfulGenerationCount < state.freeGenerationLimit;
+}
+
+export async function recordSuccessfulGeneration() {
+  const state = await getUsageState();
+  const now = nowIso();
+  const next = {
+    ...state,
+    successfulGenerationCount: state.successfulGenerationCount + 1,
+    firstUsedAt: state.firstUsedAt || now,
+    lastGeneratedAt: now,
+    updatedAt: now,
+  };
+  await putUsageState(next);
+  return next;
+}
+
+export async function resetUsageForDev() {
+  const fresh = defaultUsageState();
+  fresh.updatedAt = nowIso();
+  await putUsageState(fresh);
+  return fresh;
+}
+
+export async function setLocalPremiumUnlockedForDev(unlocked) {
+  const state = await getUsageState();
+  const next = { ...state, isLocalPremiumUnlocked: !!unlocked, updatedAt: nowIso() };
+  await putUsageState(next);
+  return next;
 }

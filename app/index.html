@@ -53,6 +53,7 @@
               <button class="btn btn-primary" type="button" data-go="manual">Start with a packaged food</button>
               <button class="btn btn-ghost-light" type="button" data-go="history">View saved ideas</button>
             </div>
+            <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
           </div>
 
           <div class="section-head">
@@ -158,33 +159,40 @@
             <p>Photo capture is coming next. For this MVP, type the item name and any details below.</p>
           </div>
 
-          <div id="draft-barcode" class="barcode-banner" hidden>
-            <div class="barcode-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14M7 5v14M11 5v14M15 5v14M19 5v14" /></svg>
-            </div>
-            <div class="barcode-body">
-              <strong>Barcode captured</strong>
-              <span id="draft-barcode-value" class="barcode-value"></span>
-            </div>
-            <button id="draft-barcode-clear" class="barcode-clear" type="button" aria-label="Clear captured barcode">Clear</button>
-          </div>
+          <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
 
           <form id="manual-lookup-form" class="form-card" novalidate>
             <div class="photo-grid">
-              <button class="photo-tile" type="button" data-photo="front" aria-label="Add front package photo">
-                <span class="photo-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
-                </span>
-                <strong>Front package</strong>
-                <em>Product name, brand, and package photo</em>
-              </button>
-              <button class="photo-tile" type="button" data-photo="back" aria-label="Add back label photo">
-                <span class="photo-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
-                </span>
-                <strong>Back label</strong>
-                <em>Ingredients and nutrition panel</em>
-              </button>
+              <div class="photo-slot" data-photo="front">
+                <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
+                  <span class="photo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
+                  </span>
+                  <strong>Front package</strong>
+                  <em>Tap to add a photo, or skip and type the name</em>
+                  <img class="photo-thumb" alt="" hidden />
+                </button>
+                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
+                <div class="photo-actions" data-photo-actions="front" hidden>
+                  <button type="button" class="photo-action-btn" data-photo-replace="front">Replace</button>
+                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="front">Remove</button>
+                </div>
+              </div>
+              <div class="photo-slot" data-photo="back">
+                <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
+                  <span class="photo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
+                  </span>
+                  <strong>Back label</strong>
+                  <em>Tap to add a photo, or paste ingredients below</em>
+                  <img class="photo-thumb" alt="" hidden />
+                </button>
+                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
+                <div class="photo-actions" data-photo-actions="back" hidden>
+                  <button type="button" class="photo-action-btn" data-photo-replace="back">Replace</button>
+                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="back">Remove</button>
+                </div>
+              </div>
             </div>
 
             <div class="field">
@@ -255,10 +263,38 @@
             <p class="disclaimer" id="result-note"></p>
           </article>
 
+          <p class="usage-strip" id="result-usage-strip" aria-live="polite"></p>
+
           <div class="form-actions">
             <button id="result-save-btn" class="btn btn-primary" type="button">Save to history</button>
             <button class="btn btn-ghost" type="button" data-go="manual">Edit input</button>
           </div>
+        </section>
+
+        <!-- UPGRADE -->
+        <section id="view-upgrade" class="screen" aria-label="Upgrade ScratchnScan" hidden>
+          <article class="upgrade-card">
+            <span class="eyebrow">ScratchnScan Plus</span>
+            <h2 class="upgrade-title">Keep creating homemade swaps</h2>
+            <p class="upgrade-body">You’ve used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
+            <div class="upgrade-offer">
+              <div class="upgrade-offer-row">
+                <strong>$4.99</strong>
+                <span>/ month</span>
+              </div>
+              <div class="upgrade-offer-row subtle">
+                <strong>$29.99</strong>
+                <span>/ year</span>
+              </div>
+              <p class="helper upgrade-offer-note">Placeholder pricing. No payment is collected today.</p>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn">Upgrade coming soon</button>
+              <button class="btn btn-ghost" type="button" data-go="history">View saved ideas</button>
+              <button class="btn btn-ghost" type="button" data-go="manual">Edit existing recipes</button>
+            </div>
+            <p class="disclaimer">No account or signup required. Your 10 free creations live on this device.</p>
+          </article>
         </section>
 
         <!-- HISTORY -->
@@ -285,6 +321,17 @@
             <h2 class="result-title" id="details-name"></h2>
             <p class="details-meta" id="details-meta"></p>
             <p class="details-meta" id="details-date"></p>
+
+            <div class="details-photo-row" id="details-photo-row" hidden>
+              <figure class="details-photo" id="details-front-photo" hidden>
+                <img alt="Front of package" />
+                <figcaption>Front package</figcaption>
+              </figure>
+              <figure class="details-photo" id="details-back-photo" hidden>
+                <img alt="Back label" />
+                <figcaption>Back label</figcaption>
+              </figure>
+            </div>
 
             <div class="metric-row" id="details-metrics" aria-hidden="true"></div>
 
