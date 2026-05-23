@@ -109,8 +109,13 @@ async function handleScanClick() {
       result.status === "permission-denied" ||
       result.status === "error"
     ) {
-      // Encourage manual fallback without forcing another scan tap.
-      showToast("Enter the package manually below");
+      // Native scanning is not available here. Show the honest fallback
+      // message, then route into manual/photo entry so Scan is never a dead
+      // action. No barcode was captured, so nothing counts as a generation.
+      showToast("Scanner unavailable — switching to manual entry");
+      setTimeout(() => {
+        window.location.hash = "#manual";
+      }, 700);
     }
   } finally {
     button.disabled = false;

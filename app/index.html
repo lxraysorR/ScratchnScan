@@ -68,7 +68,7 @@
               </span>
               <div>
                 <h3>Show us the package</h3>
-                <p>Capture front and back photos, or type the item while we build photo capture.</p>
+                <p>Capture front and back package photos, or type the item by hand.</p>
               </div>
             </li>
             <li class="feature-card">
@@ -108,13 +108,13 @@
         <section id="view-scan" class="screen" aria-label="Scan preview" hidden>
           <div class="section-head">
             <h2>Scan a package</h2>
-            <p>Barcode and photo capture are coming next. For now, use manual entry to power the demo.</p>
+            <p>On the installed app, tap Scan package to open your camera. In a browser, scanning falls back to manual and photo entry.</p>
           </div>
 
           <div class="scan-card">
             <div class="scan-preview" aria-hidden="true">
               <div class="scan-frame">
-                <span>Point your camera at the package</span>
+                <span>Tap Scan package to open your camera</span>
               </div>
               <div class="scan-line"></div>
             </div>
@@ -156,10 +156,21 @@
         <section id="view-manual" class="screen" aria-label="Package entry" hidden>
           <div class="section-head">
             <h2>Show us the package</h2>
-            <p>Photo capture is coming next. For this MVP, type the item name and any details below.</p>
+            <p>Add front and back package photos, or just type the item name and details below.</p>
           </div>
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
+
+          <div id="draft-barcode" class="barcode-banner" hidden>
+            <span class="barcode-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7v10M8 7v10M11 7v10M14 7v10M17 7v10M20 7v10" /></svg>
+            </span>
+            <span class="barcode-body">
+              <strong>Captured barcode</strong>
+              <span class="barcode-value" id="draft-barcode-value"></span>
+            </span>
+            <button type="button" class="barcode-clear" id="draft-barcode-clear">Clear</button>
+          </div>
 
           <form id="manual-lookup-form" class="form-card" novalidate>
             <div class="photo-grid">
@@ -198,7 +209,7 @@
             <div class="field">
               <label class="label" for="product-name-input">Product name or quick note <span class="req" aria-hidden="true">*</span></label>
               <input id="product-name-input" class="input" type="text" placeholder="Example: mayonnaise, ranch dressing, granola bar" autocomplete="off" required />
-              <p class="helper">For this MVP, type the item. Later, the app reads this from the front photo.</p>
+              <p class="helper">Type the item name. Photos are optional context while label reading is still in progress.</p>
             </div>
 
             <div class="field">
