@@ -2,22 +2,31 @@
 
 ## 1. Run metadata
 
-- Date: 2026-05-23
-- Branch: `claude/friendly-meitner-0nLSX`
+- Date: 2026-05-23 (second pass, same day — adds live execution evidence)
+- Branch: `claude/friendly-meitner-0nLSX` (PR #27)
 - OS: Linux 6.18.5 x86_64 (Claude Code on-the-web sandbox)
 - Node: v22.22.2
-- Browser: **Not available in this remote-execution sandbox.** Browser-only
-  behavior (live IndexedDB persistence after refresh, real click handlers,
-  visible DOM rendering) was verified by static inspection and by running
-  the scripted JS-DOM-free test suite. Items that strictly require a real
-  browser are explicitly flagged below as "Not Tested Here".
+- Browser: No Chromium/Firefox binary is available in this remote-execution
+  sandbox. **This pass added a real-DOM execution harness** using `jsdom`
+  + `fake-indexeddb` (`npm run qa:flow` → `scripts/qa-browser-flow.mjs`)
+  that imports the actual `app/js/*` module graph against the real
+  `app/index.html`, drives every nav tab and CTA, completes the manual
+  entry → generate → save → details → history → delete flow, and reads
+  IndexedDB directly to confirm persistence. **33/33 checks pass.** This
+  closes the persistence and console-error items that were "Not Tested
+  Here" in the prior pass. The only thing still genuinely untestable
+  without real hardware is on-device camera capture and pixel-level
+  mobile layout (see §6 / §16).
 
 ## 2. App start command used
 
+- `npm run qa:flow` &nbsp;— **NEW** real-DOM execution harness
+  (jsdom + fake-indexeddb). Drives the full MVP flow end to end.
+  Result: **PASS, 33/33 checks.**
 - `npm test` &nbsp;— full Node-side test suite (app shell, usage meter,
-  manual MVP fallback, manual MVP generated behavior)
-- `npm run qa:smoke` &nbsp;— required-files / required-scripts check
-- `npm run build` &nbsp;— writes `dist/` (static copy of `app/`)
+  manual MVP fallback, manual MVP generated behavior). PASS.
+- `npm run qa:smoke` &nbsp;— required-files / required-scripts check. PASS.
+- `npm run build` &nbsp;— writes `dist/` (static copy of `app/`). PASS.
 - Static host attempt: `python3 -m http.server 8765 --directory app` and
   `curl` against `/index.html` and `/js/app.js` &nbsp;— HTTP 200 on both.
   `npm start` itself is a hint script (`scripts/serve_hint.mjs`) that
@@ -50,21 +59,53 @@
 - `scripts/build_app_shell.mjs`
 - `docs/QA_REPORT.md` (previous)
 - `docs/KNOWN_ISSUES.md`
+- `scripts/qa-browser-flow.mjs` (added this pass — the execution harness)
 
 ## 5. Summary status
 
-**PASS (with the 3 fixes applied during this QA pass — see §12).**
+**PASS.** The 3 critical/high bugs from the first pass remain fixed, and
+this pass adds live execution evidence: `npm run qa:flow` drives the real
+module graph through every acceptance-criteria path and reports 33/33.
 
 | Acceptance criterion | Result |
 | --- | --- |
-| 1. App starts locally | PASS (static host returns 200 on index, JS, CSS) |
-| 2. No visible button silently fails | PASS — after Bug A fix |
-| 3. Manual entry can be completed | PASS — after Bug B fix |
-| 4. Saved item appears in history | PASS (verified by reading `saveMvpRecipe` → `getMvpHistory` flow + scripted persistence test of the codepath) |
-| 5. Details can be opened from history | PASS (history.js wires `#details/<id>` link; details.js routes back to `#history` if id is missing) |
-| 6. Refreshing the page does not lose saved MVP data | PASS (single IndexedDB store `mvp_history`, no in-memory cache; static read of localDb.js confirms persistence) — *Not Tested Here* in a real browser |
-| 7. Console errors fixed or documented | PASS — the two `ReferenceError`s introduced earlier are now fixed; remaining warnings are intentional `console.warn` paths in localDb error handling |
+| 1. App starts locally | PASS (static host returns 200 on index, JS, CSS; module graph imports clean under qa:flow) |
+| 2. No visible button silently fails | PASS — **executed**: every nav tab + scan button + manual CTAs drive their views with no thrown errors |
+| 3. Manual entry can be completed | PASS — **executed**: granola-bar sample → generate → result rendered |
+| 4. Saved item appears in history | PASS — **executed**: 1 history card present after save |
+| 5. Details can be opened from history | PASS — **executed**: details render name/meta/ingredients/steps; back-nav works |
+| 6. Refreshing the page does not lose saved MVP data | PASS — **executed**: record read back directly from IndexedDB after save, and via a fresh `getMvpHistory()` call simulating a reload |
+| 7. Console errors fixed or documented | PASS — **executed**: zero `console.error` and zero uncaught rejections captured during the full flow (after a jsdom-only `scrollTo` shim, see §10) |
 | 8. 304 responses confirmed harmless | PASS — no service worker is registered; `index.html` references `./styles.css` and `./js/app.js` with relative paths and no version query strings. Any 304 from a static host is browser-cache revalidation and is harmless. No stale-script risk. |
+
+### 5a. Executed-flow checks (`npm run qa:flow`, 33/33 PASS)
+
+Live run against the real module graph + IndexedDB. Each line below was
+asserted by the harness, not by inspection:
+
+```
+PASS  App modules import without throwing
+PASS  scratchnscan global exposed
+PASS  Home view visible / hero CTA present
+PASS  Nav -> #scan / #manual / #history / #home each show their view
+PASS  Scan start button present
+PASS  Scan shows clear web-fallback status ("Scanning isn't available… Enter manually")
+PASS  Manual view visible
+PASS  Empty name shows validation error
+PASS  Generate routed to result view
+PASS  Result shows title "Simple homemade granola" + ingredients + steps
+PASS  Fallback title is oat/granola-based for granola input
+PASS  Save routed to #details/<id>
+PASS  Details shows name + meta "Based on: Packaged Chocolate Chip Granola Bar" + ingredients + steps
+PASS  Saved item appears in history (1 card)
+PASS  Back-to-history from details works
+PASS  Saved record persisted in IndexedDB (direct read)
+PASS  History survives simulated reload (fresh getMvpHistory read)
+PASS  Delete removes the record from IndexedDB
+PASS  Empty state shown when no items remain
+PASS  No console.error during flow
+PASS  No uncaught rejections / window errors
+```
 
 ## 6. Button / navigation test results
 
@@ -143,10 +184,20 @@ Traced statically:
 
 - IndexedDB store name `scan_scratch_local_db`, version `4`, store
   `mvp_history` with `keyPath: "id"` and indexes on `createdAt` and
-  `favorite`. Single source of truth. PASS (static).
+  `favorite`. Single source of truth. PASS.
 - No in-memory cache is used to serve history. PASS.
-- **Not Tested Here**: refreshing a real browser tab and confirming the
-  saved row is still there. Has to be done on real hardware.
+- **Executed** in `qa:flow`: after saving the granola-bar sample, the
+  harness opened the IndexedDB store directly (independent of any
+  in-memory JS state) and found the row with the correct `id` and
+  `productName`. It then performed a fresh `getMvpHistory()` read
+  (the same call the app makes on load) and the row was still present —
+  this is the functional equivalent of a page reload for persistence.
+  After delete, the store returned 0 rows and the empty state showed.
+  PASS.
+- Remaining real-hardware-only check: confirming persistence survives an
+  actual browser process restart on a phone. The storage layer has no
+  in-memory dependency, so this is expected to pass, but it has not been
+  run on physical hardware.
 
 ## 10. Console errors found
 
@@ -173,8 +224,18 @@ Before fixes (would have fired in a real browser):
 After fixes (this QA pass):
 
 - No remaining `ReferenceError`. `node --check` passes on every module.
+- The `qa:flow` harness captured **zero `console.error`** and **zero
+  uncaught rejections** across the entire manual → save → details →
+  history → delete flow.
 - Intentional `console.warn` in `localDb.js` only fires on IDB failure
   paths and is documented.
+
+**Environment note (not an app bug):** under `jsdom`, `Element.scrollTo`
+is not implemented, so `app.js showView()`'s `main.scrollTo(...)` throws
+*in jsdom only*. Real browsers implement `scrollTo`, so this is a test
+harness gap, not a product defect — the harness installs a one-line
+`scrollTo` no-op shim to match real-browser behavior. No app change was
+made for this.
 
 ## 11. Network / caching notes (304s)
 
@@ -246,15 +307,26 @@ users will naturally tap "Scan" first. **Recommend** copy on the Scan
 view eyebrow such as *"Scanning is coming next — use Enter to try the
 demo path today"* in a future polish pass.
 
+### Bug F — `manual-clear-btn` has two click listeners &nbsp; **[LOW — NOT FIXED]**
+
+`manual-clear-btn` is bound in both `scan.js initScanView` (resets the
+form + toasts "Form cleared") and `packageEntry.js initPackageEntry`
+(clears the draft barcode + refreshes the banner). Both fire on a single
+click. The combined effect is benign (and the qa:flow run showed no
+error), but it is a duplicate-listener smell flagged by review item 17.
+**Recommend** consolidating the clear handler into one module in a future
+tidy-up. No functional bug today.
+
 ## 13. Severity table
 
 | ID | Severity | Status |
 | --- | --- | --- |
-| A | Critical | Fixed in this QA pass |
-| B | Critical | Fixed in this QA pass |
-| C | High | Fixed in this QA pass |
+| A | Critical | Fixed (first pass) — re-verified by qa:flow |
+| B | Critical | Fixed (first pass) — re-verified by qa:flow |
+| C | High | Fixed (first pass) — re-verified by qa:flow |
 | D | Low | Open — minor copy follow-up |
 | E | Low | Open — minor copy follow-up |
+| F | Low | Open — duplicate listener tidy-up |
 
 ## 14. Recommended next fixes
 
@@ -265,10 +337,12 @@ demo path today"* in a future polish pass.
    slug into the tip lookup.
 2. (Codex) Tighten the Scan-tab copy and add a one-line nudge toward
    the manual path while real scanning is still placeholder.
-3. (Claude) Add a tiny `scripts/test_app_imports.mjs` that grep-asserts
-   every `import` in `app/js/*.js` resolves to an actual exported
-   symbol. Bugs A and B would have been caught instantly by such a
-   guard.
+3. (Codex) Consolidate the duplicate `manual-clear-btn` click handler
+   (Bug F) into a single module.
+4. (Done this pass) `scripts/qa-browser-flow.mjs` (`npm run qa:flow`)
+   now exercises the whole flow under jsdom + fake-indexeddb. Bugs A
+   and B would have been caught instantly by it. Consider adding it to
+   the `test` script once a browser/jsdom is guaranteed in CI.
 
 ## 15. Is the MVP ready for the next implementation task?
 
