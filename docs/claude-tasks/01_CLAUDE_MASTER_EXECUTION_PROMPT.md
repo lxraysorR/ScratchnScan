@@ -1,125 +1,81 @@
-# Claude Master Execution Prompt — ScratchnScan
+# Claude Master Execution Prompt
 
-You are working in the ScratchnScan repository.
+You are working in the ScratchnScan / WinePantry repository.
 
-## Mission
+Read the control files in `docs/` and execute them in order.
 
-Read and execute the task files in this folder in order:
+## Goal
+
+Finish the MVP in the correct sequence without skipping broken core functionality.
+
+Do not jump ahead to polish or QA signoff if the main user flow is still broken.
+
+## Execution Order
 
 1. `02_FREE_GENERATION_METER_AND_UPGRADE_GATE.md`
 2. `03_PACKAGE_DRAFT_FRONT_BACK_IMAGES.md`
-3. `04_MVP_DEMO_POLISH_AND_READINESS.md`
-4. `05_QA_TEST_APPLICATION.md`
+3. `06_CRITICAL_FLOW_REPAIR_AND_MVP_COMPLETION.md`
+4. `04_MVP_DEMO_POLISH_AND_READINESS.md`
+5. `05_QA_TEST_APPLICATION.md`
 
-Complete the tasks carefully, one file at a time.
+## Critical Rule
 
-## Important Rules
+Before continuing past each file:
+- inspect the current code
+- implement the required work
+- run the listed validation steps
+- update docs/checklists if required
+- report what was completed, what was blocked, and what still needs work
 
-- Do **not** add login/auth yet.
-- Do **not** add Supabase or any cloud database yet.
-- Do **not** add Stripe or RevenueCat yet.
-- Do **not** add n8n.
-- Do **not** expose or hardcode secrets.
-- Do **not** break the existing manual-entry MVP.
-- Do **not** remove IndexedDB local history.
-- Do **not** rename the product away from ScratchnScan.
-- Keep customer-facing language clean, simple, and premium.
-- Keep the app mobile-first.
-- Keep this focused on finishing a demo-ready MVP.
+## Do Not Add Yet
 
-## Product Position
+Do not add these unless a task file explicitly requires them:
+- Supabase
+- Stripe
+- RevenueCat
+- n8n
+- full account systems
+- production billing
+- fake AI provider integrations
+- fake OCR / Google Vision / Gemini claims
 
-ScratchnScan helps users turn packaged foods into homemade scratch-made alternatives.
+## Required Engineering Standards
 
-Target user flow:
+- Keep the code loosely coupled
+- Avoid hardcoding provider-specific assumptions
+- Keep UI behavior honest
+- Never leave dead buttons or silent failures
+- Prefer small, production-safe fixes over big rewrites
+- Preserve local MVP storage/history behavior
+- Make loading, success, empty, and error states visible to the user
 
-```text
-Home
-→ Start with a packaged food
-→ Package entry / scan / photo-first screen
-→ Front package photo placeholder or local preview
-→ Back label photo placeholder or local preview
-→ Product name or quick note
-→ Ingredients from package
-→ Preference
-→ Create Homemade Version
-→ Result
-→ Save to local history
-→ Saved ideas
-→ Details
-→ Favorite / delete
-```
+## Required Behavior Standards
 
-## Current Product Decision
+By the end of execution:
+- Scan must either work or clearly fall back
+- Create Homemade Version must not silently fail
+- Generation must produce usable output from the supported inputs
+- Save/history/details must work
+- Docs must reflect reality, not hopes
+- QA should only run after the MVP is genuinely usable
 
-Accounts are intentionally deferred.
+## Reporting Format For Each Task
 
-For now:
+For each completed task, report:
+1. Root cause(s) found
+2. Files changed
+3. What was implemented
+4. Validation performed
+5. Remaining blockers
+6. Whether the next task should proceed
 
-```text
-Storage: IndexedDB / local browser storage
-Free usage: 10 successful homemade creations per device
-Upgrade: polished placeholder only
-Payment: later
-Cloud sync: later
-```
+## Final Acceptance Standard
 
-## Execution Process
+The MVP is only considered ready for demo when:
+- the core flow works end-to-end
+- there are no silent dead actions
+- the app can generate a homemade version successfully
+- saved results can be reopened
+- docs/readiness files accurately reflect the product state
 
-For each task file:
-
-1. Read the file fully.
-2. Inspect the current repo before changing code.
-3. Identify the smallest safe changes needed.
-4. Make the changes.
-5. Run the validation commands requested by that file.
-6. Fix failures caused by your changes.
-7. Document what changed.
-
-## Required Final Response
-
-When all task files are complete, report:
-
-1. Files changed.
-2. Features implemented.
-3. Validation commands run and results.
-4. Manual test results.
-5. Whether the app is demo-ready.
-6. Remaining gaps for the next phase.
-7. Any risk or issue that still needs Lamar’s review.
-
-## Validation Commands
-
-Run these whenever practical:
-
-```bash
-npm test
-npm run qa:smoke
-npm run build
-```
-
-Also run these if present:
-
-```bash
-node scripts/test_manual_mvp.mjs
-node scripts/test_manual_mvp_generated.mjs
-node scripts/test_n8n_repo_access_generated.mjs
-```
-
-If a test is stale because the UI has changed, update the test to match the new current UI. Do not fake test results.
-
-## Local Demo Instructions
-
-Use Node/NPM only:
-
-```bash
-npm install
-npm run build
-npx --yes serve dist --listen 3000
-```
-
-Then open:
-
-```text
-http://localhost:3000
-```
+Start with the first file in the list and do not skip `06_CRITICAL_FLOW_REPAIR_AND_MVP_COMPLETION.md`.
