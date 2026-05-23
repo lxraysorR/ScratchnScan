@@ -16,5 +16,8 @@
   },
   "devDependencies": {
     "wrangler": "^4.88.0"
+  },
+  "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^7.5.0"
   }
 }

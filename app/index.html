@@ -119,10 +119,11 @@
               <div class="scan-line"></div>
             </div>
             <div class="scan-actions">
-              <button class="btn btn-primary" type="button" id="scan-coming-soon">Open scanner</button>
-              <button class="btn btn-ghost" type="button" data-go="manual">Enter manually</button>
+              <button class="btn btn-primary" type="button" id="scan-start-btn">Scan package</button>
+              <button class="btn btn-ghost" type="button" data-go="manual">Enter manually instead</button>
             </div>
-            <p class="helper">Granting camera permission will auto-start scanning in the production app. Manual entry stays available as a fallback.</p>
+            <div id="scan-status" class="scan-status" role="status" aria-live="polite" hidden></div>
+            <p class="helper">Tap Scan package to use your camera. When scanning isn't available, manual entry stays open as a fallback.</p>
           </div>
 
           <div class="section-head">

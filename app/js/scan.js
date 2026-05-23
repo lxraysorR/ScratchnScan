@@ -226,7 +226,8 @@ async function handleSubmit(event) {
     const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
 
     lastGeneratedRecord = {
-      source: "manual",
+      source: barcode ? "scan+manual" : "manual",
+      upc: barcode,
       productName,
       ingredientsText: inputIngredients,
       inputIngredients,
@@ -244,6 +245,8 @@ async function handleSubmit(event) {
       favorite: false,
       isFavorite: false,
     };
+    clearDraftBarcode();
+    refreshBarcodeBanner();
 
     sessionStorage.setItem(
       "scratchnscan:lastGenerated",
