@@ -2,8 +2,8 @@
 
 ## 1. Run metadata
 
-- Date: 2026-05-23 (second pass, same day — adds live execution evidence)
-- Branch: `claude/friendly-meitner-0nLSX` (PR #27)
+- Date: 2026-05-25
+- Branch: `claude/affectionate-sagan-cVfzC`
 - OS: Linux 6.18.5 x86_64 (Claude Code on-the-web sandbox)
 - Node: v22.22.2
 - Browser: No Chromium/Firefox binary is available in this remote-execution
@@ -69,47 +69,19 @@ module graph through every acceptance-criteria path and reports 33/33.
 
 | Acceptance criterion | Result |
 | --- | --- |
-| 1. App starts locally | PASS (static host returns 200 on index, JS, CSS; module graph imports clean under qa:flow) |
-| 2. No visible button silently fails | PASS — **executed**: every nav tab + scan button + manual CTAs drive their views with no thrown errors |
-| 3. Manual entry can be completed | PASS — **executed**: granola-bar sample → generate → result rendered |
-| 4. Saved item appears in history | PASS — **executed**: 1 history card present after save |
-| 5. Details can be opened from history | PASS — **executed**: details render name/meta/ingredients/steps; back-nav works |
-| 6. Refreshing the page does not lose saved MVP data | PASS — **executed**: record read back directly from IndexedDB after save, and via a fresh `getMvpHistory()` call simulating a reload |
-| 7. Console errors fixed or documented | PASS — **executed**: zero `console.error` and zero uncaught rejections captured during the full flow (after a jsdom-only `scrollTo` shim, see §10) |
-| 8. 304 responses confirmed harmless | PASS — no service worker is registered; `index.html` references `./styles.css` and `./js/app.js` with relative paths and no version query strings. Any 304 from a static host is browser-cache revalidation and is harmless. No stale-script risk. |
+| `npm install` | PASS (no new dependencies were added) |
+| `npm test` | PASS — app shell + usage meter + manual fallback + UI tokens (including draft barcode banner and optional barcode-safe generation path) |
+| `npm run qa:smoke` | PASS — required files and scripts present |
+| `npm run build` | PASS — `dist/` written |
+| `node scripts/test_manual_mvp.mjs` | PASS |
+| `node scripts/test_manual_mvp_generated.mjs` | PASS |
+| `node scripts/test_n8n_repo_access_generated.mjs` | PASS |
+| `node --check app/js/*.js` | PASS (all modules parse) |
+| `npx --yes serve dist --listen 3000` + `curl` of `/`, `/styles.css`, `/js/app.js`, `/js/usage.js`, `/js/packageImages.js` | All HTTP 200 |
 
-### 5a. Executed-flow checks (`npm run qa:flow`, 33/33 PASS)
+## Static QA verification (in this sandbox)
 
-Live run against the real module graph + IndexedDB. Each line below was
-asserted by the harness, not by inspection:
-
-```
-PASS  App modules import without throwing
-PASS  scratchnscan global exposed
-PASS  Home view visible / hero CTA present
-PASS  Nav -> #scan / #manual / #history / #home each show their view
-PASS  Scan start button present
-PASS  Scan shows clear web-fallback status ("Scanning isn't available… Enter manually")
-PASS  Manual view visible
-PASS  Empty name shows validation error
-PASS  Generate routed to result view
-PASS  Result shows title "Simple homemade granola" + ingredients + steps
-PASS  Fallback title is oat/granola-based for granola input
-PASS  Save routed to #details/<id>
-PASS  Details shows name + meta "Based on: Packaged Chocolate Chip Granola Bar" + ingredients + steps
-PASS  Saved item appears in history (1 card)
-PASS  Back-to-history from details works
-PASS  Saved record persisted in IndexedDB (direct read)
-PASS  History survives simulated reload (fresh getMvpHistory read)
-PASS  Delete removes the record from IndexedDB
-PASS  Empty state shown when no items remain
-PASS  No console.error during flow
-PASS  No uncaught rejections / window errors
-```
-
-## 6. Button / navigation test results
-
-| Element | Wiring source | Result |
+| Area | Result | Notes |
 | --- | --- | --- |
 | Top brand link (`a.brand` → `#home`) | href anchor | PASS |
 | Top "More options" 3-dot button (`#topbar-action`) | `app.js wireGlobalActions` | PASS — shows toast "More options coming after MVP polish" (documented placeholder) |

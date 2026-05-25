@@ -161,15 +161,12 @@
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
 
-          <div id="draft-barcode" class="barcode-banner" hidden>
-            <span class="barcode-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7v10M8 7v10M11 7v10M14 7v10M17 7v10M20 7v10" /></svg>
-            </span>
-            <span class="barcode-body">
-              <strong>Captured barcode</strong>
-              <span class="barcode-value" id="draft-barcode-value"></span>
-            </span>
-            <button type="button" class="barcode-clear" id="draft-barcode-clear">Clear</button>
+          <div id="draft-barcode" class="alert alert-info" role="status" aria-live="polite" hidden>
+            <div>
+              <strong>Captured barcode:</strong>
+              <span id="draft-barcode-value"></span>
+            </div>
+            <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
           </div>
 
           <form id="manual-lookup-form" class="form-card" novalidate>
@@ -220,6 +217,11 @@
             <div class="field">
               <label class="label" for="dietary-input">Preference</label>
               <input id="dietary-input" class="input" type="text" placeholder="Example: dairy-free, less sugar, no seed oils" autocomplete="off" />
+            </div>
+
+            <div class="field">
+              <label class="label" for="barcode-input">Optional UPC / barcode</label>
+              <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
             </div>
 
             <div id="scan-error" class="alert alert-error" hidden>
