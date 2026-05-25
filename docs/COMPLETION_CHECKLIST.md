@@ -19,7 +19,8 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
 ## 3) Manual / package entry
 - **Status:** Done
 - **Acceptance criteria:** Required product name; ingredients-from-
-  package text; preference; clear validation copy; sample chips. Brand
+  package text; preference; optional UPC/barcode; visible draft barcode
+  banner with clear action; clear validation copy; sample chips. Brand
   and category are not primary required fields.
 - **Test:** `node scripts/test_manual_mvp_generated.mjs` and a manual
   run.

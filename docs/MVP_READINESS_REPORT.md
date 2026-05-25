@@ -10,13 +10,16 @@
   edge, JPEG ~0.78 quality) and stored as data URLs in IndexedDB so the
   database stays small.
 - Manual product name remains the only required text field; ingredients
-  and preference are optional. Brand and category are no longer primary
-  required fields.
+  and preference are optional. UPC/barcode is optional and now resolves
+  safely from captured barcode or manual entry. Brand and category are
+  no longer primary required fields.
 - Sample chips prefill name + ingredients + preference (Mayonnaise,
   Ranch, Ketchup, Mac & cheese, Granola bar).
 - Homemade generation calls the AI worker if reachable, otherwise falls
   back to the deterministic local recipe builder. Both paths render the
-  same result UI with a clear Starter / AI badge.
+  same result UI with a clear Starter / AI badge and useful tips mapped
+  from either `tips` or (`simpleSwaps` + `whyLessProcessed` +
+  `storageTips`).
 - Saved ideas persist in IndexedDB, survive a reload, support favorite
   toggling and confirmed delete, and show package photo thumbnails when
   available.

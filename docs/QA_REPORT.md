@@ -2,7 +2,7 @@
 
 ## Run metadata
 
-- Date: 2026-05-22
+- Date: 2026-05-25
 - Branch: `claude/affectionate-sagan-cVfzC`
 - OS: Linux 6.18.5 x86_64 (Claude Code on-the-web sandbox)
 - Node: v22.22.2
@@ -14,7 +14,7 @@
 | Command | Result |
 | --- | --- |
 | `npm install` | PASS (no new dependencies were added) |
-| `npm test` | PASS — app shell + usage meter + manual fallback + UI tokens |
+| `npm test` | PASS — app shell + usage meter + manual fallback + UI tokens (including draft barcode banner and optional barcode-safe generation path) |
 | `npm run qa:smoke` | PASS — required files and scripts present |
 | `npm run build` | PASS — `dist/` written |
 | `node scripts/test_manual_mvp.mjs` | PASS |
