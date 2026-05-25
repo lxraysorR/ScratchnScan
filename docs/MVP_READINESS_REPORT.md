@@ -5,10 +5,17 @@
 - App boots from `dist/` with no runtime errors.
 - Home, package entry, result, upgrade, history, and details routes
   render and navigate cleanly via hash routing and the bottom nav.
+- The **Scan package** button is wired and is never a dead action. On a
+  native Capacitor build it opens the ML Kit camera barcode scanner; in a
+  plain browser it shows an honest "scanner unavailable" message and routes
+  into manual / photo entry. A captured barcode appears in a banner on the
+  entry screen and is passed into generation context. Cancelled or
+  unavailable scans do not count as a free generation.
 - Package entry supports front / back package photos with capture,
   replace, and remove. Images are compressed in-browser (~720px longest
   edge, JPEG ~0.78 quality) and stored as data URLs in IndexedDB so the
-  database stays small.
+  database stays small. Tapping a tile opens the file/camera picker and a
+  thumbnail preview appears immediately.
 - Manual product name remains the only required text field; ingredients
   and preference are optional. UPC/barcode is optional and now resolves
   safely from captured barcode or manual entry. Brand and category are
@@ -37,12 +44,17 @@
 - `node scripts/test_manual_mvp.mjs`
 - `node scripts/test_manual_mvp_generated.mjs`
 - `node scripts/test_n8n_repo_access_generated.mjs`
-- Manual mobile-emulated click-through at 390px width.
+- Manual mobile-emulated click-through at 390px width: tapped Scan and
+  confirmed the browser fallback routes into manual entry; added front and
+  back photos and confirmed thumbnails, Replace, and Remove; ran Create
+  Homemade Version with no images and again after adding images.
 
 ## 3) What is demo-ready
 
 - Pitch + Home screen.
-- Package entry with placeholder or real-photo previews.
+- Scan package button with honest browser fallback into manual entry.
+- Package entry with real-photo front / back previews (capture, replace,
+  remove).
 - Sample chips and manual entry.
 - AI-or-fallback recipe generation.
 - Save / view / favorite / delete saved ideas.
@@ -52,15 +64,15 @@
 ## 4) What is still mocked / placeholder
 
 - Photo OCR / AI extraction: photos are local previews only; the
-  generator still reads typed text. The data model already carries the
-  preview data URLs and is ready for an OCR step.
+  generator still reads typed text plus a flag noting which photos were
+  attached. The data model already carries the preview data URLs and is
+  ready for an OCR step.
 - Upgrade pricing: $4.99/mo and $29.99/yr are display-only; no payment
   provider is wired in.
-- "Open scanner" button on the `#scan` view shows a friendly toast
-  rather than running a real barcode reader (the native flow is the
-  next milestone).
-- Scanner foundation does not yet ship Capacitor ML Kit; the manual
-  path covers the demo.
+- Native barcode scanning is wired through `scannerService.js` and the
+  Capacitor ML Kit adapter but has **not** been tested on real hardware;
+  it only runs inside a native build. In the browser demo, scanning is an
+  honest fallback to manual entry, not a real reader.
 
 ## 5) What remains for mobile / native
 
