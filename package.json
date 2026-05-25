@@ -12,9 +12,12 @@
     "preview": "wrangler dev",
     "app:status": "node scripts/app-status.js",
     "agent:next": "node scripts/agent-next-task.js",
-    "qa:smoke": "node scripts/qa-smoke.js"
+    "qa:smoke": "node scripts/qa-smoke.js",
+    "qa:flow": "node scripts/qa-browser-flow.mjs"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
     "wrangler": "^4.88.0"
   },
   "dependencies": {

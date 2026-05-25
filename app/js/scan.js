@@ -188,6 +188,8 @@ async function handleSubmit(event) {
     return;
   }
 
+  const barcode = getDraftBarcode();
+
   submitting = true;
   const submitBtn = el("scan-submit-btn");
   if (submitBtn) {
