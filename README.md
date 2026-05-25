@@ -39,6 +39,8 @@ node scripts/test_n8n_repo_access_generated.mjs
 - Package entry with **front package** and **back label** photo tiles
   (capture/replace/remove, compressed local preview thumbnails).
 - Manual product name, ingredients-from-package text, and preference fields.
+- Optional UPC/barcode input with a visible captured-barcode banner that
+  carries scan context into manual entry.
 - Sample chips that prefill a known packaged food (Mayonnaise, Ranch,
   Ketchup, Mac & cheese, Granola bar).
 - AI-assisted homemade recipe with a deterministic fallback when the AI

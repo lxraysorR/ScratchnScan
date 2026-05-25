@@ -161,6 +161,14 @@
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
 
+          <div id="draft-barcode" class="alert alert-info" role="status" aria-live="polite" hidden>
+            <div>
+              <strong>Captured barcode:</strong>
+              <span id="draft-barcode-value"></span>
+            </div>
+            <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
+          </div>
+
           <form id="manual-lookup-form" class="form-card" novalidate>
             <div class="photo-grid">
               <div class="photo-slot" data-photo="front">
@@ -209,6 +217,11 @@
             <div class="field">
               <label class="label" for="dietary-input">Preference</label>
               <input id="dietary-input" class="input" type="text" placeholder="Example: dairy-free, less sugar, no seed oils" autocomplete="off" />
+            </div>
+
+            <div class="field">
+              <label class="label" for="barcode-input">Optional UPC / barcode</label>
+              <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
             </div>
 
             <div id="scan-error" class="alert alert-error" hidden>

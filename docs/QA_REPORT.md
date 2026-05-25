@@ -2,7 +2,7 @@
 
 ## Run metadata
 
-- Date: 2026-05-22
+- Date: 2026-05-25
 - Branch: `claude/affectionate-sagan-cVfzC`
 - OS: Linux 6.18.5 x86_64 (Claude Code on-the-web sandbox)
 - Node: v22.22.2
@@ -14,9 +14,13 @@
 | Command | Result |
 | --- | --- |
 | `npm install` | PASS (no new dependencies were added) |
-| `npm test` | PASS — app shell + usage meter + manual fallback + UI tokens |
+| `npm test` | PASS — app shell + usage meter + manual fallback + UI tokens (including draft barcode banner and optional barcode-safe generation path) |
 | `npm run qa:smoke` | PASS — required files and scripts present |
-| `npm run build` | PASS — `dist/` written |
+| `npm run app:status` | PASS — script runs under ESM (no `require` runtime error) |
+| `npm run agent:next` | PASS — script runs under ESM (no `require` runtime error) |
+| `npm run check:syntax` | PASS — recursive `node --check` across `app/`, `src/`, `scripts/` |
+| `npm run build` | PASS — guarded by syntax check, then `dist/` written |
+| `npm run qa:flow` | PASS — aggregate QA flow gate succeeds |
 | `node scripts/test_manual_mvp.mjs` | PASS |
 | `node scripts/test_manual_mvp_generated.mjs` | PASS |
 | `node scripts/test_n8n_repo_access_generated.mjs` | PASS |
@@ -72,8 +76,13 @@ demo. The corresponding code paths are wired and unit-tested.
 
 ## Bugs found / fixed during QA
 
-- None new. The implementation was added in this same session and all
-  scripted tests pass.
+- Fixed broken ESM runtime scripts: `scripts/app-status.js` and
+  `scripts/agent-next-task.js` were using CommonJS `require` despite
+  `"type": "module"`.
+- Added syntax gating to prevent regressions:
+  - new `scripts/check-js-syntax.mjs`
+  - `npm test` and `npm run build` now fail on syntax errors
+  - `qa:smoke` now explicitly syntax-checks critical runtime files.
 
 ## Blockers
 

@@ -10,13 +10,16 @@
   edge, JPEG ~0.78 quality) and stored as data URLs in IndexedDB so the
   database stays small.
 - Manual product name remains the only required text field; ingredients
-  and preference are optional. Brand and category are no longer primary
-  required fields.
+  and preference are optional. UPC/barcode is optional and now resolves
+  safely from captured barcode or manual entry. Brand and category are
+  no longer primary required fields.
 - Sample chips prefill name + ingredients + preference (Mayonnaise,
   Ranch, Ketchup, Mac & cheese, Granola bar).
 - Homemade generation calls the AI worker if reachable, otherwise falls
   back to the deterministic local recipe builder. Both paths render the
-  same result UI with a clear Starter / AI badge.
+  same result UI with a clear Starter / AI badge and useful tips mapped
+  from either `tips` or (`simpleSwaps` + `whyLessProcessed` +
+  `storageTips`).
 - Saved ideas persist in IndexedDB, survive a reload, support favorite
   toggling and confirmed delete, and show package photo thumbnails when
   available.
@@ -27,10 +30,21 @@
 
 ## 2) What was tested
 
+- `node --check app/js/app.js` — PASS
+- `node --check app/js/scan.js` — PASS
+- `npm run check:syntax` — PASS (recursive syntax verification across
+  `app/`, `src/`, and `scripts/`)
 - `npm test` — app shell tokens, localDb exports, usage-meter helpers,
-  manual fallback recipe builder.
-- `npm run qa:smoke` — required-files and required-script presence.
-- `npm run build` — copies `app/` to `dist/` cleanly.
+  manual fallback recipe builder; now starts with syntax validation.
+- `npm run qa:smoke` — required-files/script presence and runtime-file
+  syntax checks.
+- `npm run app:status` — PASS (ESM conversion fixed prior `require`
+  runtime error).
+- `npm run agent:next` — PASS (ESM conversion fixed prior `require`
+  runtime error).
+- `npm run build` — syntax-check gate + `app/` to `dist/` copy.
+- `npm run qa:flow` — PASS (aggregated syntax + test + smoke + status
+  + next-task + build checks).
 - `node scripts/test_manual_mvp.mjs`
 - `node scripts/test_manual_mvp_generated.mjs`
 - `node scripts/test_n8n_repo_access_generated.mjs`
