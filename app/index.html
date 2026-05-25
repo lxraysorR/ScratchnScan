@@ -161,6 +161,12 @@
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
 
+          <div id="draft-barcode" class="draft-barcode" role="status" aria-live="polite" hidden>
+            <span class="draft-barcode-label">Barcode captured:</span>
+            <span id="draft-barcode-value" class="draft-barcode-value"></span>
+            <button type="button" id="draft-barcode-clear" class="draft-barcode-clear">Clear</button>
+          </div>
+
           <form id="manual-lookup-form" class="form-card" novalidate>
             <div class="photo-grid">
               <div class="photo-slot" data-photo="front">

@@ -7,6 +7,8 @@ import {
   refreshUsageStrips,
 } from "./usage.js";
 import { compressImageFile } from "./packageImages.js";
+import { getDraftBarcode, clearDraftBarcode } from "./scannerService.js";
+import { refreshBarcodeBanner } from "./packageEntry.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -185,6 +187,8 @@ async function handleSubmit(event) {
     window.location.hash = "#upgrade";
     return;
   }
+
+  const barcode = getDraftBarcode();
 
   submitting = true;
   const submitBtn = el("scan-submit-btn");
