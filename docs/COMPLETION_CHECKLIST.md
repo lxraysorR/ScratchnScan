@@ -91,8 +91,10 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
 ## 11) Tests
 - **Status:** Done
 - **Acceptance criteria:** `npm test`, `npm run qa:smoke`, and
-  `npm run build` succeed. Optional `node scripts/test_manual_mvp*.mjs`
-  and `node scripts/test_n8n_repo_access_generated.mjs` also pass.
+  `npm run build` succeed, each now guarded by `npm run check:syntax`.
+  `npm run qa:flow` succeeds as an end-to-end scripted QA gate.
+  Optional `node scripts/test_manual_mvp*.mjs` and
+  `node scripts/test_n8n_repo_access_generated.mjs` also pass.
 
 ## 12) Remaining native / mobile work
 - **Status:** Not Started

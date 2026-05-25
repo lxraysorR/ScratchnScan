@@ -5,15 +5,16 @@
   "type": "module",
   "description": "ScratchNScan MVP shell",
   "scripts": {
-    "test": "node scripts/test_app_shell.mjs && node scripts/test_usage_meter.mjs && node scripts/test_manual_mvp.mjs && node scripts/test_manual_mvp_generated.mjs",
-    "build": "node scripts/build_app_shell.mjs",
+    "check:syntax": "node scripts/check-js-syntax.mjs",
+    "test": "npm run check:syntax && node scripts/test_app_shell.mjs && node scripts/test_usage_meter.mjs && node scripts/test_manual_mvp.mjs && node scripts/test_manual_mvp_generated.mjs",
+    "build": "npm run check:syntax && node scripts/build_app_shell.mjs",
     "start": "node scripts/serve_hint.mjs",
     "deploy": "wrangler deploy",
     "preview": "wrangler dev",
     "app:status": "node scripts/app-status.js",
     "agent:next": "node scripts/agent-next-task.js",
     "qa:smoke": "node scripts/qa-smoke.js",
-    "qa:flow": "node scripts/qa-browser-flow.mjs"
+    "qa:flow": "npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",

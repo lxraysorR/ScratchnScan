@@ -37,10 +37,21 @@
 
 ## 2) What was tested
 
+- `node --check app/js/app.js` — PASS
+- `node --check app/js/scan.js` — PASS
+- `npm run check:syntax` — PASS (recursive syntax verification across
+  `app/`, `src/`, and `scripts/`)
 - `npm test` — app shell tokens, localDb exports, usage-meter helpers,
-  manual fallback recipe builder.
-- `npm run qa:smoke` — required-files and required-script presence.
-- `npm run build` — copies `app/` to `dist/` cleanly.
+  manual fallback recipe builder; now starts with syntax validation.
+- `npm run qa:smoke` — required-files/script presence and runtime-file
+  syntax checks.
+- `npm run app:status` — PASS (ESM conversion fixed prior `require`
+  runtime error).
+- `npm run agent:next` — PASS (ESM conversion fixed prior `require`
+  runtime error).
+- `npm run build` — syntax-check gate + `app/` to `dist/` copy.
+- `npm run qa:flow` — PASS (aggregated syntax + test + smoke + status
+  + next-task + build checks).
 - `node scripts/test_manual_mvp.mjs`
 - `node scripts/test_manual_mvp_generated.mjs`
 - `node scripts/test_n8n_repo_access_generated.mjs`
