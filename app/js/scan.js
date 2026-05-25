@@ -217,6 +217,8 @@ async function handleSubmit(event) {
     return;
   }
 
+  const barcode = getDraftBarcode();
+
   submitting = true;
   const submitBtn = el("scan-submit-btn");
   if (submitBtn) {
@@ -224,6 +226,11 @@ async function handleSubmit(event) {
     submitBtn.textContent = "Creating…";
   }
   el("scan-loading").hidden = false;
+
+  // Any barcode captured during a scan session flows into the recipe context.
+  const barcode = getDraftBarcode();
+  const hasFrontImage = !!draft.frontImagePreviewDataUrl;
+  const hasBackImage = !!draft.backImagePreviewDataUrl;
 
   let scratchRecipe;
   let fallbackUsed = false;
@@ -235,6 +242,11 @@ async function handleSubmit(event) {
         productName,
         ingredients: inputIngredients,
         dietaryPreference,
+        // The worker reads `goals`; map the user preference so the AI honors it.
+        goals: dietaryPreference,
+        upc: barcode || undefined,
+        hasFrontImage,
+        hasBackImage,
       });
       aiRecipe = ai?.recipe?.homemadeAlternative;
       scratchRecipe = aiRecipe ? {

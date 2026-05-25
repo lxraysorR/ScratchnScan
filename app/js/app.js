@@ -3,7 +3,9 @@ import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initDatabase } from "./localDb.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import {
   refreshUsageStrips,
   resetUsageForDev,

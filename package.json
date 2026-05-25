@@ -17,6 +17,8 @@
     "qa:flow": "npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
     "wrangler": "^4.88.0"
   },
   "dependencies": {
