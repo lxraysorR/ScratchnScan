@@ -1,5 +1,6 @@
 import { generateScratchRecipe } from "./api.js";
 import { generateHealthierScratchRecipe } from "./recipeGenerator.js";
+import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 import { showToast } from "./app.js";
 import {
   canGenerate,
