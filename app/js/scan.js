@@ -174,15 +174,18 @@ async function handleSubmit(event) {
   if (submitting) return;
 
   el("scan-error").hidden = true;
-  const productName = (el("product-name-input")?.value || "").trim();
+  let productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
   const dietaryPreference = (el("dietary-input")?.value || "").trim();
   const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
   const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || null;
+  const hasPhoto = !!draft.frontImagePreviewDataUrl || !!draft.backImagePreviewDataUrl;
 
-  if (!productName) {
-    showError("Type a packaged food name first.");
+  // A photo can stand in for a typed product name — the AI reads it to identify
+  // the item. Only block when there's nothing at all to work from.
+  if (!productName && !hasPhoto) {
+    showError("Type a product name or add a package photo first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -225,9 +228,16 @@ async function handleSubmit(event) {
         upc: barcode || undefined,
         hasFrontImage,
         hasBackImage,
+        // Send the compressed photos so the AI can identify the product and read
+        // its ingredients when the user uploaded labels instead of typing a name.
+        frontImage: frontImagePreviewDataUrl || undefined,
+        backImage: backImagePreviewDataUrl || undefined,
       });
       const aiRecipe = ai?.recipe?.homemadeAlternative;
       if (aiRecipe) {
+        // Photo-only entry: adopt the name the AI read from the package.
+        const detectedName = (ai?.recipe?.product?.name || "").trim();
+        if (!productName && detectedName) productName = detectedName;
         scratchRecipe = {
         title: aiRecipe.title || `Homemade version of ${productName}`,
         originalProductName: productName,
