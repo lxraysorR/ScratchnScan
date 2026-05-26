@@ -372,6 +372,40 @@ await test('generate: no event recorded on failed generation', async () => {
   assert.equal(supabaseCalls(calls).filter((c) => c.method === 'POST').length, 0, 'no event on failure');
 });
 
+await test('generate: accepts a photo-only request and forwards the image to Gemini', async () => {
+  const tinyJpegDataUrl =
+    'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//';
+  let geminiParts = null;
+  installFetch((url, options) => {
+    if (url.includes('generativelanguage.googleapis.com')) {
+      geminiParts = JSON.parse(options.body).contents[0].parts;
+      return geminiResponse(JSON.stringify(validGeminiRecipe()));
+    }
+    return new Response(null, { status: 204 });
+  });
+  const res = await worker.fetch(
+    makeRequest('/api/generate-scratch-recipe', { method: 'POST', body: { frontImage: tinyJpegDataUrl } }),
+    { GEMINI_API_KEY: 'g', ...SUPABASE_ENV },
+  );
+  assert.equal(res.status, 200, 'photo-only input is accepted (no productName required)');
+  const body = await res.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.meta.usedInputs.frontImage, true, 'meta records the image input');
+  assert.ok(Array.isArray(geminiParts), 'gemini request was made');
+  const imagePart = geminiParts.find((p) => p.inlineData);
+  assert.ok(imagePart, 'image is forwarded as an inlineData part');
+  assert.equal(imagePart.inlineData.mimeType, 'image/jpeg');
+});
+
+await test('generate: rejects a malformed image with no other input (400)', async () => {
+  installFetch(() => { throw new Error('no network expected'); });
+  const res = await worker.fetch(
+    makeRequest('/api/generate-scratch-recipe', { method: 'POST', body: { frontImage: 'not-a-data-url' } }),
+    { GEMINI_API_KEY: 'g' },
+  );
+  assert.equal(res.status, 400, 'a non-image string is not meaningful input');
+});
+
 // ===========================================================================
 // E. Alias route /api/generate-homemade-version
 // ===========================================================================

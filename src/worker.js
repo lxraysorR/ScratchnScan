@@ -67,11 +67,11 @@ export function cleanText(value) {
   return String(value ?? "").trim();
 }
 
-function normalizeItemName(value) {
+export function normalizeItemName(value) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function toDisplayName(normalized, fallbackRaw = "") {
+export function toDisplayName(normalized, fallbackRaw = "") {
   const raw = cleanText(fallbackRaw);
   if (raw) return raw;
   return normalized
@@ -114,7 +114,7 @@ async function logRequestEvent(env, { eventType, itemName }) {
   }
 }
 
-async function getPopularItems(env, limit = 5) {
+export async function getPopularItems(env, limit = 5) {
   const fallback = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"]
     .slice(0, limit)
     .map((name) => ({
@@ -189,6 +189,19 @@ export function extractGeminiText(geminiBody) {
     .map((part) => (typeof part?.text === "string" ? part.text : ""))
     .join("\n")
     .trim();
+}
+
+// Accept only well-formed base64 image data URLs (what the frontend sends after
+// compressing a captured photo). Returns the mime type + bare base64 payload
+// Gemini's inlineData part expects, or null when the value isn't a usable image.
+export function parseInlineImage(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const match = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i.exec(raw);
+  if (!match) return null;
+  const data = match[2].replace(/\s+/g, "");
+  if (!data) return null;
+  return { mimeType: match[1].toLowerCase(), data };
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +311,8 @@ export function buildRecipePrompt({
   frontText,
   backText,
   goals,
+  hasFrontImage = false,
+  hasBackImage = false,
 }) {
   return `
 You are a careful cooking assistant helping a user create a cleaner homemade version of a packaged food item.
@@ -357,9 +372,15 @@ User input:
 - Back label text: ${backText || "unknown"}
 - Nutrition snapshot: ${nutrition ? JSON.stringify(nutrition) : "unknown"}
 - User goals: ${goals || "none provided"}
+- Front package photo provided: ${hasFrontImage ? "yes" : "no"}
+- Ingredients/back label photo provided: ${hasBackImage ? "yes" : "no"}
 
 Rules:
 - If package text is incomplete, still create the best reasonable homemade version.
+- If package photos are provided, read them carefully to identify the product and its ingredient list.
+- When the user did not type a product name, set product.name from what the photo shows.
+- Base ingredientSignals on the ingredients you can read from the photos or text. Add "front_label" and/or "ingredients_label" to product.sourceBasis whenever a photo informed your answer.
+- If a photo is too blurry or unreadable, lower the confidence and note that a clearer ingredient label would help.
 - Prefer common grocery-store ingredients.
 - Keep instructions practical for a normal home cook.
 - Do not claim medical benefits.
@@ -553,18 +574,22 @@ async function handleGenerateScratchRecipe(request, env) {
   const backText = cleanText(body?.backText);
   const goals = cleanText(body?.goals);
   const nutrition = body?.nutrition ?? null;
+  const frontImage = parseInlineImage(body?.frontImage);
+  const backImage = parseInlineImage(body?.backImage);
 
   const hasInput =
     hasMeaningfulValue(productName) ||
     hasMeaningfulValue(ingredients) ||
     hasMeaningfulValue(frontText) ||
-    hasMeaningfulValue(backText);
+    hasMeaningfulValue(backText) ||
+    !!frontImage ||
+    !!backImage;
 
   if (!hasInput) {
     return json(
       {
         ok: false,
-        error: "Provide at least one of: productName, ingredients, frontText, or backText.",
+        error: "Provide a product name, ingredients, label text, or a package photo.",
       },
       400
     );
@@ -583,7 +608,17 @@ async function handleGenerateScratchRecipe(request, env) {
     frontText,
     backText,
     goals,
+    hasFrontImage: !!frontImage,
+    hasBackImage: !!backImage,
   });
+
+  const userParts = [{ text: prompt }];
+  if (frontImage) {
+    userParts.push({ inlineData: { mimeType: frontImage.mimeType, data: frontImage.data } });
+  }
+  if (backImage) {
+    userParts.push({ inlineData: { mimeType: backImage.mimeType, data: backImage.data } });
+  }
 
   let geminiRes;
   try {
@@ -599,7 +634,7 @@ async function handleGenerateScratchRecipe(request, env) {
           contents: [
             {
               role: "user",
-              parts: [{ text: prompt }],
+              parts: userParts,
             },
           ],
           generationConfig: {
@@ -686,6 +721,8 @@ async function handleGenerateScratchRecipe(request, env) {
         ingredients: hasMeaningfulValue(ingredients),
         frontText: hasMeaningfulValue(frontText),
         backText: hasMeaningfulValue(backText),
+        frontImage: !!frontImage,
+        backImage: !!backImage,
       },
     },
   });
