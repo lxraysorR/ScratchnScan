@@ -1,15 +1,12 @@
 import { generateHealthierScratchRecipe } from './recipeGenerator.js';
 
-export function buildDeterministicScratchRecipe({
-  productName,
-  inputIngredients,
-  notes,
-  dietaryPreference,
-} = {}) {
-  const safeName = (productName || "").trim() || "packaged food";
+export function buildDeterministicScratchRecipe(input = {}) {
+  const safeName = (input.productName || '').trim() || 'packaged food';
   return generateHealthierScratchRecipe({
+    ...input,
     productName: safeName,
-    inputIngredients,
-    notes: notes || dietaryPreference || '',
+    inputIngredients: input.inputIngredients,
+    ingredientsText: input.ingredientsText || input.inputIngredients || '',
+    notes: input.notes || input.dietaryPreference || '',
   });
 }

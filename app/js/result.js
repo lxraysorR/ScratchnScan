@@ -7,6 +7,24 @@ function el(id) { return document.getElementById(id); }
 
 let saving = false;
 
+function uniqNonEmpty(items = []) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of items) {
+    const val = String(raw || '').trim();
+    if (!val) continue;
+    const key = val.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(val);
+  }
+  return out;
+}
+
+function sanitizePlaceholders(items = []) {
+  return uniqNonEmpty(items).filter((x) => !/main base ingredient|whole-food flavor ingredient/i.test(x));
+}
+
 function renderBadges(fallbackUsed) {
   const row = el("result-badges");
   if (!row) return;
@@ -43,9 +61,9 @@ export function initResultView() {
   }
   el("result-summary").textContent = record.scratchRecipe.summary;
   const healthGoalEl = el("result-health-goal");
-  if (healthGoalEl) healthGoalEl.textContent = record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.";
+  if (healthGoalEl) healthGoalEl.textContent = (record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.").trim();
 
-  const why = record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || [];
+  const why = uniqNonEmpty(record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || []);
   const whyBlock = el("result-why-block");
   const whyList = el("result-why");
   if (whyList && whyBlock) {
@@ -65,16 +83,16 @@ export function initResultView() {
 
   const ingredients = el("result-homemade-ingredients");
   ingredients.innerHTML = "";
-  for (const item of record.scratchRecipe.ingredients || []) {
+  for (const item of sanitizePlaceholders(record.scratchRecipe.ingredients || [])) {
     const li = document.createElement("li"); li.textContent = item; ingredients.appendChild(li);
   }
   const steps = el("result-homemade-steps");
   steps.innerHTML = "";
-  for (const item of record.scratchRecipe.steps || []) {
+  for (const item of uniqNonEmpty(record.scratchRecipe.steps || [])) {
     const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
   }
 
-  const tips = record.scratchRecipe.tips || record.recipeTips || [];
+  const tips = uniqNonEmpty(record.scratchRecipe.tips || record.recipeTips || []);
   const tipsBlock = el("result-tips-block");
   const tipsList = el("result-tips");
   if (tipsList && tipsBlock) {
