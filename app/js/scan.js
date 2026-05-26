@@ -1,6 +1,7 @@
 import { generateScratchRecipe } from "./api.js";
 import { generateHealthierScratchRecipe } from "./recipeGenerator.js";
 import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
+import { createGenerationProgress } from "./progress.js";
 import { showToast } from "./app.js";
 import {
   canGenerate,
@@ -15,6 +16,33 @@ import { applyThumbToTile } from "./photoTiles.js";
 export let lastGeneratedRecord = null;
 let initialized = false;
 let submitting = false;
+let progress = null;
+
+// Upper bound for the AI request. The deterministic fallback is synchronous, so
+// the network call is the only thing that can stall the flow. Overridable in
+// tests so the timeout path can be exercised quickly.
+let aiTimeoutMs = 25000;
+export function __setAiTimeoutMsForTest(ms) { aiTimeoutMs = ms; }
+
+const GENERATE_LABEL = "Generate Homemade Version";
+
+// Single exit point for the loading UI: stops the progress timer, hides the
+// loading card, and re-enables the submit button. Safe to call multiple times
+// and from any branch (success, fallback, error, timeout, early return).
+function stopLoadingUi() {
+  if (progress) {
+    progress.stop();
+    progress = null;
+  }
+  const loading = el("scan-loading");
+  if (loading) loading.hidden = true;
+  const submitBtn = el("scan-submit-btn");
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = GENERATE_LABEL;
+  }
+  submitting = false;
+}
 
 // In-memory package draft state for the current entry session.
 // Persisted to IndexedDB only when the user saves the result.
@@ -113,6 +141,11 @@ export async function initScanView() {
       resetDraftUi();
       showToast("Form cleared");
     });
+    el("scan-retry-btn")?.addEventListener("click", () => {
+      // The form keeps the user's input, so retry is simply another submit.
+      el("scan-error").hidden = true;
+      el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true }));
+    });
     wirePhotoControls();
     initialized = true;
   }
@@ -135,10 +168,12 @@ export function applySample(name) {
   el("scan-error").hidden = true;
 }
 
-function showError(message) {
+function showError(message, { allowRetry = false } = {}) {
   const box = el("scan-error");
   const msg = el("scan-error-msg");
+  const retry = el("scan-retry-btn");
   if (msg) msg.textContent = message;
+  if (retry) retry.hidden = !allowRetry;
   if (box) box.hidden = false;
 }
 
@@ -203,7 +238,10 @@ async function handleSubmit(event) {
     submitBtn.disabled = true;
     submitBtn.textContent = "Generating…";
   }
-  el("scan-loading").hidden = false;
+  const loadingEl = el("scan-loading");
+  if (loadingEl) loadingEl.hidden = false;
+  progress = createGenerationProgress(loadingEl);
+  progress.start();
 
   const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl || null;
   const backImagePreviewDataUrl = draft.backImagePreviewDataUrl || null;
@@ -212,12 +250,7 @@ async function handleSubmit(event) {
 
   if (!productName && !inputIngredients && hasPhoto) {
     showError("We could not identify this package yet. Please type the product name and (if possible) ingredients.");
-    el("scan-loading").hidden = true;
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Generate Homemade Version";
-    }
-    submitting = false;
+    stopLoadingUi();
     return;
   }
 
@@ -240,7 +273,7 @@ async function handleSubmit(event) {
         hasBackImage,
         frontImage: frontImagePreviewDataUrl || undefined,
         backImage: backImagePreviewDataUrl || undefined,
-      });
+      }, { timeoutMs: aiTimeoutMs });
       const aiRecipe = ai?.recipe?.homemadeAlternative;
       const product = ai?.recipe?.product || {};
       const detectedName = (product.name || "").trim();
@@ -274,6 +307,10 @@ async function handleSubmit(event) {
         fallbackUsed = false;
       }
     } catch (err) {
+      // A timeout is a distinct, user-actionable outcome: surface it (with a
+      // retry) instead of silently falling back so users know to try again or
+      // add more detail. Any other AI failure uses the deterministic fallback.
+      if (err?.timeout) throw err;
       console.warn("AI recipe unavailable. Using local fallback.", err);
     }
 
@@ -327,14 +364,20 @@ async function handleSubmit(event) {
 
     window.location.hash = "#result";
   } catch (err) {
-    showError("We could not generate the recipe yet. Try typing the product name again.");
-    console.error("manual generation failed", err);
-  } finally {
-    el("scan-loading").hidden = true;
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Generate Homemade Version";
+    if (err?.timeout) {
+      showError(
+        "This is taking longer than expected. Please try again or add more product details.",
+        { allowRetry: true },
+      );
+    } else {
+      showError(
+        "We could not generate the recipe yet. Try typing the product name again.",
+        { allowRetry: true },
+      );
+      console.error("manual generation failed", err);
     }
-    submitting = false;
+  } finally {
+    // Single, guaranteed exit from the loading state for every branch above.
+    stopLoadingUi();
   }
 }

@@ -47,30 +47,48 @@ export async function lookupUpc(upc) {
   return postJson("/api/lookup-upc", { upc });
 }
 
-export async function generateScratchRecipe(payload) {
-  let res;
+export async function generateScratchRecipe(payload, { timeoutMs = 25000 } = {}) {
+  // Guard the only network call in the generate flow: without a timeout a
+  // hung/slow Worker leaves the `await` pending forever and the UI never exits
+  // its loading state. AbortController bounds the request (and its body read).
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = controller && timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
   try {
-    res = await fetch(`${WORKER_BASE}/api/generate-scratch-recipe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    throw new Error("Could not reach the AI service.");
-  }
+    let res;
+    try {
+      res = await fetch(`${WORKER_BASE}/api/generate-scratch-recipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller?.signal,
+      });
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        const timeoutErr = new Error("The AI service took too long to respond.");
+        timeoutErr.timeout = true;
+        throw timeoutErr;
+      }
+      throw new Error("Could not reach the AI service.");
+    }
 
-  let body;
-  try {
-    body = await res.json();
-  } catch {
-    throw new Error("AI service returned an unexpected response.");
-  }
+    let body;
+    try {
+      body = await res.json();
+    } catch {
+      throw new Error("AI service returned an unexpected response.");
+    }
 
-  if (!res.ok) {
-    throw new Error(body?.error ?? `AI service error (${res.status}).`);
-  }
+    if (!res.ok) {
+      throw new Error(body?.error ?? `AI service error (${res.status}).`);
+    }
 
-  return body;
+    return body;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export function normalizeProduct(raw, upc) {

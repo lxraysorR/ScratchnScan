@@ -22,7 +22,9 @@ function uniqNonEmpty(items = []) {
 }
 
 function sanitizePlaceholders(items = []) {
-  return uniqNonEmpty(items).filter((x) => !/main base ingredient|whole-food flavor ingredient/i.test(x));
+  return uniqNonEmpty(items).filter(
+    (x) => !/(?:base|flavor|seasoning) ingredient|placeholder/i.test(x),
+  );
 }
 
 function renderBadges(fallbackUsed) {
