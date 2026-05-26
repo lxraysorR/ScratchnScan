@@ -127,7 +127,10 @@ function wireGlobalActions() {
   });
 
   document.getElementById("scan-coming-soon")?.addEventListener("click", () => {
-    showToast("Camera scanner coming next. Use manual entry for now.");
+    // Scanner is optional for the MVP. There is no native scanner wired in
+    // yet, so always guide the user to the working manual path.
+    showToast("Scanner unavailable. Type the product name to continue.");
+    goto("manual");
   });
 }
 
