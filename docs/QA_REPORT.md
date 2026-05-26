@@ -2,21 +2,26 @@
 
 ## 1. Run metadata
 
-- Date: 2026-05-25
+- Date: 2026-05-26 (re-verification pass)
 - Branch: `claude/affectionate-sagan-cVfzC`
 - OS: Linux 6.18.5 x86_64 (Claude Code on-the-web sandbox)
 - Node: v22.22.2
-- Browser: No Chromium/Firefox binary is available in this remote-execution
-  sandbox. **This pass added a real-DOM execution harness** using `jsdom`
-  + `fake-indexeddb` (`npm run qa:flow` → `scripts/qa-browser-flow.mjs`)
-  that imports the actual `app/js/*` module graph against the real
-  `app/index.html`, drives every nav tab and CTA, completes the manual
-  entry → generate → save → details → history → delete flow, and reads
-  IndexedDB directly to confirm persistence. **33/33 checks pass.** This
-  closes the persistence and console-error items that were "Not Tested
-  Here" in the prior pass. The only thing still genuinely untestable
-  without real hardware is on-device camera capture and pixel-level
-  mobile layout (see §6 / §16).
+- Browser: Not available in this sandbox. Browser-only behavior is
+  flagged as **Not Tested Here** below. Data-layer flows were instead
+  exercised end-to-end against the real `app/js/localDb.js` using a
+  throwaway in-memory IndexedDB shim (not added to the project).
+
+## Verified flows (this pass)
+
+| Flow | How verified | Result |
+| --- | --- | --- |
+| Buttons / nav / chips wiring | Static cross-check: every JS `getElementById`/`el()` reference resolves to an HTML id; all `data-go`/`data-target` map to real views; all `data-sample` chips map to `SAMPLES` keys | PASS |
+| Generation (fallback) | `scripts/test_manual_mvp.mjs` exercises `buildDeterministicScratchRecipe` | PASS |
+| Save + history (newest-first) | In-memory IDB shim: 2 saves, ordering check | PASS |
+| Details round-trip (incl. image preview) | Shim: `getMvpRecipeById` returns persisted `frontImagePreviewDataUrl` + recipe title | PASS |
+| Favorite toggle on/off | Shim: `toggleMvpFavorite` true then false | PASS |
+| Delete | Shim: delete one of two, correct item survives | PASS |
+| Usage meter 0→10 + block + premium bypass + reset | Shim: `recordSuccessfulGeneration` x10, `canGenerate`, dev unlock, `resetUsageForDev` | PASS |
 
 ## 2. App start command used
 

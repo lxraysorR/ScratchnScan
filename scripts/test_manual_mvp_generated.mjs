@@ -21,7 +21,7 @@ for (const token of tokens) {
 }
 
 const historyJs = readFileSync('app/js/history.js', 'utf8');
-for (const token of ['toggleMvpFavorite', 'deleteMvpRecipe', 'View details']) {
+for (const token of ['toggleMvpFavorite', 'deleteMvpRecipe', 'View Details', 'window.confirm']) {
   if (!historyJs.includes(token)) throw new Error(`Missing history behavior token: ${token}`);
 }
 

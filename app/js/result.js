@@ -35,7 +35,28 @@ export function initResultView() {
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
   renderBadges(fallbackUsed);
   el("result-name").textContent = record.scratchRecipe.title;
+  const originalName = record.scratchRecipe.originalProductName || record.productName || "";
+  const originalEl = el("result-original");
+  if (originalEl) {
+    originalEl.textContent = originalName ? `Inspired by: ${originalName}` : "";
+    originalEl.hidden = !originalName;
+  }
   el("result-summary").textContent = record.scratchRecipe.summary;
+
+  const why = record.scratchRecipe.whyCleaner || [];
+  const whyBlock = el("result-why-block");
+  const whyList = el("result-why");
+  if (whyList && whyBlock) {
+    whyList.innerHTML = "";
+    if (why.length) {
+      for (const item of why) {
+        const li = document.createElement("li"); li.textContent = item; whyList.appendChild(li);
+      }
+      whyBlock.hidden = false;
+    } else {
+      whyBlock.hidden = true;
+    }
+  }
   el("result-note").textContent = fallbackUsed
     ? "This is a starter suggestion built from common ingredients. Tweak to taste. General food info only, not medical advice."
     : "Generated from the configured AI provider. Tweak to taste. General food info only, not medical advice.";
@@ -69,7 +90,7 @@ export function initResultView() {
   const saveBtn = el("result-save-btn");
   if (!saveBtn) return;
   saveBtn.disabled = false;
-  saveBtn.textContent = "Save to history";
+  saveBtn.textContent = "Save Recipe";
   saveBtn.onclick = async () => {
     if (saving) return;
     saving = true;

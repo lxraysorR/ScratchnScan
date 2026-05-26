@@ -22,24 +22,24 @@ const draft = {
 };
 
 const SAMPLES = {
-  Mayonnaise: {
-    ingredients: "Soybean oil, water, whole eggs, vinegar, salt, sugar, lemon juice, natural flavors",
-    preference: "simple ingredients, less processed",
+  "Doritos Cool Ranch": {
+    ingredients: "Corn, vegetable oil, maltodextrin, salt, tomato powder, whey, buttermilk, garlic powder, onion powder, MSG, artificial colors",
+    preference: "less processed, no artificial colors",
   },
-  "Boxed Mac & Cheese": {
-    ingredients: "Enriched macaroni, cheese sauce mix, whey, milkfat, salt, sodium phosphate, annatto",
-    preference: "family-friendly, less processed",
+  Oreos: {
+    ingredients: "Sugar, unbleached enriched flour, palm/canola oil, cocoa, high fructose corn syrup, leavening, salt, soy lecithin, artificial flavor",
+    preference: "less sugar, simple ingredients",
   },
-  "Ranch Dressing": {
-    ingredients: "Vegetable oil, water, buttermilk, egg yolk, sugar, salt, garlic, onion, preservatives",
-    preference: "higher protein, fresher taste",
+  "Kraft Mac and Cheese": {
+    ingredients: "Enriched macaroni, cheese sauce mix, whey, milkfat, salt, sodium phosphate, annatto, artificial color",
+    preference: "family-friendly, no artificial color",
   },
-  "Granola Bar": {
-    ingredients: "Rolled oats, sugar, corn syrup, chocolate chips, palm oil, soy lecithin, natural flavor",
-    preference: "less sugar, school snack",
+  "Pop-Tarts": {
+    ingredients: "Enriched flour, corn syrup, high fructose corn syrup, sugar, palm oil, dextrose, gelatin, artificial flavor, artificial colors",
+    preference: "less sugar, no artificial colors",
   },
-  Ketchup: {
-    ingredients: "Tomato concentrate, high fructose corn syrup, vinegar, salt, onion powder, natural flavoring",
+  "Honey Nut Cheerios": {
+    ingredients: "Whole grain oats, sugar, oat bran, corn starch, honey, brown sugar syrup, salt, natural almond flavor, vitamin blend",
     preference: "less sugar",
   },
 };
@@ -223,7 +223,7 @@ async function handleSubmit(event) {
   const submitBtn = el("scan-submit-btn");
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = "Creating…";
+    submitBtn.textContent = "Generating…";
   }
   el("scan-loading").hidden = false;
 
@@ -250,8 +250,10 @@ async function handleSubmit(event) {
       });
       aiRecipe = ai?.recipe?.homemadeAlternative;
       scratchRecipe = aiRecipe ? {
-        title: aiRecipe.title || `Simple homemade ${productName}`,
+        title: aiRecipe.title || `Homemade version of ${productName}`,
+        originalProductName: productName,
         summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
+        whyCleaner: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
         ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
         steps: aiRecipe.steps || [],
         tips: buildTipsFromAiRecipe(aiRecipe),
@@ -273,11 +275,13 @@ async function handleSubmit(event) {
     const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
 
     lastGeneratedRecord = {
-      source: barcode ? "scan+manual" : "manual",
-      upc: barcode,
+      source: "manual",
+      barcode: null,
       productName,
+      originalProductName: scratchRecipe.originalProductName || productName,
       ingredientsText: inputIngredients,
       inputIngredients,
+      notes: "",
       dietaryPreference,
       scratchRecipe,
       recipeTitle: scratchRecipe.title,
@@ -312,7 +316,7 @@ async function handleSubmit(event) {
     el("scan-loading").hidden = true;
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = "Create Homemade Version";
+      submitBtn.textContent = "Generate Homemade Version";
     }
     submitting = false;
   }

@@ -302,6 +302,18 @@ const DIETARY_TIPS = {
   "low-sugar": "Reduce sweetener to taste; rely on fruit, vanilla, or spices for flavor.",
 };
 
+function buildWhyCleaner({ titleBase, hasIngredients }) {
+  const reasons = [
+    "You skip the artificial colors, flavors, and preservatives common in packaged versions.",
+    "You control the salt, sugar, and oil instead of the manufacturer.",
+    "It uses recognizable pantry ingredients you can pronounce.",
+  ];
+  if (hasIngredients) {
+    reasons.push(`Made fresh, it can taste closer to ${titleBase} without the long additive list.`);
+  }
+  return reasons;
+}
+
 function findTemplate({ productName, category }) {
   const name = (productName || "").trim();
   if (name) {
@@ -362,11 +374,12 @@ export function buildDeterministicScratchRecipe({
   if (!tips.length) tips.push("Start with small seasoning adjustments and taste as you go.");
 
   const brandText = brand && brand.trim() ? ` (similar to ${brand.trim()})` : "";
-  const labelText = template?.label || titleBase;
 
   return {
-    title: `Simple homemade ${labelText}`,
-    summary: `Starter homemade version of ${titleBase}${brandText} using common ingredients and fewer additives. This is a suggested starting point, not an exact copy.`,
+    title: `Homemade version of ${titleBase}`,
+    originalProductName: titleBase,
+    summary: `A simpler homemade alternative inspired by ${titleBase}${brandText}, using common ingredients and fewer additives. This is a suggested starting point, not an exact copy.`,
+    whyCleaner: buildWhyCleaner({ titleBase, hasIngredients: parsedIngredients.length > 0 }),
     ingredients,
     steps,
     tips,
