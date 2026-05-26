@@ -67,11 +67,11 @@ export function cleanText(value) {
   return String(value ?? "").trim();
 }
 
-export function normalizeItemName(value) {
+function normalizeItemName(value) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-export function toDisplayName(normalized, fallbackRaw = "") {
+function toDisplayName(normalized, fallbackRaw = "") {
   const raw = cleanText(fallbackRaw);
   if (raw) return raw;
   return normalized
@@ -114,7 +114,7 @@ async function logRequestEvent(env, { eventType, itemName }) {
   }
 }
 
-export async function getPopularItems(env, limit = 5) {
+async function getPopularItems(env, limit = 5) {
   const fallback = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"]
     .slice(0, limit)
     .map((name) => ({

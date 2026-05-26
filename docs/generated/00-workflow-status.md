@@ -1,12 +1,11 @@
 # Workflow Status
 
 - Date: 2026-05-26
-- Task: Replace static homepage sample chips with dynamic popular items from request activity.
+- Task: Fix critical manual-entry runtime bugs so typed-name fallback recipe generation always works without barcode/scanner/AI.
 - Required references read: `AGENTS.md`, `CLAUDE.md`, `.agents/skills/scratchnscan-build/SKILL.md`, `.agents/03-homemade-recipe-engine/AGENT.md`.
 
 ## File-level patch plan
-1. Add worker-level Supabase helper using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
-2. Log request events into `public.sns_request_events` after successful UPC lookup and successful homemade generation.
-3. Add `GET /api/popular-items` that returns grouped top items by normalized name and fallback starter items.
-4. Replace homepage static chip source with dynamic fetch/render and fallback to starter pantry list.
-5. Add lightweight generated checks for endpoint and homepage wiring, then run test/build commands.
+1. Fix route safety for optional `refreshBarcodeBanner` in `app/js/app.js`.
+2. Fix manual submit stability in `app/js/scan.js` (barcode declaration order, photo-input currentTarget capture, fallback-first generation, AI-failure tolerance, optional barcode persistence, remove recipeError leftovers).
+3. Add focused regression checks for the exact browser errors and fallback behavior.
+4. Run `npm test` and `npm run build`.

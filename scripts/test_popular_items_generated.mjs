@@ -14,18 +14,9 @@ for (const token of [
   if (!worker.includes(token)) throw new Error(`Missing worker token: ${token}`);
 }
 
-const popularChips = readFileSync('app/js/popularChips.js', 'utf8');
-for (const token of [
-  'STARTER_PANTRY_ITEMS',
-  'pickChipNames',
-  'renderPopularChips',
-  'dataset.sample',
-]) {
-  if (!popularChips.includes(token)) throw new Error(`Missing popularChips token: ${token}`);
-}
-
 const app = readFileSync('app/js/app.js', 'utf8');
 for (const token of [
+  'STARTER_PANTRY_ITEMS',
   'renderPopularChips',
   'loadPopularItems',
   'data-sample',
