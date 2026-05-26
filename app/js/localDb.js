@@ -103,13 +103,19 @@ export function saveMvpRecipe(input) {
   const ingredientsText = normalizeText(
     input.ingredientsText || input.inputIngredients || input.ingredients,
   );
+  // Barcode is optional. Manual entries store null; a future scanner can
+  // pass a real barcode. We keep `upc` too for backward compatibility.
+  const barcode = input.barcode ? normalizeBarcode(input.barcode) || null
+    : (normalizeBarcode(input.upc) || null);
   const payload = {
     id,
     source: input.source || "manual",
     createdAt,
     updatedAt: nowIso(),
+    barcode,
     upc: normalizeBarcode(input.upc),
     productName: normalizeText(input.productName),
+    originalProductName: normalizeText(input.originalProductName || scratchRecipe?.originalProductName || input.productName),
     brand: normalizeText(input.brand),
     category: normalizeText(input.category),
     ingredientsText,

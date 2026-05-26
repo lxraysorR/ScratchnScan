@@ -99,6 +99,19 @@ export async function initDetailsView(id) {
 
   el("details-summary").textContent = record.scratchRecipe?.summary || "";
 
+  const whyList = record.scratchRecipe?.whyCleaner || [];
+  const whyBlock = el("details-why-block");
+  const whyEl = el("details-why");
+  if (whyEl && whyBlock) {
+    whyEl.innerHTML = "";
+    if (whyList.length) {
+      whyList.forEach((v) => { const li = document.createElement("li"); li.textContent = v; whyEl.appendChild(li); });
+      whyBlock.hidden = false;
+    } else {
+      whyBlock.hidden = true;
+    }
+  }
+
   const ing = el("details-ingredients"); ing.innerHTML = "";
   ingredientsList.forEach((v) => { const li = document.createElement("li"); li.textContent = v; ing.appendChild(li); });
   const steps = el("details-steps"); steps.innerHTML = "";

@@ -50,8 +50,9 @@
             <h1 class="hero-title">Turn packaged foods into scratch-made recipes.</h1>
             <p class="hero-sub">Take front and back package photos, or enter the item manually. ScratchnScan gives you a simpler homemade version with ingredients, steps, and smart swaps.</p>
             <div class="hero-actions">
-              <button class="btn btn-primary" type="button" data-go="manual">Start with a packaged food</button>
-              <button class="btn btn-ghost-light" type="button" data-go="history">View saved ideas</button>
+              <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
+              <button class="btn btn-ghost-light" type="button" data-go="scan">Scan Barcode</button>
+              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
             </div>
             <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
           </div>
@@ -96,11 +97,11 @@
             <p>One tap fills the form so you can see the flow.</p>
           </div>
           <div class="chip-row" id="home-samples" aria-label="Sample packaged foods">
-            <button class="chip" type="button" data-sample="Mayonnaise">Mayonnaise</button>
-            <button class="chip" type="button" data-sample="Ranch Dressing">Ranch dressing</button>
-            <button class="chip" type="button" data-sample="Ketchup">Ketchup</button>
-            <button class="chip" type="button" data-sample="Boxed Mac & Cheese">Mac &amp; cheese</button>
-            <button class="chip" type="button" data-sample="Granola Bar">Granola bar</button>
+            <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
+            <button class="chip" type="button" data-sample="Oreos">Oreos</button>
+            <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
+            <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
+            <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
           </div>
         </section>
 
@@ -195,14 +196,14 @@
             </div>
 
             <div class="field">
-              <label class="label" for="product-name-input">Product name or quick note <span class="req" aria-hidden="true">*</span></label>
-              <input id="product-name-input" class="input" type="text" placeholder="Example: mayonnaise, ranch dressing, granola bar" autocomplete="off" required />
-              <p class="helper">For this MVP, type the item. Later, the app reads this from the front photo.</p>
+              <label class="label" for="product-name-input">Product name <span class="req" aria-hidden="true">*</span></label>
+              <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Kraft Mac and Cheese, Pop-Tarts" autocomplete="off" required />
+              <p class="helper">Type a packaged food name. No barcode or scanner needed.</p>
             </div>
 
             <div class="field">
-              <label class="label" for="ingredients-input">Ingredients from package</label>
-              <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste or type ingredients here when available. Later this comes from the back-label photo."></textarea>
+              <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
+              <textarea id="ingredients-input" class="input" rows="3" placeholder="Optional: paste the ingredients list to get a closer match."></textarea>
             </div>
 
             <div class="field">
@@ -219,7 +220,7 @@
             </div>
 
             <div class="form-actions">
-              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Create Homemade Version</button>
+              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Generate Homemade Version</button>
               <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear form</button>
             </div>
           </form>
@@ -229,11 +230,11 @@
             <p>One tap prefills the form for demo speed.</p>
           </div>
           <div class="chip-row" id="manual-samples" aria-label="Sample packaged foods">
-            <button class="chip" type="button" data-sample="Mayonnaise">Mayonnaise</button>
-            <button class="chip" type="button" data-sample="Ranch Dressing">Ranch</button>
-            <button class="chip" type="button" data-sample="Ketchup">Ketchup</button>
-            <button class="chip" type="button" data-sample="Boxed Mac & Cheese">Mac &amp; cheese</button>
-            <button class="chip" type="button" data-sample="Granola Bar">Granola bar</button>
+            <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
+            <button class="chip" type="button" data-sample="Oreos">Oreos</button>
+            <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
+            <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
+            <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
           </div>
         </section>
 
@@ -242,7 +243,13 @@
           <article class="result-card">
             <div class="badge-row" id="result-badges"></div>
             <h2 class="result-title" id="result-name"></h2>
+            <p class="result-original" id="result-original"></p>
             <p class="result-summary" id="result-summary"></p>
+
+            <section class="recipe-block" id="result-why-block" hidden>
+              <h3>Why this is cleaner</h3>
+              <ul id="result-why" class="bullet-list"></ul>
+            </section>
 
             <section class="recipe-block">
               <h3>Ingredients</h3>
@@ -255,7 +262,7 @@
             </section>
 
             <section class="recipe-block" id="result-tips-block" hidden>
-              <h3>Smart swaps</h3>
+              <h3>Tips</h3>
               <ul id="result-tips" class="bullet-list"></ul>
             </section>
 
@@ -265,8 +272,9 @@
           <p class="usage-strip" id="result-usage-strip" aria-live="polite"></p>
 
           <div class="form-actions">
-            <button id="result-save-btn" class="btn btn-primary" type="button">Save to history</button>
-            <button class="btn btn-ghost" type="button" data-go="manual">Edit input</button>
+            <button id="result-save-btn" class="btn btn-primary" type="button">Save Recipe</button>
+            <button class="btn btn-ghost" type="button" data-go="manual">Make Another</button>
+            <button class="btn btn-ghost" type="button" data-go="history">View History</button>
           </div>
         </section>
 
@@ -307,8 +315,8 @@
             <div class="empty-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 1 1 16 0" /><path d="M2 11h20l-2 8H4z" /></svg>
             </div>
-            <h3>No saved ideas yet</h3>
-            <p>Create your first homemade swap from a packaged food.</p>
+            <h3>No saved recipes yet</h3>
+            <p>Create your first homemade version.</p>
             <button class="btn btn-primary" type="button" data-go="manual">Create first recipe</button>
           </div>
         </section>
@@ -336,8 +344,13 @@
 
             <p class="result-summary" id="details-summary"></p>
 
+            <section class="recipe-block" id="details-why-block" hidden>
+              <h3>Why this is cleaner</h3>
+              <ul id="details-why" class="bullet-list"></ul>
+            </section>
+
             <section class="recipe-block">
-              <h3 id="details-recipe-title">Recipe</h3>
+              <h3 id="details-recipe-title">Ingredients</h3>
               <ul id="details-ingredients" class="bullet-list"></ul>
             </section>
 

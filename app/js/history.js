@@ -86,13 +86,29 @@ export async function initHistoryView() {
         </div>
       </div>
       <div class="history-actions">
-        <button class="btn btn-primary btn-small" type="button" data-action="view">View details</button>
+        <button class="btn btn-primary btn-small" type="button" data-action="view">View Details</button>
         <button class="fav-btn ${fav ? "is-on" : ""}" type="button" data-action="fav" aria-pressed="${fav}" aria-label="${fav ? "Remove from favorites" : "Add to favorites"}">${fav ? STAR_SVG : STAR_OUTLINE_SVG}</button>
+        <button class="btn btn-danger btn-small" type="button" data-action="delete">Delete</button>
       </div>
     `;
 
     li.querySelector('[data-action="view"]').addEventListener("click", () => {
       window.location.hash = `#details/${r.id}`;
+    });
+
+    li.querySelector('[data-action="delete"]').addEventListener("click", async (event) => {
+      if (busy) return;
+      const title = r.productName || recipeTitle;
+      if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+      busy = true;
+      event.currentTarget.disabled = true;
+      try {
+        await deleteMvpRecipe(r.id);
+        showToast("Recipe deleted");
+        await initHistoryView();
+      } finally {
+        busy = false;
+      }
     });
 
     li.querySelector('[data-action="fav"]').addEventListener("click", async (event) => {

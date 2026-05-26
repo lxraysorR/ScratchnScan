@@ -23,9 +23,12 @@ for (const file of required) {
 const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
   'ScratchnScan',
-  'Start with a packaged food',
   'Create Homemade Version',
-  'Save to history',
+  'Generate Homemade Version',
+  'Scan Barcode',
+  'View Saved Recipes',
+  'Save Recipe',
+  'Why this is cleaner',
   'view-home',
   'view-scan',
   'view-manual',
