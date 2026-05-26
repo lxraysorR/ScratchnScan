@@ -1,5 +1,5 @@
 import { generateScratchRecipe } from "./api.js";
-import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
+import { generateHealthierScratchRecipe } from "./recipeGenerator.js";
 import { showToast } from "./app.js";
 import {
   canGenerate,
@@ -226,15 +226,19 @@ async function handleSubmit(event) {
   }
   el("scan-loading").hidden = false;
 
-  // Barcode is optional in manual flow.
-  const hasFrontImage = !!draft.frontImagePreviewDataUrl;
-  const hasBackImage = !!draft.backImagePreviewDataUrl;
+  // Always build a deterministic healthier recipe first. This guarantees a
+  // result even when there is no AI key, the network is down, the API call
+  // fails, the barcode is empty, or the scanner never ran.
+  let scratchRecipe = generateHealthierScratchRecipe({
+    productName,
+    inputIngredients,
+    dietaryPreference,
+  });
+  let fallbackUsed = true;
 
-  let scratchRecipe;
-  let fallbackUsed = false;
-  let recipeError = null;
   try {
-    let aiRecipe = null;
+    // Optionally upgrade the deterministic recipe with an AI result if a
+    // provider happens to be configured. Any failure keeps the fallback.
     try {
       const ai = await generateScratchRecipe({
         productName,
@@ -246,30 +250,27 @@ async function handleSubmit(event) {
         hasFrontImage,
         hasBackImage,
       });
-      aiRecipe = ai?.recipe?.homemadeAlternative;
-      scratchRecipe = aiRecipe ? {
-        title: aiRecipe.title || `Homemade version of ${productName}`,
-        originalProductName: productName,
-        summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
-        healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
-        whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
-        tags: ["homemade", "less processed", "simple ingredients"],
-        createdAt: new Date().toISOString(),
-        ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
-        steps: aiRecipe.steps || [],
-        tips: buildTipsFromAiRecipe(aiRecipe),
-      } : null;
-    } catch {
-      aiRecipe = null;
-    }
-
-    if (!scratchRecipe) {
-      fallbackUsed = true;
-      scratchRecipe = buildDeterministicScratchRecipe({
-        productName,
-        inputIngredients,
-        dietaryPreference,
-      });
+      const aiRecipe = ai?.recipe?.homemadeAlternative;
+      if (aiRecipe) {
+        scratchRecipe = {
+          title: aiRecipe.title || scratchRecipe.title,
+          originalProductName: productName,
+          summary: ai?.recipe?.plainEnglishExplanation || scratchRecipe.summary,
+          healthGoal: aiRecipe.healthGoal || scratchRecipe.healthGoal,
+          whyHealthier: Array.isArray(aiRecipe.whyHealthier)
+            ? aiRecipe.whyHealthier
+            : (Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : scratchRecipe.whyHealthier),
+          ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
+          steps: aiRecipe.steps || [],
+          tips: aiRecipe.tips || scratchRecipe.tips,
+          tags: Array.isArray(aiRecipe.tags) ? aiRecipe.tags : scratchRecipe.tags,
+          createdAt: scratchRecipe.createdAt,
+        };
+        fallbackUsed = false;
+      }
+    } catch (aiErr) {
+      // Expected when no AI provider is configured. Keep the fallback recipe.
+      console.warn("AI recipe unavailable, using local fallback.", aiErr);
     }
 
     const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl;

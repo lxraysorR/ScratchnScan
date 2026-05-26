@@ -45,6 +45,13 @@ export function initResultView() {
   const healthGoalEl = el("result-health-goal");
   if (healthGoalEl) healthGoalEl.textContent = record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.";
 
+  const healthGoal = record.scratchRecipe.healthGoal || "";
+  const goalEl = el("result-healthgoal");
+  if (goalEl) {
+    goalEl.textContent = healthGoal ? `Health goal: ${healthGoal}` : "";
+    goalEl.hidden = !healthGoal;
+  }
+
   const why = record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || [];
   const whyBlock = el("result-why-block");
   const whyList = el("result-why");

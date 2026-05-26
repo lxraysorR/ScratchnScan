@@ -5,7 +5,7 @@
   "type": "module",
   "description": "ScratchNScan MVP shell",
   "scripts": {
-    "test": "node scripts/test_app_shell.mjs && node scripts/test_usage_meter.mjs && node scripts/test_manual_flow.mjs && node scripts/test_manual_mvp.mjs && node scripts/test_manual_mvp_generated.mjs && node scripts/test_popular_items_generated.mjs",
+    "test": "node scripts/test_app_shell.mjs && node scripts/test_recipe_generator.mjs && node scripts/test_usage_meter.mjs && node scripts/test_manual_flow.mjs && node scripts/test_manual_mvp.mjs && node scripts/test_manual_mvp_generated.mjs",
     "build": "node scripts/build_app_shell.mjs",
     "start": "node scripts/serve_hint.mjs",
     "deploy": "wrangler deploy",
