@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const statePath = path.join(process.cwd(), 'qa/state/daily-qa-state.json');
-const promptDir = path.join(process.cwd(), 'agents/prompts');
+const statePath = join(process.cwd(), "qa/state/daily-qa-state.json");
+const promptDir = join(process.cwd(), "agents/prompts");
 const order = [
   '001-project-audit.md',
   '002-mvp-completion-plan.md',
@@ -15,9 +15,9 @@ const order = [
 ];
 
 function readState() {
-  if (!fs.existsSync(statePath)) return { completedTasks: [], blockedTasks: [] };
+  if (!existsSync(statePath)) return { completedTasks: [], blockedTasks: [] };
   try {
-    return JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    return JSON.parse(readFileSync(statePath, "utf8"));
   } catch {
     return { completedTasks: [], blockedTasks: [] };
   }
@@ -32,6 +32,6 @@ if (!next) {
   process.exit(0);
 }
 
-const nextPath = path.join(promptDir, next);
+const nextPath = join(promptDir, next);
 console.log(`Next recommended prompt: agents/prompts/${next}`);
-console.log(fs.existsSync(nextPath) ? 'Status: file exists' : 'Status: file missing');
+console.log(existsSync(nextPath) ? "Status: file exists" : "Status: file missing");

@@ -11,6 +11,9 @@ const tokens = [
   'product-name-input',
   'ingredients-input',
   'dietary-input',
+  'barcode-input',
+  'draft-barcode',
+  'draft-barcode-value',
   'Saved ideas',
 ];
 for (const token of tokens) {
@@ -35,6 +38,10 @@ for (const token of [
   'frontImagePlaceholder',
   'backImagePlaceholder',
   'recipeTips',
+  'const barcode = draftBarcode || manualBarcode || null',
+  'simpleSwaps',
+  'storageTips',
+  'whyLessProcessed',
 ]) {
   if (!scanJs.includes(token)) throw new Error(`Missing scan MVP behavior token: ${token}`);
 }

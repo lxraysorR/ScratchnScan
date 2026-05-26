@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 const root = process.cwd();
 const checks = [
@@ -23,7 +23,7 @@ console.log('ScratchNScan App Status');
 console.log('========================');
 let missing = 0;
 for (const rel of checks) {
-  const exists = fs.existsSync(path.join(root, rel));
+  const exists = existsSync(join(root, rel));
   console.log(`${exists ? '✅' : '❌'} ${rel}`);
   if (!exists) missing += 1;
 }

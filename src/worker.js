@@ -1,16 +1,20 @@
 /**
  * ScratchNScan Cloudflare Worker
  *
- * Secrets (set via `wrangler secret put`):
- *   APP_ADMIN_TOKEN       - bearer token for /api/admin/status
- *   SEARCHUPCDATA_API_KEY - SearchUPCData.com API key
- *   GEMINI_API_KEY        - Google Gemini API key
+ * Local secrets:
+ *   Put GEMINI_API_KEY in .dev.vars
+ *
+ * Deployed secrets:
+ *   wrangler secret put APP_ADMIN_TOKEN
+ *   wrangler secret put SEARCHUPCDATA_API_KEY
+ *   wrangler secret put GEMINI_API_KEY
  *
  * Routes:
  *   GET  /api/health
- *   GET  /api/admin/status          (requires Authorization: Bearer <APP_ADMIN_TOKEN>)
- *   POST /api/lookup-upc            { "upc": "012000001772" }
+ *   GET  /api/admin/status
+ *   POST /api/lookup-upc
  *   POST /api/generate-scratch-recipe
+ *   POST /api/generate-homemade-version   (alias)
  */
 
 // ---------------------------------------------------------------------------
@@ -24,7 +28,8 @@ const ALLOWED_ORIGINS = [
 
 function corsHeaders(request) {
   const origin = request.headers.get("Origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[2];
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+
   return {
     "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -38,20 +43,53 @@ function withCors(request, response) {
   for (const [k, v] of Object.entries(corsHeaders(request))) {
     headers.set(k, v);
   }
-  return new Response(response.body, { status: response.status, headers });
+  headers.set("Vary", "Origin");
+  return new Response(response.body, {
+    status: response.status,
+    headers,
+  });
 }
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Small helpers
+// ---------------------------------------------------------------------------
+function cleanText(value) {
+  return String(value ?? "").trim();
+}
+
+function hasMeaningfulValue(value) {
+  return cleanText(value).length > 0;
+}
+
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
+function extractGeminiText(geminiBody) {
+  const parts = geminiBody?.candidates?.[0]?.content?.parts ?? [];
+  return parts
+    .map((part) => (typeof part?.text === "string" ? part.text : ""))
+    .join("\n")
+    .trim();
 }
 
 // ---------------------------------------------------------------------------
 // Route handlers
 // ---------------------------------------------------------------------------
-
 function handleHealth() {
   return json({ ok: true, service: "scratchnscan" });
 }
@@ -59,15 +97,17 @@ function handleHealth() {
 function handleAdminStatus(request, env) {
   const auth = request.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+
   if (!token || token !== env.APP_ADMIN_TOKEN) {
     return json({ ok: false, error: "Unauthorized" }, 401);
   }
+
   return json({
     ok: true,
     service: "scratchnscan",
     admin: true,
     secrets: {
-      APP_ADMIN_TOKEN: "set",
+      APP_ADMIN_TOKEN: env.APP_ADMIN_TOKEN ? "set" : "missing",
       SEARCHUPCDATA_API_KEY: env.SEARCHUPCDATA_API_KEY ? "set" : "missing",
       GEMINI_API_KEY: env.GEMINI_API_KEY ? "set" : "missing",
     },
@@ -75,19 +115,12 @@ function handleAdminStatus(request, env) {
 }
 
 async function handleLookupUpc(request, env) {
-  // Safe request identifier for logs — never log secrets or auth headers.
-  const reqId = request.headers.get("cf-ray") ?? "local";
+  const reqId = request.headers.get("cf-ray") ?? crypto.randomUUID();
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ ok: false, error: "Invalid UPC" }, 400);
-  }
-
-  // Strip spaces/dashes and validate: digits only, lengths 8 / 12 / 13 / 14.
-  const upc = String(body?.upc ?? "").trim().replace(/[\s\-]/g, "");
+  const body = await readJson(request);
+  const upc = cleanText(body?.upc).replace(/[\s\-]/g, "");
   const VALID_LENGTHS = new Set([8, 12, 13, 14]);
+
   if (!upc || !/^\d+$/.test(upc) || !VALID_LENGTHS.has(upc.length)) {
     return json({ ok: false, error: "Invalid UPC" }, 400);
   }
@@ -111,7 +144,13 @@ async function handleLookupUpc(request, env) {
   }
 
   if (!apiRes.ok) {
-    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_error", providerStatus: apiRes.status }));
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/lookup-upc",
+      upc,
+      error: "provider_error",
+      providerStatus: apiRes.status,
+    }));
     return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
   }
 
@@ -135,7 +174,6 @@ async function handleLookupUpc(request, env) {
 }
 
 function normalizeUpcData(raw, upc) {
-  // Provider may return an array or a single object.
   const item = Array.isArray(raw) ? raw[0] : raw;
   return {
     upc,
@@ -147,98 +185,19 @@ function normalizeUpcData(raw, upc) {
   };
 }
 
-async function handleGenerateScratchRecipe(request, env) {
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Request body must be valid JSON" }, 400);
-  }
+function buildRecipePrompt({
+  productName,
+  brand,
+  ingredients,
+  nutrition,
+  frontText,
+  backText,
+  goals,
+}) {
+  return `
+You are a careful cooking assistant helping a user create a cleaner homemade version of a packaged food item.
 
-  const productName = (body?.productName ?? "").trim();
-  if (!productName) {
-    return json({ error: "productName is required" }, 400);
-  }
-
-  const brand = (body?.brand ?? "").trim();
-  const ingredients = (body?.ingredients ?? "").trim();
-  const nutrition = body?.nutrition ?? null;
-
-  if (!env.GEMINI_API_KEY) {
-    return json({ error: "AI recipe service not configured" }, 502);
-  }
-
-  const prompt = buildRecipePrompt({ productName, brand, ingredients, nutrition });
-
-  let geminiRes;
-  try {
-    geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.4,
-            maxOutputTokens: 2048,
-          },
-        }),
-      }
-    );
-  } catch (err) {
-    console.error("Gemini network error:", err);
-    return json({ error: "AI provider unavailable" }, 502);
-  }
-
-  if (!geminiRes.ok) {
-    const errText = await geminiRes.text().catch(() => "");
-    console.error("Gemini error status:", geminiRes.status, errText);
-    return json({ error: "AI provider returned an error" }, 502);
-  }
-
-  let geminiBody;
-  try {
-    geminiBody = await geminiRes.json();
-  } catch {
-    return json({ error: "AI provider returned invalid data" }, 502);
-  }
-
-  const rawText = geminiBody?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  let recipe;
-  try {
-    recipe = JSON.parse(rawText);
-  } catch {
-    console.error("Gemini JSON parse failed. Raw:", rawText.slice(0, 300));
-    return json({ error: "AI provider returned malformed JSON" }, 502);
-  }
-
-  const validated = validateAiContract(recipe);
-  if (!validated.ok) {
-    return json({ error: "AI response failed validation", details: validated.errors }, 502);
-  }
-
-  return json({ ok: true, recipe: validated.recipe });
-}
-
-// ---------------------------------------------------------------------------
-// AI prompt and contract validation
-// ---------------------------------------------------------------------------
-
-function buildRecipePrompt({ productName, brand, ingredients, nutrition }) {
-  const brandLine = brand ? `Brand: ${brand}` : "";
-  const ingredientsLine = ingredients ? `Ingredients list: ${ingredients}` : "Ingredients list: unknown";
-  const nutritionLine = nutrition ? `Nutrition snapshot: ${JSON.stringify(nutrition)}` : "";
-
-  return `You are a helpful cooking assistant. A user scanned a packaged food item and wants a cleaner homemade alternative.
-
-Product: ${productName}
-${brandLine}
-${ingredientsLine}
-${nutritionLine}
-
-Return ONLY a JSON object matching this exact structure. Do not include markdown fences or extra text.
+Return ONLY a JSON object that matches this structure exactly:
 
 {
   "product": {
@@ -249,7 +208,11 @@ Return ONLY a JSON object matching this exact structure. Do not include markdown
   },
   "plainEnglishExplanation": "string",
   "ingredientSignals": [
-    { "name": "string", "reason": "string", "category": "sweetener | oil | preservative | stabilizer | flavor | color | flour | dairy | protein | other" }
+    {
+      "name": "string",
+      "reason": "string",
+      "category": "sweetener | oil | preservative | stabilizer | flavor | color | flour | dairy | protein | other"
+    }
   ],
   "homemadeAlternative": {
     "title": "string",
@@ -258,9 +221,21 @@ Return ONLY a JSON object matching this exact structure. Do not include markdown
     "cookTimeMinutes": 0,
     "difficulty": "easy | moderate",
     "servings": "string",
-    "ingredients": [{ "item": "string", "amount": "string", "notes": "string" }],
+    "ingredients": [
+      {
+        "item": "string",
+        "amount": "string",
+        "notes": "string"
+      }
+    ],
     "steps": ["string"],
-    "simpleSwaps": [{ "insteadOf": "string", "use": "string", "why": "string" }],
+    "simpleSwaps": [
+      {
+        "insteadOf": "string",
+        "use": "string",
+        "why": "string"
+      }
+    ],
     "whyLessProcessed": ["string"],
     "tasteAndTextureExpectation": "string",
     "storageTips": "string"
@@ -269,11 +244,153 @@ Return ONLY a JSON object matching this exact structure. Do not include markdown
   "disclaimer": "This is general cooking and ingredient information, not medical advice. Check labels and consult a qualified professional for allergies, medical conditions, or dietary restrictions."
 }
 
+User input:
+- Product name: ${productName || "unknown"}
+- Brand: ${brand || "unknown"}
+- Ingredients text: ${ingredients || "unknown"}
+- Front label text: ${frontText || "unknown"}
+- Back label text: ${backText || "unknown"}
+- Nutrition snapshot: ${nutrition ? JSON.stringify(nutrition) : "unknown"}
+- User goals: ${goals || "none provided"}
+
 Rules:
-- Do not claim medical benefits or diagnose allergies.
+- If package text is incomplete, still create the best reasonable homemade version.
+- Prefer common grocery-store ingredients.
+- Keep instructions practical for a normal home cook.
+- Do not claim medical benefits.
 - Use cautious language such as "may be simpler" or "uses fewer packaged additives".
-- If the product is unsafe or impossible to replicate at home, return a safe explanation and no recipe steps.
-- Keep instructions simple enough for a home cook.`;
+- If there is not enough information for a confident replica, still provide a reasonable homemade interpretation.
+- Do not include markdown fences.
+`.trim();
+}
+
+function getRecipeResponseSchema() {
+  return {
+    type: "OBJECT",
+    required: [
+      "product",
+      "plainEnglishExplanation",
+      "ingredientSignals",
+      "homemadeAlternative",
+      "safetyNotes",
+      "disclaimer",
+    ],
+    properties: {
+      product: {
+        type: "OBJECT",
+        required: ["name", "foodType", "confidence", "sourceBasis"],
+        properties: {
+          name: { type: "STRING" },
+          foodType: { type: "STRING" },
+          confidence: {
+            type: "STRING",
+            enum: ["high", "medium", "low"],
+          },
+          sourceBasis: {
+            type: "ARRAY",
+            items: {
+              type: "STRING",
+              enum: ["upc", "front_label", "ingredients_label", "user_text"],
+            },
+          },
+        },
+      },
+      plainEnglishExplanation: { type: "STRING" },
+      ingredientSignals: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          required: ["name", "reason", "category"],
+          properties: {
+            name: { type: "STRING" },
+            reason: { type: "STRING" },
+            category: {
+              type: "STRING",
+              enum: [
+                "sweetener",
+                "oil",
+                "preservative",
+                "stabilizer",
+                "flavor",
+                "color",
+                "flour",
+                "dairy",
+                "protein",
+                "other",
+              ],
+            },
+          },
+        },
+      },
+      homemadeAlternative: {
+        type: "OBJECT",
+        required: [
+          "title",
+          "positioning",
+          "prepTimeMinutes",
+          "cookTimeMinutes",
+          "difficulty",
+          "servings",
+          "ingredients",
+          "steps",
+          "simpleSwaps",
+          "whyLessProcessed",
+          "tasteAndTextureExpectation",
+          "storageTips",
+        ],
+        properties: {
+          title: { type: "STRING" },
+          positioning: { type: "STRING" },
+          prepTimeMinutes: { type: "INTEGER" },
+          cookTimeMinutes: { type: "INTEGER" },
+          difficulty: {
+            type: "STRING",
+            enum: ["easy", "moderate"],
+          },
+          servings: { type: "STRING" },
+          ingredients: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              required: ["item", "amount", "notes"],
+              properties: {
+                item: { type: "STRING" },
+                amount: { type: "STRING" },
+                notes: { type: "STRING" },
+              },
+            },
+          },
+          steps: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+          },
+          simpleSwaps: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              required: ["insteadOf", "use", "why"],
+              properties: {
+                insteadOf: { type: "STRING" },
+                use: { type: "STRING" },
+                why: { type: "STRING" },
+              },
+            },
+          },
+          whyLessProcessed: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+          },
+          tasteAndTextureExpectation: { type: "STRING" },
+          storageTips: { type: "STRING" },
+        },
+      },
+      safetyNotes: {
+        type: "ARRAY",
+        items: { type: "STRING" },
+      },
+      disclaimer: { type: "STRING" },
+    },
+  };
 }
 
 function validateAiContract(recipe) {
@@ -281,16 +398,33 @@ function validateAiContract(recipe) {
 
   if (!recipe?.product?.name) errors.push("product.name is required");
   if (!recipe?.homemadeAlternative?.title) errors.push("homemadeAlternative.title is required");
-  if (!Array.isArray(recipe?.homemadeAlternative?.ingredients) || recipe.homemadeAlternative.ingredients.length === 0) {
+
+  if (
+    !Array.isArray(recipe?.homemadeAlternative?.ingredients) ||
+    recipe.homemadeAlternative.ingredients.length === 0
+  ) {
     errors.push("homemadeAlternative.ingredients must be a non-empty array");
   }
-  if (!Array.isArray(recipe?.homemadeAlternative?.steps) || recipe.homemadeAlternative.steps.length === 0) {
+
+  if (
+    !Array.isArray(recipe?.homemadeAlternative?.steps) ||
+    recipe.homemadeAlternative.steps.length === 0
+  ) {
     errors.push("homemadeAlternative.steps must be a non-empty array");
   }
 
-  if (errors.length > 0) return { ok: false, errors };
+  if (!Array.isArray(recipe?.ingredientSignals)) {
+    errors.push("ingredientSignals must be an array");
+  }
 
-  // Ensure disclaimer is always present.
+  if (!Array.isArray(recipe?.safetyNotes)) {
+    errors.push("safetyNotes must be an array");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
   if (!recipe.disclaimer) {
     recipe.disclaimer =
       "This is general cooking and ingredient information, not medical advice. Check labels and consult a qualified professional for allergies, medical conditions, or dietary restrictions.";
@@ -299,15 +433,163 @@ function validateAiContract(recipe) {
   return { ok: true, recipe };
 }
 
+async function handleGenerateScratchRecipe(request, env) {
+  const reqId = request.headers.get("cf-ray") ?? crypto.randomUUID();
+  const body = await readJson(request);
+
+  if (!body) {
+    return json({ ok: false, error: "Request body must be valid JSON" }, 400);
+  }
+
+  const productName = cleanText(body?.productName);
+  const brand = cleanText(body?.brand);
+  const ingredients = cleanText(body?.ingredients);
+  const frontText = cleanText(body?.frontText);
+  const backText = cleanText(body?.backText);
+  const goals = cleanText(body?.goals);
+  const nutrition = body?.nutrition ?? null;
+
+  const hasInput =
+    hasMeaningfulValue(productName) ||
+    hasMeaningfulValue(ingredients) ||
+    hasMeaningfulValue(frontText) ||
+    hasMeaningfulValue(backText);
+
+  if (!hasInput) {
+    return json(
+      {
+        ok: false,
+        error: "Provide at least one of: productName, ingredients, frontText, or backText.",
+      },
+      400
+    );
+  }
+
+  if (!env.GEMINI_API_KEY) {
+    console.log(JSON.stringify({ reqId, path: "/api/generate-scratch-recipe", error: "missing_key" }));
+    return json({ ok: false, error: "AI recipe service not configured" }, 502);
+  }
+
+  const prompt = buildRecipePrompt({
+    productName,
+    brand,
+    ingredients,
+    nutrition,
+    frontText,
+    backText,
+    goals,
+  });
+
+  let geminiRes;
+  try {
+    geminiRes = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: getRecipeResponseSchema(),
+            temperature: 0.4,
+            maxOutputTokens: 2048,
+          },
+        }),
+      }
+    );
+  } catch (err) {
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/generate-scratch-recipe",
+      error: "provider_network_error",
+      message: err instanceof Error ? err.message : String(err),
+    }));
+    return json({ ok: false, error: "AI provider unavailable" }, 502);
+  }
+
+  if (!geminiRes.ok) {
+    const errText = await geminiRes.text().catch(() => "");
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/generate-scratch-recipe",
+      error: "provider_error",
+      providerStatus: geminiRes.status,
+      detailPreview: errText.slice(0, 300),
+    }));
+    return json({ ok: false, error: "AI provider returned an error" }, 502);
+  }
+
+  let geminiBody;
+  try {
+    geminiBody = await geminiRes.json();
+  } catch {
+    return json({ ok: false, error: "AI provider returned invalid data" }, 502);
+  }
+
+  const rawText = extractGeminiText(geminiBody);
+  if (!rawText) {
+    return json({ ok: false, error: "AI provider returned an empty response" }, 502);
+  }
+
+  let recipe;
+  try {
+    recipe = JSON.parse(rawText);
+  } catch {
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/generate-scratch-recipe",
+      error: "json_parse_failed",
+      rawPreview: rawText.slice(0, 300),
+    }));
+    return json({ ok: false, error: "AI provider returned malformed JSON" }, 502);
+  }
+
+  const validated = validateAiContract(recipe);
+  if (!validated.ok) {
+    return json(
+      {
+        ok: false,
+        error: "AI response failed validation",
+        details: validated.errors,
+      },
+      502
+    );
+  }
+
+  return json({
+    ok: true,
+    recipe: validated.recipe,
+    meta: {
+      model: "gemini-3.5-flash",
+      usedInputs: {
+        productName: hasMeaningfulValue(productName),
+        ingredients: hasMeaningfulValue(ingredients),
+        frontText: hasMeaningfulValue(frontText),
+        backText: hasMeaningfulValue(backText),
+      },
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Main fetch handler
 // ---------------------------------------------------------------------------
-
 export default {
   async fetch(request, env) {
-    // Handle preflight.
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders(request) });
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(request),
+      });
     }
 
     const url = new URL(request.url);
@@ -315,6 +597,7 @@ export default {
     const method = request.method;
 
     let response;
+
     try {
       if (pathname === "/api/health" && method === "GET") {
         response = handleHealth();
@@ -322,16 +605,25 @@ export default {
         response = handleAdminStatus(request, env);
       } else if (pathname === "/api/lookup-upc" && method === "POST") {
         response = await handleLookupUpc(request, env);
-      } else if (pathname === "/api/generate-scratch-recipe" && method === "POST") {
+      } else if (
+        (pathname === "/api/generate-scratch-recipe" ||
+          pathname === "/api/generate-homemade-version") &&
+        method === "POST"
+      ) {
         response = await handleGenerateScratchRecipe(request, env);
       } else if (pathname.startsWith("/api/")) {
         response = json({ ok: false, error: "Not found" }, 404);
-      } else {
-        // Serve static frontend assets via the ASSETS binding.
+      } else if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
         return env.ASSETS.fetch(request);
+      } else {
+        response = json({ ok: false, error: "Static assets binding is missing" }, 500);
       }
     } catch (err) {
-      console.log(JSON.stringify({ path: pathname, error: "unhandled_exception", message: err?.message }));
+      console.log(JSON.stringify({
+        path: pathname,
+        error: "unhandled_exception",
+        message: err instanceof Error ? err.message : String(err),
+      }));
       response = json({ ok: false, error: "Internal server error" }, 500);
     }
 

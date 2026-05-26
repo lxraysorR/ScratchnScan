@@ -19,7 +19,8 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
 ## 3) Manual / package entry
 - **Status:** Done
 - **Acceptance criteria:** Required product name; ingredients-from-
-  package text; preference; clear validation copy; sample chips. Brand
+  package text; preference; optional UPC/barcode; visible draft barcode
+  banner with clear action; clear validation copy; sample chips. Brand
   and category are not primary required fields.
 - **Test:** `node scripts/test_manual_mvp_generated.mjs` and a manual
   run.
@@ -31,12 +32,23 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
   The thumbnail uses `object-fit: cover` and stays sharp.
 - **Test:** Manual run; pick an image for front and back.
 
-## 5) Scanner foundation
-- **Status:** In Progress (placeholder)
-- **Acceptance criteria:** `#scan` view is reachable; "Open scanner"
-  shows a friendly fallback toast; manual entry is always available.
-  Native Capacitor ML Kit packaging is **not** included in this pass.
-- **Test:** Tap "Scan" in the bottom nav.
+## 5) Scanner / photo-first flow
+- **Status:** Done (native scan wired, not yet hardware-tested) / browser
+  fallback fully working
+- **Acceptance criteria:** `#scan` view is reachable; the **Scan package**
+  button is wired and never a dead action. On a native (Capacitor) build it
+  opens the ML Kit camera scanner; in a plain browser it does not pretend to
+  scan — it shows a friendly "scanner unavailable" message and routes into
+  manual / photo entry. A captured barcode shows in a banner on the entry
+  screen and flows into generation context. Cancelled or unavailable scans
+  never count as a free generation. Front / back photo tiles open
+  file/camera selection, store a compressed local preview, and support
+  Replace / Remove.
+- **Known gap:** native camera scan is untested on real hardware (see #12);
+  photos are stored as local previews only (no OCR yet).
+- **Test:** Tap "Scan" in the bottom nav, then "Scan package" (browser
+  fallback routes to manual). Add front and back photos, confirm thumbnails,
+  Replace, and Remove.
 
 ## 6) Homemade recipe generation
 - **Status:** Done
@@ -79,8 +91,10 @@ Status values: **Not Started** | **In Progress** | **Done** | **Blocked**
 ## 11) Tests
 - **Status:** Done
 - **Acceptance criteria:** `npm test`, `npm run qa:smoke`, and
-  `npm run build` succeed. Optional `node scripts/test_manual_mvp*.mjs`
-  and `node scripts/test_n8n_repo_access_generated.mjs` also pass.
+  `npm run build` succeed, each now guarded by `npm run check:syntax`.
+  `npm run qa:flow` succeeds as an end-to-end scripted QA gate.
+  Optional `node scripts/test_manual_mvp*.mjs` and
+  `node scripts/test_n8n_repo_access_generated.mjs` also pass.
 
 ## 12) Remaining native / mobile work
 - **Status:** Not Started

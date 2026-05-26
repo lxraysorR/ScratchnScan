@@ -1,8 +1,11 @@
 import { initScanView, applySample } from "./scan.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initDatabase } from "./localDb.js";
+import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import {
   refreshUsageStrips,
   resetUsageForDev,
@@ -44,10 +47,12 @@ async function route() {
   if (name === "manual") {
     showView("manual");
     await initScanView();
+    refreshBarcodeBanner();
     return;
   }
   if (name === "scan") {
     showView("scan");
+    initPackageEntry();
     return;
   }
   if (name === "result") {

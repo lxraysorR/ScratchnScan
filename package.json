@@ -12,9 +12,15 @@
     "preview": "wrangler dev",
     "app:status": "node scripts/app-status.js",
     "agent:next": "node scripts/agent-next-task.js",
-    "qa:smoke": "node scripts/qa-smoke.js"
+    "qa:smoke": "node scripts/qa-smoke.js",
+    "qa:flow": "npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
     "wrangler": "^4.88.0"
+  },
+  "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^7.5.0"
   }
 }
