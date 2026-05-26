@@ -103,10 +103,13 @@ function wirePhotoControls() {
   });
   document.querySelectorAll("[data-photo-input]").forEach((input) => {
     input.addEventListener("change", async (event) => {
-      const which = event.currentTarget.dataset.photoInput;
-      const file = event.currentTarget.files?.[0];
+      const inputEl = event.currentTarget;
+      const which = inputEl?.dataset?.photoInput;
+      const file = inputEl?.files?.[0];
       await handlePhotoSelected(which, file);
-      event.currentTarget.value = "";
+      if (inputEl) {
+        inputEl.value = "";
+      }
     });
   });
   document.querySelectorAll("[data-photo-replace]").forEach((btn) => {
@@ -200,12 +203,12 @@ async function handleSubmit(event) {
   const productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
   const dietaryPreference = (el("dietary-input")?.value || "").trim();
-  const draftBarcode = normalizeBarcode(getDraftBarcode());
-  const manualBarcode = normalizeBarcode(el("barcode-input")?.value || "");
+  const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
+  const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || null;
 
   if (!productName) {
-    showError("Add a product name or quick note so we know what to scratch-make.");
+    showError("Type a packaged food name first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -217,7 +220,6 @@ async function handleSubmit(event) {
     return;
   }
 
-  const barcode = getDraftBarcode();
 
   submitting = true;
   const submitBtn = el("scan-submit-btn");
@@ -227,16 +229,18 @@ async function handleSubmit(event) {
   }
   el("scan-loading").hidden = false;
 
-  // Any barcode captured during a scan session flows into the recipe context.
-  const barcode = getDraftBarcode();
-  const hasFrontImage = !!draft.frontImagePreviewDataUrl;
-  const hasBackImage = !!draft.backImagePreviewDataUrl;
+  const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl || null;
+  const backImagePreviewDataUrl = draft.backImagePreviewDataUrl || null;
+  const hasFrontImage = !!frontImagePreviewDataUrl;
+  const hasBackImage = !!backImagePreviewDataUrl;
 
-  let scratchRecipe;
-  let fallbackUsed = false;
-  let recipeError = null;
+  let scratchRecipe = buildDeterministicScratchRecipe({
+    productName,
+    inputIngredients,
+    dietaryPreference,
+  });
+  let fallbackUsed = true;
   try {
-    let aiRecipe = null;
     try {
       const ai = await generateScratchRecipe({
         productName,
@@ -248,35 +252,29 @@ async function handleSubmit(event) {
         hasFrontImage,
         hasBackImage,
       });
-      aiRecipe = ai?.recipe?.homemadeAlternative;
-      scratchRecipe = aiRecipe ? {
+      const aiRecipe = ai?.recipe?.homemadeAlternative;
+      if (aiRecipe) {
+        scratchRecipe = {
         title: aiRecipe.title || `Homemade version of ${productName}`,
         originalProductName: productName,
         summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
-        whyCleaner: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+        healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
+        whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+        tags: ["homemade", "less processed", "simple ingredients"],
+        createdAt: new Date().toISOString(),
         ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
         steps: aiRecipe.steps || [],
         tips: buildTipsFromAiRecipe(aiRecipe),
-      } : null;
-    } catch {
-      aiRecipe = null;
+        };
+        fallbackUsed = false;
+      }
+    } catch (err) {
+      console.warn("AI recipe unavailable. Using local fallback.", err);
     }
-
-    if (!scratchRecipe) {
-      fallbackUsed = true;
-      scratchRecipe = buildDeterministicScratchRecipe({
-        productName,
-        inputIngredients,
-        dietaryPreference,
-      });
-    }
-
-    const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl;
-    const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
 
     lastGeneratedRecord = {
       source: "manual",
-      barcode: null,
+      barcode,
       productName,
       originalProductName: scratchRecipe.originalProductName || productName,
       ingredientsText: inputIngredients,
@@ -310,8 +308,8 @@ async function handleSubmit(event) {
 
     window.location.hash = "#result";
   } catch (err) {
-    recipeError = err;
-    showError(err?.message || "Could not generate a homemade version. Please try again.");
+    showError("We could not generate the recipe yet. Try typing the product name again.");
+    console.error("manual generation failed", err);
   } finally {
     el("scan-loading").hidden = true;
     if (submitBtn) {
@@ -320,6 +318,4 @@ async function handleSubmit(event) {
     }
     submitting = false;
   }
-  // Unused but kept for clarity; thrown errors are surfaced above.
-  void recipeError;
 }
