@@ -20,7 +20,11 @@ assert.match(scanJs, /const hasFrontImage = !!frontImagePreviewDataUrl;/);
 assert.match(scanJs, /const hasBackImage = !!backImagePreviewDataUrl;/);
 assert.match(scanJs, /const inputEl = event\.currentTarget;/);
 assert.match(scanJs, /await handlePhotoSelected\(which, file\);/);
-assert.match(scanJs, /if \(inputEl\) \{\s*inputEl\.value = "";/s);
+assert.ok(
+  /if \(inputEl\)\s*inputEl\.value = "";/s.test(scanJs) ||
+  /if \(inputEl\) \{\s*inputEl\.value = "";/s.test(scanJs),
+  'photo input handler should clear captured inputEl safely',
+);
 assert.match(scanJs, /console\.warn\("AI recipe unavailable\. Using local fallback\.", err\);/);
 assert.match(scanJs, /barcode,\s*\n\s*productName,/);
 const fallbackInit = scanJs.indexOf('let scratchRecipe = buildDeterministicScratchRecipe');

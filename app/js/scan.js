@@ -82,9 +82,7 @@ function wirePhotoControls() {
       const which = inputEl?.dataset?.photoInput;
       const file = inputEl?.files?.[0];
       await handlePhotoSelected(which, file);
-      if (inputEl) {
-        inputEl.value = "";
-      }
+      if (inputEl) inputEl.value = "";
     });
   });
   document.querySelectorAll("[data-photo-replace]").forEach((btn) => {
