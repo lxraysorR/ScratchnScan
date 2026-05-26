@@ -12,8 +12,27 @@ function inferIngredients(text) {
 
 const PRODUCT_TEMPLATES = [
   {
+    match: /\b(chips|crisps|potato chips|tortilla chips)\b/i,
+    label: "potato chips",
+    method: "Baked",
+    base: "Potatoes",
+    ingredients: [
+      "2 large russet potatoes, sliced paper-thin",
+      "1 tbsp olive or avocado oil",
+      "1/2 tsp sea salt",
+      "Optional: paprika, garlic powder, or black pepper",
+    ],
+    steps: [
+      "Heat oven to 375F (190C). Toss thin potato slices with oil and salt.",
+      "Arrange in a single layer on lined sheet pans, not overlapping.",
+      "Bake 15-22 min, flipping once, until golden and crisp. Watch closely near the end. Cool to crisp up.",
+    ],
+  },
+  {
     match: /\b(mayo|mayonnaise|aioli)\b/i,
     label: "mayonnaise",
+    method: "Whisked",
+    base: "Egg / oil",
     ingredients: [
       "1 egg yolk (or 3 tbsp aquafaba for vegan)",
       "1 tsp Dijon mustard",
@@ -31,6 +50,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(ranch|dressing|vinaigrette)\b/i,
     label: "dressing",
+    method: "Whisked",
+    base: "Yogurt / oil",
     ingredients: [
       "1/2 cup plain yogurt or sour cream (or cashew cream for dairy-free)",
       "2 tbsp olive oil",
@@ -48,6 +69,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(ketchup|tomato sauce)\b/i,
     label: "ketchup",
+    method: "Simmered",
+    base: "Tomato",
     ingredients: [
       "1 (15 oz) can tomato sauce or 2 cups crushed tomatoes",
       "2 tbsp apple cider vinegar",
@@ -65,6 +88,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(granola|cereal)\b/i,
     label: "granola",
+    method: "Baked",
+    base: "Oats",
     ingredients: [
       "3 cups rolled oats",
       "1 cup nuts or seeds (almonds, pecans, sunflower)",
@@ -82,6 +107,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(bread|loaf|sandwich bread)\b/i,
     label: "sandwich bread",
+    method: "Baked",
+    base: "Flour",
     ingredients: [
       "3 cups bread flour (or 1:1 gluten-free blend)",
       "1 tsp salt",
@@ -99,6 +126,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(mac.*cheese|macaroni|cheese pasta)\b/i,
     label: "mac and cheese",
+    method: "Stovetop",
+    base: "Pasta",
     ingredients: [
       "8 oz dried pasta",
       "2 tbsp butter (or olive oil)",
@@ -116,6 +145,8 @@ const PRODUCT_TEMPLATES = [
   {
     match: /\b(yogurt|yoghurt)\b/i,
     label: "yogurt",
+    method: "Cultured",
+    base: "Milk",
     ingredients: [
       "4 cups whole milk (or oat milk + 1 tbsp starch)",
       "2 tbsp plain yogurt with live cultures (starter)",
@@ -341,16 +372,16 @@ export function buildDeterministicScratchRecipe({
     ];
   } else {
     ingredients = [
-      "Main base ingredient (grain, dairy, or vegetable)",
-      "Simple fat (oil or butter)",
-      "Salt and spices",
-      "Liquid (water, milk, or stock)",
-      "Optional aromatic (garlic, onion, herbs)",
+      "1 cup whole-food base (oats, potatoes, beans, or flour)",
+      "1-2 tbsp olive oil or butter",
+      "1/2 tsp salt plus spices to taste",
+      "1/2-1 cup water, milk, or stock",
+      "1 aromatic: garlic, onion, or fresh herbs",
     ];
     steps = [
-      "Combine dry/base ingredients in a bowl.",
-      "Add liquid and fat, then mix until texture is even.",
-      "Cook, bake, or chill based on the product style, then taste and adjust.",
+      "Combine your base with salt and spices in a bowl.",
+      "Add liquid and fat, then mix until the texture is even.",
+      "Cook, bake, or chill to match the packaged version, then taste and adjust.",
     ];
   }
 
@@ -364,11 +395,17 @@ export function buildDeterministicScratchRecipe({
   const brandText = brand && brand.trim() ? ` (similar to ${brand.trim()})` : "";
   const labelText = template?.label || titleBase;
 
+  const quickFacts = (template?.method || template?.base)
+    ? { method: template.method || "", base: template.base || "" }
+    : null;
+
   return {
     title: `Simple homemade ${labelText}`,
     summary: `Starter homemade version of ${titleBase}${brandText} using common ingredients and fewer additives. This is a suggested starting point, not an exact copy.`,
     ingredients,
     steps,
     tips,
+    quickFacts,
+    whyCleaner: `Made from scratch, this skips the additives, preservatives, and stabilizers common in packaged ${labelText}, and lets you control the salt, sugar, and fat. Taste and texture may differ from the store version.`,
   };
 }

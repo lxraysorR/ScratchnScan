@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="app-header">
-      <a href="#home" class="app-logo">ScratchNScan</a>
+    <header class="topbar">
+      <a href="#home" class="brand">
+        <span class="logo">Scan-Scratch</span>
+        <span class="brand-sub">Turn packaged foods into homemade versions</span>
+      </a>
       <nav class="app-nav">
         <a href="#manual" class="nav-link">Manual Entry</a>
         <a href="#history" class="nav-link">History</a>
@@ -69,15 +72,15 @@
       </section>
 
       <section id="view-result" class="view" hidden>
-        <h2 class="view-title">Generated result</h2>
-        <div class="result-card">
-          <h3 id="result-name" class="result-name"></h3>
-          <p id="result-summary"></p>
-          <h4>Ingredients</h4><ul id="result-homemade-ingredients"></ul>
-          <h4>Steps</h4><ol id="result-homemade-steps"></ol>
-          <p id="result-note" class="hint"></p>
+        <div class="card-header">
+          <h2 class="view-title">Generated result</h2>
+          <span class="pill accent">Result preview</span>
         </div>
-        <div class="result-actions"><button id="result-save-btn" class="btn btn-primary">Save to history</button><a href="#manual" class="btn btn-secondary">Back to manual</a></div>
+        <div id="result-content"></div>
+        <div class="cta-bar">
+          <a href="#manual" class="btn secondary">Edit details</a>
+          <button id="result-save-btn" class="btn primary">Save recipe</button>
+        </div>
       </section>
 
       <section id="view-history" class="view" hidden>
@@ -87,23 +90,16 @@
       </section>
 
       <section id="view-details" class="view" hidden>
-        <h2 class="view-title">Details</h2>
-        <div class="result-card">
-          <h3 id="details-name" class="result-name"></h3>
-          <p id="details-meta" class="result-source"></p>
-          <p id="details-date" class="result-source"></p>
-          <p id="details-input" class="history-summary"></p>
-          <p id="details-summary"></p>
-          <h4 id="details-recipe-title"></h4>
-          <h5>Ingredients</h5><ul id="details-ingredients"></ul>
-          <h5>Steps</h5><ol id="details-steps"></ol>
-          <p id="details-fallback-note" class="hint" hidden></p>
-          <p class="hint">General food information only. Not medical or dietary advice.</p>
+        <div class="card-header">
+          <h2 class="view-title">Saved recipe</h2>
+          <span class="pill green">Saved recipe</span>
         </div>
-        <div class="result-actions">
-          <button id="details-favorite-btn" class="btn btn-secondary">☆ Favorite</button>
-          <button id="details-delete-btn" class="btn btn-danger">Delete</button>
-          <a href="#history" class="btn btn-secondary">Back to history</a>
+        <p id="details-date" class="result-source"></p>
+        <div id="details-content"></div>
+        <div class="cta-bar">
+          <a href="#history" class="btn secondary grow-0">Back</a>
+          <button id="details-favorite-btn" class="btn secondary">☆ Favorite</button>
+          <button id="details-delete-btn" class="btn danger grow-0">Delete</button>
         </div>
       </section>
     </main>

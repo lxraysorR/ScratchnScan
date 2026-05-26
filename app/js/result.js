@@ -1,5 +1,6 @@
 import { lastGeneratedRecord } from "./scan.js";
 import { saveMvpRecipe } from "./localDb.js";
+import { renderRecipeRecord } from "./recipeRender.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -15,44 +16,30 @@ export function initResultView() {
   }
 
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
-  el("result-name").textContent = record.scratchRecipe.title;
-  el("result-summary").textContent = record.scratchRecipe.summary;
-  el("result-note").textContent = fallbackUsed
-    ? "No AI provider available - this is a starter suggestion built from common ingredients. Tweak to taste."
-    : "Generated from the configured AI provider. Tweak to taste.";
-
-  const ingredients = el("result-homemade-ingredients");
-  ingredients.innerHTML = "";
-  for (const item of record.scratchRecipe.ingredients || []) {
-    const li = document.createElement("li"); li.textContent = item; ingredients.appendChild(li);
-  }
-  const steps = el("result-homemade-steps");
-  steps.innerHTML = "";
-  for (const item of record.scratchRecipe.steps || []) {
-    const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
-  }
+  renderRecipeRecord(el("result-content"), record, { fallbackUsed });
 
   const saveBtn = el("result-save-btn");
   if (!saveBtn) return;
+  saving = false;
   saveBtn.disabled = false;
-  saveBtn.textContent = "Save to history";
+  saveBtn.textContent = "Save recipe";
   saveBtn.onclick = async () => {
     if (saving) return;
     saving = true;
     saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
+    saveBtn.textContent = "Saving…";
     try {
       const id = await saveMvpRecipe({ ...record, fallbackUsed });
       sessionStorage.removeItem("scratchnscan:lastGenerated");
       if (id) {
         window.location.hash = `#details/${id}`;
       } else {
-        saveBtn.textContent = "Save failed - try again";
+        saveBtn.textContent = "Save failed — try again";
         saveBtn.disabled = false;
         saving = false;
       }
     } catch {
-      saveBtn.textContent = "Save failed - try again";
+      saveBtn.textContent = "Save failed — try again";
       saveBtn.disabled = false;
       saving = false;
     }

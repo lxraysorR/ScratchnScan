@@ -11,6 +11,7 @@ const required = [
   'app/js/history.js',
   'app/js/details.js',
   'app/js/manualRecipe.js',
+  'app/js/recipeRender.js',
   'AGENTS.md',
   'docs/MVP_SCOPE.md',
 ];
@@ -22,12 +23,17 @@ for (const file of required) {
 const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
   'ScratchNScan',
+  'Scan-Scratch',
   'Start Manual Entry',
   'Generate Scratch Version',
-  'Save to history',
+  'Save recipe',
   'view-manual',
+  'view-result',
   'view-history',
   'view-details',
+  'result-content',
+  'details-content',
+  'cta-bar',
   'product-name-input',
   'brand-input',
   'category-input',
@@ -107,6 +113,33 @@ const veganMayo = recipeMod.buildDeterministicScratchRecipe({
 });
 if (!veganMayo.tips.some((t) => /aquafaba|plant/i.test(t))) {
   throw new Error('vegan dietary tip should appear');
+}
+
+// New theme fields: matched templates expose quickFacts + whyCleaner.
+if (!mayo.whyCleaner || !/cleaner|additives|preservatives/i.test(mayo.whyCleaner)) {
+  throw new Error('matched template should include a whyCleaner explanation');
+}
+if (!mayo.quickFacts || !mayo.quickFacts.method) {
+  throw new Error('matched template should include quickFacts.method');
+}
+const chips = recipeMod.buildDeterministicScratchRecipe({ productName: 'Potato Chips' });
+if (!/chips/i.test(chips.title) || !chips.quickFacts || chips.quickFacts.base !== 'Potatoes') {
+  throw new Error(`chips template unexpected: ${JSON.stringify({ title: chips.title, qf: chips.quickFacts })}`);
+}
+
+// Defensive rendering contract: generic fallback must not emit banned placeholder names.
+const bannedPlaceholders = ['Main base ingredient', 'Whole-food flavor ingredient'];
+const genericText = generic.ingredients.join('\n');
+for (const banned of bannedPlaceholders) {
+  if (genericText.includes(banned)) {
+    throw new Error(`generic fallback should not contain placeholder "${banned}"`);
+  }
+}
+
+// recipeRender.js should expose the shared renderer export.
+const renderSrc = readFileSync('app/js/recipeRender.js', 'utf8');
+if (!/export\s+function\s+renderRecipeRecord\b/.test(renderSrc)) {
+  throw new Error('recipeRender.js must export renderRecipeRecord');
 }
 
 console.log('App shell + localDb tests passed.');
