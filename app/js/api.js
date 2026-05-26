@@ -86,3 +86,18 @@ export function normalizeProduct(raw, upc) {
     found: Boolean(p.name ?? p.productName),
   };
 }
+
+
+export async function getPopularItems() {
+  let res;
+  try {
+    res = await fetch(`${WORKER_BASE}/api/popular-items`);
+  } catch {
+    return { ok: false, items: [] };
+  }
+  try {
+    return await res.json();
+  } catch {
+    return { ok: false, items: [] };
+  }
+}

@@ -69,14 +69,14 @@ function clearStatus() {
 export function refreshBarcodeBanner() {
   const banner = el("draft-barcode");
   const value = el("draft-barcode-value");
-  const barcode = getDraftBarcode();
   if (!banner || !value) return;
+  const barcode = typeof getDraftBarcode === "function" ? getDraftBarcode() : "";
   if (barcode) {
     value.textContent = barcode;
     banner.hidden = false;
   } else {
-    banner.hidden = true;
     value.textContent = "";
+    banner.hidden = true;
   }
 }
 
