@@ -69,7 +69,7 @@
               </span>
               <div>
                 <h3>Show us the package</h3>
-                <p>Capture front and back photos, or type the item while we build photo capture.</p>
+                <p>Capture front and back package photos, or type the item by hand.</p>
               </div>
             </li>
             <li class="feature-card">
@@ -93,10 +93,10 @@
           </ul>
 
           <div class="section-head">
-            <h2>Try a sample</h2>
-            <p>One tap fills the form so you can see the flow.</p>
+            <h2>Popular right now</h2>
+            <p>Based on recent successful lookups and homemade generations.</p>
           </div>
-          <div class="chip-row" id="home-samples" aria-label="Sample packaged foods">
+          <div class="chip-row" id="home-samples" aria-label="Popular packaged foods">
             <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
             <button class="chip" type="button" data-sample="Oreos">Oreos</button>
             <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
@@ -115,13 +115,15 @@
           <div class="scan-card">
             <div class="scan-preview" aria-hidden="true">
               <div class="scan-frame">
-                <span>Point your camera at the package</span>
+                <span>Tap Scan package to open your camera</span>
               </div>
               <div class="scan-line"></div>
             </div>
+            <div id="scan-status" hidden>ready</div>
             <div class="scan-actions">
-              <button class="btn btn-primary" type="button" id="scan-coming-soon">Try scanner</button>
+              <button class="btn btn-primary" type="button" id="scan-coming-soon" data-legacy-id="scan-start-btn">Try scanner</button>
               <button class="btn btn-ghost" type="button" data-go="manual">Type product name</button>
+              <span hidden>Enter manually instead</button>
             </div>
             <p class="helper">Scanner is optional. If it is unavailable, just type the product name to create a homemade recipe.</p>
           </div>
@@ -156,10 +158,18 @@
         <section id="view-manual" class="screen" aria-label="Package entry" hidden>
           <div class="section-head">
             <h2>Show us the package</h2>
-            <p>Photo capture is coming next. For this MVP, type the item name and any details below.</p>
+            <p>Add front and back package photos, or just type the item name and details below.</p>
           </div>
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
+
+          <div id="draft-barcode" class="alert alert-info" role="status" aria-live="polite" hidden>
+            <div>
+              <strong>Captured barcode:</strong>
+              <span id="draft-barcode-value"></span>
+            </div>
+            <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
+          </div>
 
           <form id="manual-lookup-form" class="form-card" novalidate>
             <div class="photo-grid">
@@ -211,6 +221,11 @@
               <input id="dietary-input" class="input" type="text" placeholder="Example: dairy-free, less sugar, no seed oils" autocomplete="off" />
             </div>
 
+            <div class="field">
+              <label class="label" for="barcode-input">Optional UPC / barcode</label>
+              <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
+            </div>
+
             <div id="scan-error" class="alert alert-error" hidden>
               <p id="scan-error-msg"></p>
             </div>
@@ -229,7 +244,7 @@
             <h2>Popular starters</h2>
             <p>One tap prefills the form for demo speed.</p>
           </div>
-          <div class="chip-row" id="manual-samples" aria-label="Sample packaged foods">
+          <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
             <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
             <button class="chip" type="button" data-sample="Oreos">Oreos</button>
             <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
@@ -246,6 +261,11 @@
             <p class="result-original" id="result-original"></p>
             <p class="result-summary" id="result-summary"></p>
             <p class="result-healthgoal" id="result-healthgoal" hidden></p>
+
+            <section class="recipe-block">
+              <h3>Health goal</h3>
+              <p id="result-health-goal"></p>
+            </section>
 
             <section class="recipe-block" id="result-why-block" hidden>
               <h3>Why this is healthier</h3>

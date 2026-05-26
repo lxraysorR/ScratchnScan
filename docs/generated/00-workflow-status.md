@@ -1,11 +1,12 @@
 # Workflow Status
 
-- Date: 2026-05-18
-- Task: Add a repository-scoped n8n verification script to confirm changes run inside the ScratchnScan repo.
-- Required references read: `AGENTS.md`, `CLAUDE.md`, `.agents/01-repo-inventory-and-scope/AGENT.md`.
-- Blocker noted: `AGENTS.md` references `.agents/skills/scan-scratch-build/SKILL.md`, but that path is missing in this repo.
+- Date: 2026-05-26
+- Task: Replace static homepage sample chips with dynamic popular items from request activity.
+- Required references read: `AGENTS.md`, `CLAUDE.md`, `.agents/skills/scratchnscan-build/SKILL.md`, `.agents/03-homemade-recipe-engine/AGENT.md`.
 
 ## File-level patch plan
-1. Add a small generated verification script under `scripts/` that fails if the working repo is not `ScratchnScan`.
-2. Run the generated script and confirm it passes in the current environment.
-3. Update this workflow status file to reflect the completed minimal test-task scope.
+1. Add worker-level Supabase helper using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+2. Log request events into `public.sns_request_events` after successful UPC lookup and successful homemade generation.
+3. Add `GET /api/popular-items` that returns grouped top items by normalized name and fallback starter items.
+4. Replace homepage static chip source with dynamic fetch/render and fallback to starter pantry list.
+5. Add lightweight generated checks for endpoint and homepage wiring, then run test/build commands.

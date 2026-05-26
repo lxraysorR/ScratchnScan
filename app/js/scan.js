@@ -7,6 +7,8 @@ import {
   refreshUsageStrips,
 } from "./usage.js";
 import { compressImageFile } from "./packageImages.js";
+import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
+import { refreshBarcodeBanner } from "./packageEntry.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -164,6 +166,32 @@ function showError(message) {
   if (box) box.hidden = false;
 }
 
+function buildTipsFromAiRecipe(aiRecipe) {
+  const tips = [];
+  for (const tip of aiRecipe?.tips || []) {
+    if (tip) tips.push(String(tip));
+  }
+  for (const swap of aiRecipe?.simpleSwaps || []) {
+    const insteadOf = String(swap?.insteadOf || "").trim();
+    const use = String(swap?.use || "").trim();
+    const why = String(swap?.why || "").trim();
+    if (!insteadOf && !use && !why) continue;
+    const parts = [];
+    if (insteadOf && use) parts.push(`Swap ${insteadOf} for ${use}.`);
+    else if (use) parts.push(`Try ${use}.`);
+    else if (insteadOf) parts.push(`Adjust from ${insteadOf}.`);
+    if (why) parts.push(why);
+    tips.push(parts.join(" ").trim());
+  }
+  for (const reason of aiRecipe?.whyLessProcessed || []) {
+    if (reason) tips.push(`Why less processed: ${reason}`);
+  }
+  if (aiRecipe?.storageTips) {
+    tips.push(`Storage: ${String(aiRecipe.storageTips).trim()}`);
+  }
+  return tips.filter(Boolean);
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
@@ -172,9 +200,12 @@ async function handleSubmit(event) {
   const productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
   const dietaryPreference = (el("dietary-input")?.value || "").trim();
+  const draftBarcode = normalizeBarcode(getDraftBarcode());
+  const manualBarcode = normalizeBarcode(el("barcode-input")?.value || "");
+  const barcode = draftBarcode || manualBarcode || null;
 
   if (!productName) {
-    showError("Add a product name or quick note so we know what to scratch-make.");
+    showError("Type a packaged food name first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -185,6 +216,7 @@ async function handleSubmit(event) {
     window.location.hash = "#upgrade";
     return;
   }
+
 
   submitting = true;
   const submitBtn = el("scan-submit-btn");
@@ -212,6 +244,11 @@ async function handleSubmit(event) {
         productName,
         ingredients: inputIngredients,
         dietaryPreference,
+        // The worker reads `goals`; map the user preference so the AI honors it.
+        goals: dietaryPreference,
+        upc: barcode || undefined,
+        hasFrontImage,
+        hasBackImage,
       });
       const aiRecipe = ai?.recipe?.homemadeAlternative;
       if (aiRecipe) {
@@ -261,6 +298,8 @@ async function handleSubmit(event) {
       favorite: false,
       isFavorite: false,
     };
+    clearDraftBarcode();
+    refreshBarcodeBanner();
 
     sessionStorage.setItem(
       "scratchnscan:lastGenerated",
@@ -274,7 +313,8 @@ async function handleSubmit(event) {
     window.location.hash = "#result";
   } catch (err) {
     recipeError = err;
-    showError(err?.message || "Could not generate a homemade version. Please try again.");
+    showError("We could not generate the recipe yet. Try typing the product name again.");
+    console.error("manual generation failed", err);
   } finally {
     el("scan-loading").hidden = true;
     if (submitBtn) {

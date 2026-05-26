@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { spawnSync } from 'child_process';
 
 const cwd = process.cwd();
 const pkgPath = join(cwd, 'package.json');
@@ -17,6 +18,15 @@ const requiredFiles = [
   'scripts/qa-smoke.js'
 ];
 const requiredScripts = ['app:status', 'agent:next', 'qa:smoke'];
+const syntaxCheckFiles = [
+  'app/js/app.js',
+  'app/js/scan.js',
+  'app/js/packageEntry.js',
+  'app/js/result.js',
+  'app/js/history.js',
+  'scripts/app-status.js',
+  'scripts/agent-next-task.js'
+];
 
 let failures = 0;
 function check(label, ok, detail = '') {
@@ -42,6 +52,16 @@ if (pkg && pkg.scripts) {
   }
 } else {
   requiredScripts.forEach((scriptName) => check(`script exists: ${scriptName}`, false));
+}
+
+for (const file of syntaxCheckFiles) {
+  const abs = join(cwd, file);
+  if (!existsSync(abs)) {
+    check(`syntax check: ${file}`, false, 'file missing');
+    continue;
+  }
+  const result = spawnSync(process.execPath, ['--check', abs], { encoding: 'utf8' });
+  check(`syntax check: ${file}`, result.status === 0, result.status === 0 ? '' : 'node --check failed');
 }
 
 console.log(`Smoke result: ${failures === 0 ? 'PASS' : 'FAIL'} (${failures} issue(s))`);

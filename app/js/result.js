@@ -42,6 +42,8 @@ export function initResultView() {
     originalEl.hidden = !originalName;
   }
   el("result-summary").textContent = record.scratchRecipe.summary;
+  const healthGoalEl = el("result-health-goal");
+  if (healthGoalEl) healthGoalEl.textContent = record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.";
 
   const healthGoal = record.scratchRecipe.healthGoal || "";
   const goalEl = el("result-healthgoal");
@@ -107,15 +109,18 @@ export function initResultView() {
       const id = await saveMvpRecipe({ ...record, fallbackUsed });
       sessionStorage.removeItem("scratchnscan:lastGenerated");
       if (id) {
-        showToast("Saved to your ideas");
+        showToast("Recipe saved.");
         window.location.hash = `#details/${id}`;
       } else {
-        saveBtn.textContent = "Save failed — try again";
+        showToast("Recipe could not be saved. Please try again.");
+        saveBtn.textContent = "Save Recipe";
         saveBtn.disabled = false;
         saving = false;
       }
-    } catch {
-      saveBtn.textContent = "Save failed — try again";
+    } catch (err) {
+      console.error("save recipe failed", err);
+      showToast("Recipe could not be saved. Please try again.");
+      saveBtn.textContent = "Save Recipe";
       saveBtn.disabled = false;
       saving = false;
     }

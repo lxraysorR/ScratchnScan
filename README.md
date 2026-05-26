@@ -38,7 +38,12 @@ node scripts/test_n8n_repo_access_generated.mjs
 - Mobile-first home, package entry, result, history, and details screens.
 - Package entry with **front package** and **back label** photo tiles
   (capture/replace/remove, compressed local preview thumbnails).
+- **Scan a package** button that opens the native camera barcode scanner
+  on installed (Capacitor) builds, and falls back honestly to manual/photo
+  entry in a plain browser instead of pretending to scan.
 - Manual product name, ingredients-from-package text, and preference fields.
+- Optional UPC/barcode input with a visible captured-barcode banner that
+  carries scan context into manual entry.
 - Sample chips that prefill a known packaged food (Mayonnaise, Ranch,
   Ketchup, Mac & cheese, Granola bar).
 - AI-assisted homemade recipe with a deterministic fallback when the AI
@@ -113,9 +118,12 @@ worker secrets only.
 - Cloud database or sync (Supabase, etc.).
 - Real payment integration (Stripe, RevenueCat).
 - Real OCR / AI extraction from the photos (today they live as local
-  previews only — the generator still uses typed text).
-- Native mobile packaging (Capacitor scanner integration, app store
-  builds).
+  previews only — the generator still uses typed text plus a flag noting
+  which photos were attached).
+- Native mobile packaging / app-store builds. The Capacitor barcode
+  scanner is wired (`scannerService.js` + `capacitorBarcodeScannerAdapter.js`)
+  and works inside a native build; a plain browser cannot scan and routes
+  to manual entry.
 - Production-grade scanner device testing.
 - n8n automation flows.
 
