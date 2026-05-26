@@ -23,6 +23,7 @@ For quick checks you can also open `app/index.html` directly in a browser.
 npm test           # app shell + localDb + usage meter + manual fallback
 npm run qa:smoke   # required-files / scripts smoke check
 npm run build      # writes app/ -> dist/
+npm start          # prints local start hint
 ```
 
 Optional integration probes:
@@ -53,6 +54,17 @@ node scripts/test_n8n_repo_access_generated.mjs
 - **10 free successful homemade creations per device.** After the limit,
   a polished upgrade screen appears and new generation is blocked, but
   history, details, favorite, and delete keep working.
+
+
+## Manual-entry MVP quick test
+
+1. Run `npm install` then `npm run build`.
+2. Start locally with `npm start` (prints the recommended static serve command).
+3. Open the app and enter a product name in Manual Entry.
+4. (Optional) Add ingredients/notes and generate.
+5. If no AI key/provider is configured, a deterministic fallback recipe is generated so the flow still works.
+6. Save the result, then verify History, Details, Favorite toggle, Delete, and Empty state.
+7. Refresh the browser and confirm saved data is still present (IndexedDB local persistence).
 
 ## Storage
 
