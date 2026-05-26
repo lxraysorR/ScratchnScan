@@ -9,6 +9,8 @@ import {
 import { compressImageFile } from "./packageImages.js";
 import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
 import { refreshBarcodeBanner } from "./packageEntry.js";
+import { applyThumbToTile } from "./photoTiles.js";
+import { buildGenerationPayload } from "./generationPayload.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -45,33 +47,6 @@ const SAMPLES = {
 };
 
 function el(id) { return document.getElementById(id); }
-
-function applyThumbToTile(which, dataUrl) {
-  const slot = document.querySelector(`.photo-slot[data-photo="${which}"]`);
-  if (!slot) return;
-  const tile = slot.querySelector(".photo-tile");
-  const img = slot.querySelector(".photo-thumb");
-  const actions = slot.querySelector(`[data-photo-actions="${which}"]`);
-  if (dataUrl) {
-    if (img) {
-      img.src = dataUrl;
-      img.alt = which === "front" ? "Front package preview" : "Back label preview";
-      img.hidden = false;
-    }
-    tile?.classList.add("has-photo");
-    tile?.setAttribute("aria-label", which === "front" ? "Replace front package photo" : "Replace back label photo");
-    if (actions) actions.hidden = false;
-  } else {
-    if (img) {
-      img.removeAttribute("src");
-      img.alt = "";
-      img.hidden = true;
-    }
-    tile?.classList.remove("has-photo");
-    tile?.setAttribute("aria-label", which === "front" ? "Add front package photo" : "Add back label photo");
-    if (actions) actions.hidden = true;
-  }
-}
 
 function resetDraftUi() {
   draft.frontImagePreviewDataUrl = null;
@@ -236,20 +211,27 @@ async function handleSubmit(event) {
   });
   let fallbackUsed = true;
 
+  // Photo flags are optional. Declare them once, before the AI call, so the
+  // submit flow never references an undeclared variable.
+  const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl;
+  const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
+  const hasFrontImage = !!frontImagePreviewDataUrl;
+  const hasBackImage = !!backImagePreviewDataUrl;
+
   try {
     // Optionally upgrade the deterministic recipe with an AI result if a
     // provider happens to be configured. Any failure keeps the fallback.
     try {
-      const ai = await generateScratchRecipe({
-        productName,
-        ingredients: inputIngredients,
-        dietaryPreference,
-        // The worker reads `goals`; map the user preference so the AI honors it.
-        goals: dietaryPreference,
-        upc: barcode || undefined,
-        hasFrontImage,
-        hasBackImage,
-      });
+      const ai = await generateScratchRecipe(
+        buildGenerationPayload({
+          productName,
+          ingredients: inputIngredients,
+          dietaryPreference,
+          barcode,
+          hasFrontImage,
+          hasBackImage,
+        }),
+      );
       const aiRecipe = ai?.recipe?.homemadeAlternative;
       if (aiRecipe) {
         scratchRecipe = {
@@ -273,12 +255,9 @@ async function handleSubmit(event) {
       console.warn("AI recipe unavailable, using local fallback.", aiErr);
     }
 
-    const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl;
-    const backImagePreviewDataUrl = draft.backImagePreviewDataUrl;
-
     lastGeneratedRecord = {
       source: "manual",
-      barcode: null,
+      barcode,
       productName,
       originalProductName: scratchRecipe.originalProductName || productName,
       ingredientsText: inputIngredients,
@@ -312,7 +291,6 @@ async function handleSubmit(event) {
 
     window.location.hash = "#result";
   } catch (err) {
-    recipeError = err;
     showError("We could not generate the recipe yet. Try typing the product name again.");
     console.error("manual generation failed", err);
   } finally {
@@ -323,6 +301,4 @@ async function handleSubmit(event) {
     }
     submitting = false;
   }
-  // Unused but kept for clarity; thrown errors are surfaced above.
-  void recipeError;
 }

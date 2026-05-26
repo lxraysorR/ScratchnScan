@@ -5,6 +5,7 @@ import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
 import { initDatabase } from "./localDb.js";
+import { renderPopularChips } from "./popularChips.js";
 import {
   refreshUsageStrips,
   resetUsageForDev,
@@ -15,32 +16,6 @@ import {
 
 const VIEWS = ["home", "scan", "manual", "result", "upgrade", "history", "details"];
 const NAV_TARGETS = new Set(["home", "scan", "manual", "history"]);
-const STARTER_PANTRY_ITEMS = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"];
-
-function renderPopularChips(items = []) {
-  const homeSamples = document.getElementById("home-samples");
-  if (!homeSamples) return;
-  const normalized = new Set();
-  const picked = [];
-  for (const item of items) {
-    const name = String(item?.name || "").trim();
-    const key = String(item?.normalizedName || name.toLowerCase().replace(/\s+/g, " ").trim());
-    if (!name || !key || normalized.has(key)) continue;
-    normalized.add(key);
-    picked.push(name);
-    if (picked.length >= 5) break;
-  }
-  const finalItems = picked.length ? picked : STARTER_PANTRY_ITEMS;
-  homeSamples.innerHTML = "";
-  for (const name of finalItems) {
-    const btn = document.createElement("button");
-    btn.className = "chip";
-    btn.type = "button";
-    btn.dataset.sample = name;
-    btn.textContent = name;
-    homeSamples.appendChild(btn);
-  }
-}
 
 async function loadPopularItems() {
   try {
