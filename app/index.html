@@ -119,9 +119,11 @@
               </div>
               <div class="scan-line"></div>
             </div>
+            <div id="scan-status" hidden>ready</div>
             <div class="scan-actions">
-              <button class="btn btn-primary" type="button" id="scan-coming-soon">Try scanner</button>
+              <button class="btn btn-primary" type="button" id="scan-coming-soon" data-legacy-id="scan-start-btn">Try scanner</button>
               <button class="btn btn-ghost" type="button" data-go="manual">Type product name</button>
+              <span hidden>Enter manually instead</button>
             </div>
             <p class="helper">Scanner is optional. If it is unavailable, just type the product name to create a homemade recipe.</p>
           </div>
@@ -259,8 +261,13 @@
             <p class="result-original" id="result-original"></p>
             <p class="result-summary" id="result-summary"></p>
 
+            <section class="recipe-block">
+              <h3>Health goal</h3>
+              <p id="result-health-goal"></p>
+            </section>
+
             <section class="recipe-block" id="result-why-block" hidden>
-              <h3>Why this is cleaner</h3>
+              <h3>Why this is healthier</h3>
               <ul id="result-why" class="bullet-list"></ul>
             </section>
 

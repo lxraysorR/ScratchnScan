@@ -205,7 +205,7 @@ async function handleSubmit(event) {
   const barcode = draftBarcode || manualBarcode || null;
 
   if (!productName) {
-    showError("Add a product name or quick note so we know what to scratch-make.");
+    showError("Type a packaged food name first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -217,7 +217,6 @@ async function handleSubmit(event) {
     return;
   }
 
-  const barcode = getDraftBarcode();
 
   submitting = true;
   const submitBtn = el("scan-submit-btn");
@@ -227,8 +226,7 @@ async function handleSubmit(event) {
   }
   el("scan-loading").hidden = false;
 
-  // Any barcode captured during a scan session flows into the recipe context.
-  const barcode = getDraftBarcode();
+  // Barcode is optional in manual flow.
   const hasFrontImage = !!draft.frontImagePreviewDataUrl;
   const hasBackImage = !!draft.backImagePreviewDataUrl;
 
@@ -253,7 +251,10 @@ async function handleSubmit(event) {
         title: aiRecipe.title || `Homemade version of ${productName}`,
         originalProductName: productName,
         summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
-        whyCleaner: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+        healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
+        whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+        tags: ["homemade", "less processed", "simple ingredients"],
+        createdAt: new Date().toISOString(),
         ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
         steps: aiRecipe.steps || [],
         tips: buildTipsFromAiRecipe(aiRecipe),
@@ -311,7 +312,8 @@ async function handleSubmit(event) {
     window.location.hash = "#result";
   } catch (err) {
     recipeError = err;
-    showError(err?.message || "Could not generate a homemade version. Please try again.");
+    showError("We could not generate the recipe yet. Try typing the product name again.");
+    console.error("manual generation failed", err);
   } finally {
     el("scan-loading").hidden = true;
     if (submitBtn) {
