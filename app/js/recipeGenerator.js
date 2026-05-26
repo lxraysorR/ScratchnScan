@@ -205,6 +205,38 @@ const TEMPLATES = [
       tags: ["homemade", "lower sugar", "whole grain", "simple ingredients"],
     }),
   },
+  {
+    id: "mayonnaise",
+    pattern: /\b(mayo|mayonnaise|aioli)\b/i,
+    build: () => ({
+      title: "Homemade Mayonnaise",
+      healthGoal: "Fewer additives, with the oil, salt, and acidity you control.",
+      whyHealthier: [
+        "Uses simple pantry ingredients instead of stabilizers and preservatives.",
+        "You choose the oil and control the salt and acidity.",
+        "No artificial flavors or added colors.",
+      ],
+      ingredients: [
+        "2 egg yolks, room temperature",
+        "1 cup neutral oil (light olive, avocado, or sunflower)",
+        "1 tbsp lemon juice or vinegar",
+        "1 tsp Dijon mustard",
+        "1/4 tsp salt (adjust to taste)",
+      ],
+      steps: [
+        "Whisk the egg yolks, mustard, lemon juice, and salt until combined.",
+        "Add the oil a few drops at a time at first, whisking constantly.",
+        "Once it begins to thicken, pour the oil in a thin, steady stream while whisking.",
+        "Taste and adjust salt and acidity, then store in a sealed jar in the fridge.",
+      ],
+      tips: [
+        "Add the oil slowly so the mixture emulsifies and stays thick.",
+        "For a vegan mayo, blend aquafaba (chickpea liquid) in place of the egg yolks.",
+        "Use a fresh egg, keep it refrigerated, and use within a few days.",
+      ],
+      tags: ["homemade", "less processed", "simple ingredients"],
+    }),
+  },
 ];
 
 function buildDefault(displayName) {
