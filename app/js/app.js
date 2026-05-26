@@ -52,16 +52,6 @@ async function loadPopularItems() {
 }
 
 
-async function loadPopularItems() {
-  try {
-    const payload = await getPopularItems();
-    renderPopularChips(payload?.ok ? payload.items : []);
-  } catch {
-    renderPopularChips([]);
-  }
-}
-
-
 function showView(name) {
   const view = VIEWS.includes(name) ? name : "home";
   for (const id of VIEWS) {

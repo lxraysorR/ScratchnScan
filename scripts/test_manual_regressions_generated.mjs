@@ -23,6 +23,10 @@ assert.match(scanJs, /await handlePhotoSelected\(which, file\);/);
 assert.match(scanJs, /if \(inputEl\) \{\s*inputEl\.value = "";/s);
 assert.match(scanJs, /console\.warn\("AI recipe unavailable\. Using local fallback\.", err\);/);
 assert.match(scanJs, /barcode,\s*\n\s*productName,/);
+const fallbackInit = scanJs.indexOf('let scratchRecipe = buildDeterministicScratchRecipe');
+const aiCall = scanJs.indexOf('await generateScratchRecipe({');
+assert.ok(fallbackInit >= 0 && aiCall > fallbackInit, 'fallback recipe must be initialized before AI call');
+assert.match(scanJs, /window\.location\.hash = "#result";/, 'flow should still route to result after AI attempt');
 
 const recipe = buildDeterministicScratchRecipe({ productName: 'chips' });
 assert.ok(recipe && recipe.title && recipe.ingredients.length > 0 && recipe.steps.length > 0,
