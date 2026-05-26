@@ -99,7 +99,14 @@ export async function initDetailsView(id) {
 
   el("details-summary").textContent = record.scratchRecipe?.summary || "";
 
-  const whyList = record.scratchRecipe?.whyCleaner || [];
+  const healthGoal = record.scratchRecipe?.healthGoal || "";
+  const goalEl = el("details-healthgoal");
+  if (goalEl) {
+    goalEl.textContent = healthGoal ? `Health goal: ${healthGoal}` : "";
+    goalEl.hidden = !healthGoal;
+  }
+
+  const whyList = record.scratchRecipe?.whyHealthier || record.scratchRecipe?.whyCleaner || [];
   const whyBlock = el("details-why-block");
   const whyEl = el("details-why");
   if (whyEl && whyBlock) {

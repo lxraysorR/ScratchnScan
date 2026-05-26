@@ -33,7 +33,7 @@ for (const token of ['toggleMvpFavorite', 'deleteMvpRecipe', 'window.confirm']) 
 const scanJs = readFileSync('app/js/scan.js', 'utf8');
 for (const token of [
   'product name',
-  'buildDeterministicScratchRecipe',
+  'generateHealthierScratchRecipe',
   'submitBtn.disabled = true',
   'frontImagePlaceholder',
   'backImagePlaceholder',
