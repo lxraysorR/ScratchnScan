@@ -28,7 +28,7 @@ const htmlChecks = [
   'Scan Barcode',
   'View Saved Recipes',
   'Save Recipe',
-  'Why this is cleaner',
+  'Why this is healthier',
   'view-home',
   'view-scan',
   'view-manual',

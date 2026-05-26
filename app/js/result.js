@@ -43,7 +43,14 @@ export function initResultView() {
   }
   el("result-summary").textContent = record.scratchRecipe.summary;
 
-  const why = record.scratchRecipe.whyCleaner || [];
+  const healthGoal = record.scratchRecipe.healthGoal || "";
+  const goalEl = el("result-healthgoal");
+  if (goalEl) {
+    goalEl.textContent = healthGoal ? `Health goal: ${healthGoal}` : "";
+    goalEl.hidden = !healthGoal;
+  }
+
+  const why = record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || [];
   const whyBlock = el("result-why-block");
   const whyList = el("result-why");
   if (whyList && whyBlock) {
