@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { buildDeterministicScratchRecipe } from '../app/js/manualRecipe.js';
 
 const appJs = readFileSync('app/js/app.js', 'utf8');
+assert.match(appJs, /import\s+\{\s*initPackageEntry,\s*refreshBarcodeBanner\s*\}\s+from\s+"\.\/packageEntry\.js";/);
 assert.match(appJs, /typeof refreshBarcodeBanner === "function"/, 'app.js should safely guard refreshBarcodeBanner');
+const packageEntryJs = readFileSync('app/js/packageEntry.js', 'utf8');
+assert.match(packageEntryJs, /export function refreshBarcodeBanner\(/, 'packageEntry should export refreshBarcodeBanner');
 
 const scanJs = readFileSync('app/js/scan.js', 'utf8');
 assert.match(scanJs, /const draftBarcode = normalizeBarcode\(getDraftBarcode\?\.\(\) \|\| ""\);/);

@@ -69,7 +69,7 @@ function clearStatus() {
 export function refreshBarcodeBanner() {
   const banner = el("draft-barcode");
   const value = el("draft-barcode-value");
-  const barcode = getDraftBarcode();
+  const barcode = getDraftBarcode?.();
   if (!banner || !value) return;
   if (barcode) {
     value.textContent = barcode;
