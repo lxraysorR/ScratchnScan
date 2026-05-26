@@ -63,15 +63,15 @@ function json(data, status = 200) {
 // ---------------------------------------------------------------------------
 // Small helpers
 // ---------------------------------------------------------------------------
-function cleanText(value) {
+export function cleanText(value) {
   return String(value ?? "").trim();
 }
 
-function normalizeItemName(value) {
+export function normalizeItemName(value) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function toDisplayName(normalized, fallbackRaw = "") {
+export function toDisplayName(normalized, fallbackRaw = "") {
   const raw = cleanText(fallbackRaw);
   if (raw) return raw;
   return normalized
@@ -114,7 +114,7 @@ async function logRequestEvent(env, { eventType, itemName }) {
   }
 }
 
-async function getPopularItems(env, limit = 5) {
+export async function getPopularItems(env, limit = 5) {
   const fallback = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"]
     .slice(0, limit)
     .map((name) => ({
@@ -183,7 +183,7 @@ async function readJson(request) {
   }
 }
 
-function extractGeminiText(geminiBody) {
+export function extractGeminiText(geminiBody) {
   const parts = geminiBody?.candidates?.[0]?.content?.parts ?? [];
   return parts
     .map((part) => (typeof part?.text === "string" ? part.text : ""))
@@ -278,7 +278,7 @@ async function handleLookupUpc(request, env) {
   return json({ ok: true, product });
 }
 
-function normalizeUpcData(raw, upc) {
+export function normalizeUpcData(raw, upc) {
   const item = Array.isArray(raw) ? raw[0] : raw;
   return {
     upc,
@@ -290,7 +290,7 @@ function normalizeUpcData(raw, upc) {
   };
 }
 
-function buildRecipePrompt({
+export function buildRecipePrompt({
   productName,
   brand,
   ingredients,
@@ -498,7 +498,7 @@ function getRecipeResponseSchema() {
   };
 }
 
-function validateAiContract(recipe) {
+export function validateAiContract(recipe) {
   const errors = [];
 
   if (!recipe?.product?.name) errors.push("product.name is required");
