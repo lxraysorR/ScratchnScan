@@ -11,7 +11,6 @@ import { compressImageFile } from "./packageImages.js";
 import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
 import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
-import { buildGenerationPayload } from "./generationPayload.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -211,49 +210,84 @@ async function handleSubmit(event) {
   const hasFrontImage = !!frontImagePreviewDataUrl;
   const hasBackImage = !!backImagePreviewDataUrl;
 
+  if (!productName && !inputIngredients && hasPhoto) {
+    showError("We could not identify this package yet. Please type the product name and (if possible) ingredients.");
+    el("scan-loading").hidden = true;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Generate Homemade Version";
+    }
+    submitting = false;
+    return;
+  }
+
   let scratchRecipe = buildDeterministicScratchRecipe({
-    productName,
+    productName: productName || "packaged food",
     inputIngredients,
-    dietaryPreference,
+    notes: dietaryPreference,
   });
   let fallbackUsed = true;
+  let productContext = null;
   try {
     try {
       const ai = await generateScratchRecipe({
         productName,
         ingredients: inputIngredients,
         dietaryPreference,
-        // The worker reads `goals`; map the user preference so the AI honors it.
         goals: dietaryPreference,
         upc: barcode || undefined,
         hasFrontImage,
         hasBackImage,
-        // Send the compressed photos so the AI can identify the product and read
-        // its ingredients when the user uploaded labels instead of typing a name.
         frontImage: frontImagePreviewDataUrl || undefined,
         backImage: backImagePreviewDataUrl || undefined,
       });
       const aiRecipe = ai?.recipe?.homemadeAlternative;
+      const product = ai?.recipe?.product || {};
+      const detectedName = (product.name || "").trim();
+      if (!productName && detectedName) productName = detectedName;
+      productContext = {
+        productName: productName || detectedName,
+        brand: product.brand || "",
+        flavor: product.flavor || "",
+        category: product.category || "",
+        packageText: product.packageText || "",
+        ingredientsText: inputIngredients || product.ingredientsText || "",
+        detectedIngredients: Array.isArray(product.detectedIngredients) ? product.detectedIngredients : [],
+        nutritionFacts: product.nutritionFacts || null,
+        claims: Array.isArray(product.claims) ? product.claims : [],
+        confidence: typeof product.confidence === 'number' ? product.confidence : null,
+        source: hasPhoto ? 'photo' : 'manual',
+      };
       if (aiRecipe) {
-        // Photo-only entry: adopt the name the AI read from the package.
-        const detectedName = (ai?.recipe?.product?.name || "").trim();
-        if (!productName && detectedName) productName = detectedName;
         scratchRecipe = {
-        title: aiRecipe.title || `Homemade version of ${productName}`,
-        originalProductName: productName,
-        summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
-        healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
-        whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
-        tags: ["homemade", "less processed", "simple ingredients"],
-        createdAt: new Date().toISOString(),
-        ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
-        steps: aiRecipe.steps || [],
-        tips: buildTipsFromAiRecipe(aiRecipe),
+          title: aiRecipe.title || `Homemade version of ${productContext.productName || productName}`,
+          originalProductName: productContext.productName || productName,
+          summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
+          healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
+          whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+          tags: ["homemade", "less processed", "simple ingredients"],
+          createdAt: new Date().toISOString(),
+          ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
+          steps: aiRecipe.steps || [],
+          tips: buildTipsFromAiRecipe(aiRecipe),
         };
         fallbackUsed = false;
       }
     } catch (err) {
       console.warn("AI recipe unavailable. Using local fallback.", err);
+    }
+
+    if (!scratchRecipe) {
+      scratchRecipe = buildDeterministicScratchRecipe({
+        productName,
+        inputIngredients,
+        notes: dietaryPreference,
+        category: productContext?.category || "",
+        flavor: productContext?.flavor || "",
+        detectedIngredients: productContext?.detectedIngredients || [],
+        claims: productContext?.claims || [],
+        source: productContext?.source || (hasPhoto ? 'photo' : 'manual'),
+      });
     }
 
     lastGeneratedRecord = {
@@ -275,6 +309,7 @@ async function handleSubmit(event) {
       frontImagePreviewDataUrl: frontImagePreviewDataUrl || null,
       backImagePreviewDataUrl: backImagePreviewDataUrl || null,
       fallbackUsed,
+      productContext,
       favorite: false,
       isFavorite: false,
     };

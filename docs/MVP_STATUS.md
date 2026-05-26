@@ -37,3 +37,9 @@ The app currently supports entering packaged food details manually, generating a
 9. Delete recipe and confirm it disappears.
 10. Confirm empty-state message appears when history has no items.
 11. Refresh browser and confirm saved data state remains consistent.
+
+
+## Photo/product context behavior
+- Photo analysis should produce product-specific recipes when package context is available.
+- If product extraction fails or confidence is too low, the app should ask for manual product name/ingredients input before generation.
+- Generic placeholder ingredients should never be shown to users.
