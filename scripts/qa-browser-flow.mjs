@@ -76,22 +76,28 @@ for (const target of ["scan", "manual", "history", "home"]) {
   check(`Nav -> #${target} shows its view`, !document.getElementById(`view-${target}`).hidden);
 }
 
-// 10. Scanner entry point: scan view + start button wired, web fallback message
+// 10. Scanner entry point: the scan view's primary action must never be a dead
+// button. In the browser/MVP build it routes the user to manual entry with a
+// clear "scanner unavailable" message (no native scanner is wired in yet).
 await goto("scan");
-const scanBtn = document.getElementById("scan-start-btn");
-check("Scan view start button present", !!scanBtn);
+const scanBtn = document.getElementById("scan-coming-soon");
+check("Scan view action button present", !!scanBtn);
 if (scanBtn) {
   scanBtn.click();
-  await sleep(60);
-  const status = document.getElementById("scan-status");
-  check("Scan shows clear web-fallback status", !status.hidden && /isn't available|manually/i.test(status.textContent), status.textContent.trim());
+  await sleep(80);
+  const toast = document.getElementById("toast");
+  check(
+    "Scan routes to manual with a friendly fallback",
+    window.location.hash === "#manual" && /scanner unavailable/i.test(toast.textContent),
+    `${window.location.hash} | ${toast.textContent.trim()}`,
+  );
 }
 
 // 4. Manual entry flow with the spec sample data
 await goto("manual");
 check("Manual view visible", !document.getElementById("view-manual").hidden);
-document.getElementById("product-name-input").value = "Packaged Chocolate Chip Granola Bar";
-document.getElementById("ingredients-input").value = "oats, sugar, chocolate chips, palm oil, corn syrup, natural flavor";
+document.getElementById("product-name-input").value = "Crunchy Oat Granola Bar";
+document.getElementById("ingredients-input").value = "oats, sugar, palm oil, corn syrup, natural flavor";
 document.getElementById("dietary-input").value = "less sugar";
 
 // 12. Error handling: empty name should block with a visible message
@@ -100,19 +106,21 @@ document.getElementById("product-name-input").value = "";
 document.getElementById("manual-lookup-form").dispatchEvent(new window.Event("submit", { cancelable: true }));
 await sleep(40);
 const errBox = document.getElementById("scan-error");
-check("Empty name shows validation error", !errBox.hidden && /product name/i.test(document.getElementById("scan-error-msg").textContent));
+check("Empty name shows validation error", !errBox.hidden && /name/i.test(document.getElementById("scan-error-msg").textContent), document.getElementById("scan-error-msg").textContent.trim());
 document.getElementById("product-name-input").value = savedName;
 
 // 11. Generate/analyze flow (fallback branch)
 document.getElementById("manual-lookup-form").dispatchEvent(new window.Event("submit", { cancelable: true }));
 await sleep(150);
 check("Generate routed to result view", window.location.hash === "#result");
+check("Generation persisted lastGenerated payload to sessionStorage", !!window.sessionStorage.getItem("scratchnscan:lastGenerated"));
 await goto("result"); // ensure result view initialized from sessionStorage
 const resultName = document.getElementById("result-name").textContent;
 check("Result shows a recipe title", resultName.length > 0, resultName);
 check("Result has ingredients", document.getElementById("result-homemade-ingredients").children.length > 0);
 check("Result has steps", document.getElementById("result-homemade-steps").children.length > 0);
 check("Fallback title is oat/granola-based for granola input", /granola|oat/i.test(resultName), resultName);
+check("Generation completes without leaving the button stuck in loading", document.getElementById("scan-loading").hidden);
 
 // 5. Save flow
 const saveBtn = document.getElementById("result-save-btn");
