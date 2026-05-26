@@ -226,10 +226,11 @@
               <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
             </div>
 
-            <div id="scan-error" class="alert alert-error" hidden>
+            <div id="scan-error" class="alert alert-error" role="alert" hidden>
               <p id="scan-error-msg"></p>
+              <button id="scan-retry-btn" class="btn btn-ghost btn-small" type="button" hidden>Try again</button>
             </div>
-            <div id="scan-loading" class="alert alert-info" hidden>
+            <div id="scan-loading" class="alert alert-info" role="status" aria-live="polite" hidden>
               <span class="spinner" aria-hidden="true"></span>
               <span>Creating your homemade version…</span>
             </div>

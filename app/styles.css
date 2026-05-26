@@ -607,6 +607,80 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Error alert can hold a retry action alongside the message. */
+#scan-error { flex-wrap: wrap; }
+#scan-error #scan-error-msg { margin: 0; flex: 1 1 auto; }
+#scan-error #scan-retry-btn { flex: 0 0 auto; }
+
+/* STAGED GENERATION PROGRESS */
+.generation-progress {
+  display: block;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--bg-warm);
+  border: 1px solid rgba(202, 168, 93, 0.35);
+  color: var(--ink);
+  padding: 14px 16px;
+}
+.generation-progress .gp-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.generation-progress .gp-head-text { display: flex; flex-direction: column; min-width: 0; }
+.generation-progress .gp-title { font-size: 14px; font-weight: 800; color: var(--green); }
+.generation-progress .gp-detail { font-size: 12.5px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.generation-progress .gp-pulse {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+
+.generation-progress .gp-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.generation-progress .gp-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.generation-progress .gp-mark {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(16, 25, 22, 0.07);
+  color: var(--muted);
+}
+.generation-progress .gp-stage.is-active { color: var(--green); }
+.generation-progress .gp-stage.is-active .gp-mark {
+  background: rgba(31, 107, 84, 0.16);
+  color: var(--green-3);
+  animation: gp-pulse 1.4s infinite;
+}
+.generation-progress .gp-stage.is-done { color: var(--ink-soft); }
+.generation-progress .gp-stage.is-done .gp-mark {
+  background: rgba(31, 107, 84, 0.16);
+  color: var(--green-3);
+}
+@keyframes gp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(31, 107, 84, 0.30); }
+  50% { box-shadow: 0 0 0 6px rgba(31, 107, 84, 0); }
+}
+
 /* RESULT */
 .result-card {
   background: var(--surface);

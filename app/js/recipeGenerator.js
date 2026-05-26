@@ -27,7 +27,12 @@ function baseRecipe(originalProductName) {
       "Lets you control sweetness, salt, and fat.",
       "Keeps ingredient choices simple and easy to understand.",
     ],
-    ingredients: ["Whole-food base ingredient", "Simple seasoning ingredient", "Small amount of oil or butter", "Salt and spices to taste"],
+    ingredients: [
+      "1 to 2 cups of the main whole food this product is based on (such as oats, potatoes, flour, or fruit)",
+      "1 tablespoon olive oil, butter, or a neutral oil",
+      "Salt, pepper, and simple spices to taste",
+      "Optional: a little honey, lemon, or vinegar to balance flavor",
+    ],
     steps: [
       "Prep ingredients and preheat the oven or stovetop as needed.",
       "Combine ingredients until evenly mixed.",
