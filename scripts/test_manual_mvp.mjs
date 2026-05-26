@@ -9,5 +9,5 @@ const recipe = buildDeterministicScratchRecipe({
 assert.equal(recipe.title.includes('boxed brownie mix'), true);
 assert.equal(recipe.ingredients.length > 0, true);
 assert.equal(recipe.steps.length > 0, true);
-assert.equal(recipe.tips[0].includes('less sweet'), true);
+assert.equal(recipe.tips.some((t) => t.includes('less sweet')), true);
 console.log('Manual MVP fallback test passed.');

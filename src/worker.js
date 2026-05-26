@@ -67,6 +67,110 @@ function cleanText(value) {
   return String(value ?? "").trim();
 }
 
+function normalizeItemName(value) {
+  return String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function toDisplayName(normalized, fallbackRaw = "") {
+  const raw = cleanText(fallbackRaw);
+  if (raw) return raw;
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+async function supabaseRequest(env, path, options = {}) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  const url = `${env.SUPABASE_URL.replace(/\/$/, "")}${path}`;
+  const headers = {
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  return fetch(url, { ...options, headers });
+}
+
+async function logRequestEvent(env, { eventType, itemName }) {
+  const normalizedItemName = normalizeItemName(itemName);
+  if (!normalizedItemName) return false;
+  try {
+    const res = await supabaseRequest(env, "/rest/v1/sns_request_events", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([
+        {
+          event_type: eventType,
+          item_name: cleanText(itemName),
+          normalized_item_name: normalizedItemName,
+        },
+      ]),
+    });
+    return !!res && res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function getPopularItems(env, limit = 5) {
+  const fallback = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"]
+    .slice(0, limit)
+    .map((name) => ({
+      name,
+      normalizedName: normalizeItemName(name),
+      requestCount: 0,
+    }));
+
+  try {
+    const res = await supabaseRequest(
+      env,
+      "/rest/v1/sns_request_events?select=item_name,normalized_item_name,created_at&order=created_at.desc&limit=1000",
+      { method: "GET" },
+    );
+    if (!res || !res.ok) return fallback;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return fallback;
+
+    const grouped = new Map();
+    for (const row of rows) {
+      const normalizedName = normalizeItemName(row?.normalized_item_name || row?.item_name);
+      if (!normalizedName) continue;
+      const createdAt = row?.created_at || "";
+      const current = grouped.get(normalizedName) || {
+        name: toDisplayName(normalizedName, row?.item_name),
+        normalizedName,
+        requestCount: 0,
+        latestCreatedAt: "",
+      };
+      current.requestCount += 1;
+      if (!current.latestCreatedAt || createdAt > current.latestCreatedAt) {
+        current.latestCreatedAt = createdAt;
+        if (cleanText(row?.item_name)) current.name = cleanText(row.item_name);
+      }
+      grouped.set(normalizedName, current);
+    }
+
+    const items = [...grouped.values()]
+      .sort(
+        (a, b) =>
+          b.requestCount - a.requestCount ||
+          (b.latestCreatedAt || "").localeCompare(a.latestCreatedAt || ""),
+      )
+      .slice(0, limit)
+      .map(({ name, normalizedName, requestCount }) => ({ name, normalizedName, requestCount }));
+    return items.length ? items : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function handlePopularItems(env) {
+  const items = await getPopularItems(env, 5);
+  return json({ ok: true, items });
+}
+
 function hasMeaningfulValue(value) {
   return cleanText(value).length > 0;
 }
@@ -170,6 +274,7 @@ async function handleLookupUpc(request, env) {
   }
 
   console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, result: "found" }));
+  void logRequestEvent(env, { eventType: "lookup_success", itemName: product.name || upc });
   return json({ ok: true, product });
 }
 
@@ -565,6 +670,12 @@ async function handleGenerateScratchRecipe(request, env) {
     );
   }
 
+  void logRequestEvent(env, {
+    eventType: "generation_success",
+    itemName:
+      productName || validated.recipe?.product?.name || validated.recipe?.homemadeAlternative?.title || "",
+  });
+
   return json({
     ok: true,
     recipe: validated.recipe,
@@ -601,6 +712,8 @@ export default {
     try {
       if (pathname === "/api/health" && method === "GET") {
         response = handleHealth();
+      } else if (pathname === "/api/popular-items" && method === "GET") {
+        response = await handlePopularItems(env);
       } else if (pathname === "/api/admin/status" && method === "GET") {
         response = handleAdminStatus(request, env);
       } else if (pathname === "/api/lookup-upc" && method === "POST") {
