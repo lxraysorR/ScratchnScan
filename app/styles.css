@@ -1273,3 +1273,14 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
 .label-tip-body p { margin: 0; }
 .label-tip-body p + p { margin-top: 8px; }
 .label-tip-footnote { color: var(--muted); font-size: 12.5px; }
+
+.manual-wizard [data-manual-step] { display: grid; gap: 14px; }
+.wizard-stepper { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.wizard-dot { border: 1px solid var(--line); border-radius: 999px; min-height: 30px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color: var(--muted); background: var(--surface-2); }
+.wizard-dot.is-active { background: var(--green); color: #fff; border-color: var(--green); }
+.wizard-dot.is-done { background: rgba(31,107,84,0.14); color: var(--green); }
+.form-actions-inline { grid-template-columns: 1fr 1fr; }
+.review-card { border: 1px solid var(--line); background: var(--surface-2); border-radius: 16px; padding: 14px; }
+.review-card h3 { margin: 0 0 10px; font-size: 16px; }
+.review-card p { margin: 6px 0; font-size: 14px; color: var(--ink-soft); }
+#scan-loading { padding: 0; border: 0; background: transparent; }

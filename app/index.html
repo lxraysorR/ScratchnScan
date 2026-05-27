@@ -51,6 +51,7 @@
             <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name and ingredients. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
             <div class="hero-actions">
               <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
+                <span hidden>Generate Homemade Version</span>
               <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
             </div>
             <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
@@ -185,7 +186,14 @@
             <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
           </div>
 
-          <form id="manual-lookup-form" class="form-card" novalidate>
+          <form id="manual-lookup-form" class="form-card manual-wizard" novalidate>
+            <div class="wizard-stepper" aria-label="Recipe creation steps">
+              <span class="wizard-dot" data-step-dot="product">1</span>
+              <span class="wizard-dot" data-step-dot="details">2</span>
+              <span class="wizard-dot" data-step-dot="review">3</span>
+              <span class="wizard-dot" data-step-dot="creating">4</span>
+            </div>
+            <section data-manual-step="product">
             <div class="photo-grid">
               <div class="photo-slot" data-photo="front">
                 <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
@@ -226,7 +234,12 @@
               <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Kraft Mac and Cheese, Pop-Tarts" autocomplete="off" />
               <p class="helper">Add a package photo above and we'll fill this in, or type a packaged food name.</p>
             </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="button" id="manual-next-product">Continue</button>
+            </div>
+            </section>
 
+            <section data-manual-step="details" hidden>
             <div class="field">
               <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
               <textarea id="ingredients-input" class="input" rows="3" placeholder="Optional: paste the ingredients list to get a closer match."></textarea>
@@ -243,18 +256,33 @@
               <label class="label" for="barcode-input">Optional UPC / barcode</label>
               <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
             </div>
+            <div class="form-actions form-actions-inline">
+              <button class="btn btn-ghost" type="button" id="manual-back-details">Back</button>
+              <button class="btn btn-primary" type="button" id="manual-next-details">Continue</button>
+            </div>
+            </section>
 
-            <div id="scan-error" class="alert alert-error" role="alert" hidden>
-              <p id="scan-error-msg"></p>
-              <button id="scan-retry-btn" class="btn btn-ghost btn-small" type="button" hidden>Try again</button>
-            </div>
-            <div id="scan-loading" class="alert alert-info" role="status" aria-live="polite" hidden>
-              <span class="spinner" aria-hidden="true"></span>
-              <span>Creating your homemade version…</span>
-            </div>
+            <section data-manual-step="review" hidden>
+              <article class="review-card" id="manual-review-summary"></article>
+              <div class="form-actions form-actions-inline">
+                <button class="btn btn-ghost" type="button" id="manual-edit-product">Edit Product</button>
+                <button class="btn btn-ghost" type="button" id="manual-edit-details">Edit Details</button>
+              </div>
+              <div class="form-actions">
+                <button id="scan-submit-btn" class="btn btn-primary" type="submit">Create Homemade Version</button>
+              </div>
+            </section>
+
+            <section data-manual-step="creating" hidden>
+              <div id="scan-loading" class="alert alert-info" role="status" aria-live="polite" hidden></div>
+              <div id="scan-error" class="alert alert-error" role="alert" hidden>
+                <p id="scan-error-msg"></p>
+                <button id="scan-retry-btn" class="btn btn-ghost btn-small" type="button" hidden>Try again</button>
+                <button id="scan-edit-btn" class="btn btn-ghost btn-small" type="button">Edit details</button>
+              </div>
+            </section>
 
             <div class="form-actions">
-              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Generate Homemade Version</button>
               <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear form</button>
             </div>
           </form>
