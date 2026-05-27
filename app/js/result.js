@@ -1,6 +1,7 @@
 import { lastGeneratedRecord } from "./scan.js";
 import { saveMvpRecipe } from "./localDb.js";
-import { renderRecipeRecord } from "./recipeRender.js";
+import { showToast } from "./app.js";
+import { refreshUsageStrips } from "./usage.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -52,7 +53,46 @@ export function initResultView() {
   refreshUsageStrips();
 
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
-  renderRecipeRecord(el("result-content"), record, { fallbackUsed });
+  renderBadges(fallbackUsed);
+  el("result-name").textContent = record.scratchRecipe.title;
+  const originalName = record.scratchRecipe.originalProductName || record.productName || "";
+  const originalEl = el("result-original");
+  if (originalEl) {
+    originalEl.textContent = originalName ? `Inspired by: ${originalName}` : "";
+    originalEl.hidden = !originalName;
+  }
+  el("result-summary").textContent = record.scratchRecipe.summary;
+  const healthGoalEl = el("result-health-goal");
+  if (healthGoalEl) healthGoalEl.textContent = (record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.").trim();
+
+  const why = uniqNonEmpty(record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || []);
+  const whyBlock = el("result-why-block");
+  const whyList = el("result-why");
+  if (whyList && whyBlock) {
+    whyList.innerHTML = "";
+    if (why.length) {
+      for (const item of why) {
+        const li = document.createElement("li"); li.textContent = item; whyList.appendChild(li);
+      }
+      whyBlock.hidden = false;
+    } else {
+      whyBlock.hidden = true;
+    }
+  }
+  el("result-note").textContent = fallbackUsed
+    ? "This is a starter suggestion built from common ingredients. Tweak to taste. General food info only, not medical advice."
+    : "Generated from the configured AI provider. Tweak to taste. General food info only, not medical advice.";
+
+  const ingredients = el("result-homemade-ingredients");
+  ingredients.innerHTML = "";
+  for (const item of sanitizePlaceholders(record.scratchRecipe.ingredients || [])) {
+    const li = document.createElement("li"); li.textContent = item; ingredients.appendChild(li);
+  }
+  const steps = el("result-homemade-steps");
+  steps.innerHTML = "";
+  for (const item of uniqNonEmpty(record.scratchRecipe.steps || [])) {
+    const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
+  }
 
   const tips = uniqNonEmpty(record.scratchRecipe.tips || record.recipeTips || []);
   const tipsBlock = el("result-tips-block");
@@ -71,9 +111,8 @@ export function initResultView() {
 
   const saveBtn = el("result-save-btn");
   if (!saveBtn) return;
-  saving = false;
   saveBtn.disabled = false;
-  saveBtn.textContent = "Save recipe";
+  saveBtn.textContent = "Save Recipe";
   saveBtn.onclick = async () => {
     if (saving) return;
     saving = true;
@@ -86,12 +125,15 @@ export function initResultView() {
         showToast("Recipe saved.");
         window.location.hash = `#details/${id}`;
       } else {
-        saveBtn.textContent = "Save failed — try again";
+        showToast("Recipe could not be saved. Please try again.");
+        saveBtn.textContent = "Save Recipe";
         saveBtn.disabled = false;
         saving = false;
       }
-    } catch {
-      saveBtn.textContent = "Save failed — try again";
+    } catch (err) {
+      console.error("save recipe failed", err);
+      showToast("Recipe could not be saved. Please try again.");
+      saveBtn.textContent = "Save Recipe";
       saveBtn.disabled = false;
       saving = false;
     }

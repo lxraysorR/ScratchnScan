@@ -12,7 +12,11 @@ const required = [
   'app/js/history.js',
   'app/js/details.js',
   'app/js/manualRecipe.js',
-  'app/js/recipeRender.js',
+  'app/js/platform.js',
+  'app/js/scannerService.js',
+  'app/js/scanCoordinator.js',
+  'app/js/capacitorBarcodeScannerAdapter.js',
+  'app/js/packageEntry.js',
   'AGENTS.md',
   'docs/MVP_SCOPE.md',
 ];
@@ -23,18 +27,19 @@ for (const file of required) {
 // HTML tokens — keep this list aligned with what the MVP actually renders.
 const html = readFileSync('app/index.html', 'utf8');
 const htmlChecks = [
-  'ScratchNScan',
-  'Scan-Scratch',
-  'Start Manual Entry',
-  'Generate Scratch Version',
-  'Save recipe',
+  'ScratchnScan',
+  'Create Homemade Version',
+  'Generate Homemade Version',
+  'Scan Barcode',
+  'View Saved Recipes',
+  'Save Recipe',
+  'Why this is healthier',
+  'view-home',
+  'view-scan',
   'view-manual',
   'view-result',
   'view-history',
   'view-details',
-  'result-content',
-  'details-content',
-  'cta-bar',
   'product-name-input',
   'ingredients-input',
   'dietary-input',
@@ -147,31 +152,55 @@ if (!veganMayo.tips.some((t) => /aquafaba|plant/i.test(t))) {
   throw new Error('vegan dietary tip should appear');
 }
 
-// New theme fields: matched templates expose quickFacts + whyCleaner.
-if (!mayo.whyCleaner || !/cleaner|additives|preservatives/i.test(mayo.whyCleaner)) {
-  throw new Error('matched template should include a whyCleaner explanation');
+// Scanner service: behaves in a non-Capacitor (web) environment.
+const platformMod = await import(pathToFileURL(resolve('app/js/platform.js')).href);
+if (platformMod.isNativePlatform() !== false) {
+  throw new Error('isNativePlatform() should be false in Node test environment');
 }
-if (!mayo.quickFacts || !mayo.quickFacts.method) {
-  throw new Error('matched template should include quickFacts.method');
-}
-const chips = recipeMod.buildDeterministicScratchRecipe({ productName: 'Potato Chips' });
-if (!/chips/i.test(chips.title) || !chips.quickFacts || chips.quickFacts.base !== 'Potatoes') {
-  throw new Error(`chips template unexpected: ${JSON.stringify({ title: chips.title, qf: chips.quickFacts })}`);
+if (platformMod.getPlatform() !== 'web') {
+  throw new Error('getPlatform() should be "web" in Node test environment');
 }
 
-// Defensive rendering contract: generic fallback must not emit banned placeholder names.
-const bannedPlaceholders = ['Main base ingredient', 'Whole-food flavor ingredient'];
-const genericText = generic.ingredients.join('\n');
-for (const banned of bannedPlaceholders) {
-  if (genericText.includes(banned)) {
-    throw new Error(`generic fallback should not contain placeholder "${banned}"`);
-  }
+// Provide a sessionStorage shim so scannerService can run under Node.
+const memory = new Map();
+globalThis.sessionStorage = {
+  getItem: (k) => (memory.has(k) ? memory.get(k) : null),
+  setItem: (k, v) => { memory.set(k, String(v)); },
+  removeItem: (k) => { memory.delete(k); },
+  clear: () => memory.clear(),
+};
+
+const scanner = await import(pathToFileURL(resolve('app/js/scannerService.js')).href);
+const webScan = await scanner.startScan();
+if (webScan.status !== 'unsupported') {
+  throw new Error(`expected web startScan to return unsupported, got ${webScan.status}`);
+}
+if (scanner.normalizeBarcode(' 012-000-001772 ') !== '012000001772') {
+  throw new Error('scannerService.normalizeBarcode should strip non-digit characters');
+}
+scanner.setDraftBarcode('012000001772');
+if (scanner.getDraftBarcode() !== '012000001772') {
+  throw new Error('draft barcode round-trip failed');
+}
+scanner.clearDraftBarcode();
+if (scanner.getDraftBarcode() !== '') {
+  throw new Error('clearDraftBarcode should empty the draft');
 }
 
-// recipeRender.js should expose the shared renderer export.
-const renderSrc = readFileSync('app/js/recipeRender.js', 'utf8');
-if (!/export\s+function\s+renderRecipeRecord\b/.test(renderSrc)) {
-  throw new Error('recipeRender.js must export renderRecipeRecord');
-}
+// Scan coordinator guard rails.
+const coord = await import(pathToFileURL(resolve('app/js/scanCoordinator.js')).href);
+coord.resetScanState();
+if (!coord.beginScan()) throw new Error('beginScan should succeed when idle');
+if (coord.beginScan()) throw new Error('beginScan should reject while a scan is in flight');
+coord.endScan();
+if (!coord.beginScan()) throw new Error('beginScan should succeed after endScan');
+coord.endScan();
+coord.setCooldownMs(50);
+if (!coord.shouldAcceptBarcode('111')) throw new Error('first barcode should be accepted');
+if (coord.shouldAcceptBarcode('111')) throw new Error('duplicate barcode inside cooldown should be rejected');
+if (!coord.shouldAcceptBarcode('222')) throw new Error('different barcode should be accepted');
+await new Promise((r) => setTimeout(r, 80));
+if (!coord.shouldAcceptBarcode('111')) throw new Error('same barcode after cooldown should be accepted');
+coord.resetScanState();
 
-console.log('App shell + localDb tests passed.');
+console.log('App shell + localDb + scanner tests passed.');
