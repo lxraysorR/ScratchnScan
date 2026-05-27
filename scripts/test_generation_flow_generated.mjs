@@ -94,7 +94,7 @@ await gotoManual();
         homemadeAlternative: {
           title: "Homemade Oat Granola Bars",
           healthGoal: "Less added sugar.",
-          whyCleaner: ["No corn syrup."],
+          whyLessProcessed: ["No corn syrup."],
           ingredients: [{ item: "2 cups rolled oats" }, { item: "1/4 cup honey" }],
           steps: ["Mix.", "Press into a pan.", "Bake and cool."],
           tips: ["Store airtight."],

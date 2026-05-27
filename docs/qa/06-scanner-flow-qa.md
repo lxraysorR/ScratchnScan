@@ -1,37 +1,105 @@
-# Claude QA Prompt — Scanner Flow (Beta vs Coming Next)
+# QA 06 — Scanner Flow
 
-## Role
-You are QA reviewing Scratch-N-Scan.
+## Purpose
+
+Verify the scanner service, barcode draft state, `packageEntry.js` wiring, scan-view copy, all status paths, and the regression guard for the manual-submit barcode payload.
 
 ## Scope
-Validate scanner-state honesty, UI consistency, and fallback behavior.
 
-## Do-not-change instructions
-- QA only; do not implement scanner features in this pass.
-- **Do not add new features during QA. If you find an issue, report it and write a separate Codex fix prompt.**
+- `app/js/scannerService.js` — `startScan`, `normalizeBarcode`, draft barcode helpers
+- `app/js/scanCoordinator.js` — concurrent scan guard, duplicate barcode cooldown
+- `app/js/capacitorBarcodeScannerAdapter.js` — Capacitor adapter
+- `app/js/platform.js` — `isNativePlatform`, `getPlatform`
+- `app/js/packageEntry.js` — `initPackageEntry`, `refreshBarcodeBanner`, `handleScanClick`, status copy
+- `app/index.html` — scan view IDs (`scan-start-btn`, `scan-status`, `draft-barcode*`)
+- `scripts/test_scan_submit_regression.mjs`
+- `scripts/test_frontend_helpers.mjs` (scanner service / coordinator cases)
 
-## Commands to run
-- `npm test`
-- Search scanner-related handlers and UI states.
+## Out of scope
+
+- Generation triggered after scan (QA 02)
+- Photo upload (QA 03)
+- Storage (QA 08)
 
 ## Checklist
-- [ ] Scanner state is explicit: **Beta enabled** or **Coming Next**.
-- [ ] No mismatch between `scan-coming-soon` and `scan-start-btn` behavior/state.
-- [ ] Visible scan button behavior is honest to current implementation.
 
-### If scanner is Beta-enabled
-- [ ] Visible scan button invokes scanner handler / `scannerService.startScan` path.
-- [ ] Unsupported device gracefully falls back to manual/photo entry.
-- [ ] Permission denied gracefully falls back to manual/photo entry.
-- [ ] Captured barcode is preserved in context/session.
+### 1. Test suite
 
-### If scanner is Coming Next
-- [ ] UI clearly states “Coming Next”.
-- [ ] No fake active scanning button appears.
-- [ ] Manual/photo alternatives are clearly presented.
+- [ ] `node scripts/test_scan_submit_regression.mjs` exits 0
+- [ ] `node scripts/test_frontend_helpers.mjs` exits 0 (scanner / coordinator cases)
+- [ ] `test_scan_submit_regression.mjs` is in `npm test`
 
-## Report format
-Use `docs/qa/REPORT_TEMPLATE.md` and include a **Scanner Mode Verdict** section.
+### 2. scan.js payload variables
 
-## Acceptance criteria
-PASS only if scanner messaging and behavior are consistent and user-safe.
+- [ ] `barcode` is declared with `const` in `handleSubmit`
+- [ ] `frontImagePreviewDataUrl` is declared with `const` in `handleSubmit`
+- [ ] `backImagePreviewDataUrl` is declared with `const` in `handleSubmit`
+- [ ] `barcode` is passed into `runGenerationFlow` input
+- [ ] `barcode` is NOT hardcoded as `null` in the saved payload
+- [ ] No dead declarations of unused variables remain in `handleSubmit`
+
+### 3. Scanner service statuses
+
+- [ ] Web (non-native) → `{ status: 'unsupported', barcode: null }`
+- [ ] Concurrent scan attempt → `{ status: 'busy', barcode: null }`
+- [ ] User cancel (no barcodes returned) → `{ status: 'cancelled', barcode: null }`
+- [ ] Successful native scan → `{ status: 'success', barcode: <normalized> }`
+- [ ] Duplicate barcode within cooldown → `{ status: 'duplicate', barcode: <value> }`
+
+### 4. `normalizeBarcode`
+
+- [ ] Strips all non-digit characters
+- [ ] Returns `""` for null/undefined
+- [ ] Returns digits-only for mixed input like `"012-000-1772"`
+
+### 5. Draft barcode helpers
+
+- [ ] `setDraftBarcode` → stores in `sessionStorage`
+- [ ] `getDraftBarcode` → reads from `sessionStorage`
+- [ ] `clearDraftBarcode` → removes from `sessionStorage`
+- [ ] All helpers are safe when `sessionStorage` is unavailable (no throw)
+
+### 6. Coordinator
+
+- [ ] `beginScan()` returns `true` first call, `false` if already active
+- [ ] `endScan()` unlocks for next scan
+- [ ] `shouldAcceptBarcode` rejects same barcode within cooldown
+- [ ] `shouldAcceptBarcode` accepts different barcode immediately
+
+### 7. `packageEntry.js` wiring
+
+- [ ] `scan-start-btn` exists in HTML and `initPackageEntry` attaches click handler
+- [ ] `draft-barcode`, `draft-barcode-value`, `draft-barcode-clear` exist in HTML
+- [ ] `refreshBarcodeBanner` shows banner when draft barcode is set
+- [ ] `refreshBarcodeBanner` hides banner when no barcode
+- [ ] `draft-barcode-clear` click clears barcode and hides banner
+- [ ] `initPackageEntry` is idempotent (second call does not double-wire)
+
+### 8. Status copy coverage
+
+- [ ] `STATUS_COPY` in `packageEntry.js` covers all `startScan` statuses: `scanning`, `success`, `duplicate`, `cancelled`, `busy`, `permission-denied`, `preparing`, `unsupported`, `error`
+- [ ] `unsupported` / `error` status routes user to `#manual` after a short delay
+
+### 9. No regressions
+
+- [ ] `npm test` passes
+- [ ] `npm run build` passes
+
+## Commands to run
+
+```bash
+node scripts/test_scan_submit_regression.mjs
+node scripts/test_frontend_helpers.mjs
+npm test
+npm run build
+```
+
+## Pass criteria
+
+All checklist items checked. All commands exit 0. `test_scan_submit_regression.mjs` is in `npm test`.
+
+## Failure response
+
+1. Document failing command and full output.
+2. Fix only scanner/barcode/wiring issues — no other scope.
+3. Rerun failing test.

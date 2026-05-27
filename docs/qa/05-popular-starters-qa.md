@@ -1,34 +1,86 @@
-# Claude QA Prompt — Popular Starters
+# QA 05 — Popular Starters
 
-## Role
-You are QA reviewing Scratch-N-Scan.
+## Purpose
+
+Verify the popular starters chip row: API wiring, fallback to pantry defaults, deduplication, rendering, and that `app.js` uses the tested `popularChips.js` module rather than a silent local copy.
 
 ## Scope
-Validate shared starter source usage, prefill behavior, editability, and fallback generation.
 
-## Do-not-change instructions
-- QA only; do not replace or redesign starter logic during this pass.
-- **Do not add new features during QA. If you find an issue, report it and write a separate Codex fix prompt.**
+- `app/js/popularChips.js` — `pickChipNames`, `renderPopularChips`, `STARTER_PANTRY_ITEMS`
+- `app/js/app.js` — `loadPopularItems`, import wiring, `[data-sample]` click handler
+- `app/js/api.js` — `getPopularItems`
+- `src/worker.js` — `/api/popular-items` route presence
+- `scripts/test_popular_items_generated.mjs`
+- `scripts/test_frontend_dom.mjs` (chip rendering cases)
+- `scripts/test_frontend_helpers.mjs` (`pickChipNames` cases)
 
-## Commands to run
-- `npm test`
-- Search code paths for starter data source usage.
+## Out of scope
+
+- AI generation triggered by chip click (QA 02)
+- Storage (QA 08)
 
 ## Checklist
-- [ ] One shared popular starter source exists.
-- [ ] Home “Popular Right Now” uses shared source.
-- [ ] Manual “Popular Starters” uses shared source.
-- [ ] Duplicate hardcoded starter lists are removed where practical.
-- [ ] Clicking starter pre-fills product name.
-- [ ] Clicking starter pre-fills category.
-- [ ] Clicking starter pre-fills ingredients/package text.
-- [ ] Clicking starter pre-fills preference/health goal.
-- [ ] Starter selection can create ProductContext with source `popular`.
-- [ ] Manual edits after prefill still work.
-- [ ] Fallback generation from starter path works.
 
-## Report format
-Use `docs/qa/REPORT_TEMPLATE.md` with a **Starter Source Consistency** subsection.
+### 1. Test suite
 
-## Acceptance criteria
-PASS only if starter source is shared and both UI surfaces behave consistently.
+- [ ] `node scripts/test_popular_items_generated.mjs` exits 0
+- [ ] `node scripts/test_frontend_dom.mjs` exits 0 (includes chip render cases)
+- [ ] `node scripts/test_frontend_helpers.mjs` exits 0 (includes `pickChipNames` cases)
+
+### 2. `pickChipNames`
+
+- [ ] Returns up to 5 unique names from API data
+- [ ] Deduplicates by `normalizedName` key
+- [ ] Respects a custom `limit` argument
+- [ ] Falls back to `STARTER_PANTRY_ITEMS` on empty / blank / undefined input
+- [ ] `STARTER_PANTRY_ITEMS` = `['Cream Cheese', 'Mayo', 'Mustard', 'Ketchup', 'Tomato Sauce']`
+
+### 3. `renderPopularChips`
+
+- [ ] Renders `button.chip` elements with `data-sample` and matching text
+- [ ] Clears stale chips before re-render (no duplicates)
+- [ ] Falls back to pantry starters when API data is empty
+- [ ] All chips are `type="button"` elements
+
+### 4. `app.js` wiring
+
+- [ ] `app.js` imports `renderPopularChips` from `popularChips.js` (no local duplicate)
+- [ ] `app.js` does NOT define its own `renderPopularChips` function
+- [ ] `loadPopularItems` calls the imported `renderPopularChips`
+- [ ] `[data-sample]` click handler calls `applySample` and routes to `#manual`
+- [ ] Sample chip click gates on `canGenerate()` before proceeding
+
+### 5. API fallback
+
+- [ ] `getPopularItems` returns `{ ok: false, items: [] }` on network error
+- [ ] `getPopularItems` returns `{ ok: false, items: [] }` on non-JSON response
+- [ ] `loadPopularItems` calls `renderPopularChips([])` on any error (shows fallback starters)
+
+### 6. Worker endpoint
+
+- [ ] `/api/popular-items` route exists in `src/worker.js`
+
+### 7. No regressions
+
+- [ ] `npm test` passes
+- [ ] `npm run build` passes
+
+## Commands to run
+
+```bash
+node scripts/test_popular_items_generated.mjs
+node scripts/test_frontend_dom.mjs
+node scripts/test_frontend_helpers.mjs
+npm test
+npm run build
+```
+
+## Pass criteria
+
+All checklist items checked. All commands exit 0. `app.js` uses `popularChips.js`, not a local copy.
+
+## Failure response
+
+1. Document the failing check and exact output.
+2. Fix only popular-starters/chip-rendering issues.
+3. Rerun the failing test.

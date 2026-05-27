@@ -1,39 +1,110 @@
-# Claude QA Prompt — Smoke Test
+# QA 01 — Smoke Test
 
-## Role
-You are QA reviewing Scratch-N-Scan.
+## Purpose
+
+Verify the project installs, builds, and its full test suite passes. Confirm required files and scripts are present. Catch syntax errors and missing dependencies before any flow QA.
 
 ## Scope
-Basic health checks for install, scripts, startup viability, and obvious runtime breakage.
 
-## Do-not-change instructions
-- QA only: do not change production code.
-- Do not add features or refactor behavior.
-- **Do not add new features during QA. If you find an issue, report it and write a separate Codex fix prompt.**
+- Dependency installation
+- Required file existence
+- Required npm scripts existence
+- JavaScript syntax checks
+- `npm test` (full test suite)
+- `npm run qa:smoke` (file/script presence check)
+- `npm run build` (dist output)
+- `npm run qa:flow` (aggregate gate)
 
-## Commands to run
-1. `npm install`
-2. `npm test`
-3. `npm run build` (if script exists)
-4. `npm run start` or `npm run dev` (if script exists)
-5. Any explicit smoke script, e.g. `npm run qa:smoke` (if script exists)
+## Out of scope
+
+- Browser behavior
+- AI/API calls
+- Storage flows
+- UI rendering
 
 ## Checklist
-- [ ] App installs successfully.
-- [ ] Test suite runs.
-- [ ] Build runs when available.
-- [ ] No obvious syntax/module resolution errors.
-- [ ] Local start/dev command exists and starts without immediate crash.
-- [ ] Main HTML/JS/CSS assets are loadable.
-- [ ] No missing module imports in startup path.
-- [ ] If browser tooling is available, confirm no console-breaking errors in basic manual flow.
 
-## Report format
-Use `docs/qa/REPORT_TEMPLATE.md` and include:
-- script availability table
-- command outputs summary
-- pass/fail per checklist item
-- blocker list + separate Codex fix prompts
+### 1. Dependencies
 
-## Acceptance criteria
-Smoke pass is PASS only if install + tests pass and no critical startup/module errors are found.
+- [ ] `npm install` completes without error
+- [ ] No missing peer dependencies (warnings are acceptable)
+
+### 2. Required files
+
+- [ ] `app/index.html` exists
+- [ ] `app/js/app.js` exists
+- [ ] `app/js/scan.js` exists
+- [ ] `app/js/api.js` exists
+- [ ] `app/styles.css` exists
+- [ ] `docs/MVP_SCOPE.md` exists
+- [ ] `docs/COMPLETION_CHECKLIST.md` exists
+- [ ] `qa/state/daily-qa-state.json` exists
+- [ ] `scripts/qa-smoke.js` exists
+- [ ] `scripts/app-status.js` exists
+- [ ] `scripts/agent-next-task.js` exists
+
+### 3. Required npm scripts
+
+- [ ] `npm test` script defined in package.json
+- [ ] `npm run build` script defined in package.json
+- [ ] `npm run qa:smoke` script defined in package.json
+- [ ] `npm run qa:flow` script defined in package.json
+- [ ] `npm run app:status` script defined in package.json
+- [ ] `npm run agent:next` script defined in package.json
+
+### 4. Syntax checks
+
+- [ ] `node --check app/js/app.js` passes
+- [ ] `node --check app/js/scan.js` passes
+- [ ] `node --check app/js/packageEntry.js` passes
+- [ ] `node --check app/js/result.js` passes
+- [ ] `node --check app/js/history.js` passes
+- [ ] `node --check app/js/api.js` passes
+- [ ] `node --check app/js/localDb.js` passes
+- [ ] `node --check app/js/usage.js` passes
+- [ ] `node --check app/js/manualRecipe.js` passes
+- [ ] `node --check scripts/app-status.js` passes
+- [ ] `node --check scripts/agent-next-task.js` passes
+
+### 5. Test suite
+
+- [ ] `npm test` exits 0
+- [ ] No test reports unexpected failures in output
+
+### 6. Smoke script
+
+- [ ] `npm run qa:smoke` exits 0
+- [ ] Output shows `Smoke result: PASS`
+
+### 7. Build
+
+- [ ] `npm run build` exits 0
+- [ ] `dist/index.html` written
+- [ ] `dist/js/app.js` written
+
+### 8. Aggregate flow gate
+
+- [ ] `npm run qa:flow` exits 0
+
+## Commands to run
+
+```bash
+npm install
+node --check app/js/app.js app/js/scan.js app/js/packageEntry.js app/js/result.js app/js/history.js app/js/api.js app/js/localDb.js app/js/usage.js app/js/manualRecipe.js
+node --check scripts/app-status.js scripts/agent-next-task.js
+npm test
+npm run qa:smoke
+npm run build
+npm run qa:flow
+```
+
+## Pass criteria
+
+All checklist items above must be checked. Any exit-code failure is a blocker.
+
+## Failure response
+
+1. Document the failing command and full output.
+2. Fix only the failure (syntax error, missing file, wrong script name).
+3. Rerun the failed command.
+4. If unfixable, mark BLOCKED and document why.

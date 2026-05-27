@@ -16,8 +16,8 @@ assert.ok(!scanJs.includes('let recipeError'), 'recipeError leftover should be r
 assert.ok(!scanJs.includes('void recipeError'), 'recipeError void leftover should be removed');
 assert.match(scanJs, /const frontImagePreviewDataUrl = draft\.frontImagePreviewDataUrl \|\| null;/);
 assert.match(scanJs, /const backImagePreviewDataUrl = draft\.backImagePreviewDataUrl \|\| null;/);
-assert.match(scanJs, /const hasFrontImage = !!frontImagePreviewDataUrl;/);
-assert.match(scanJs, /const hasBackImage = !!backImagePreviewDataUrl;/);
+assert.ok(!scanJs.includes('const hasFrontImage = !!frontImagePreviewDataUrl'), 'hasFrontImage must not be declared in scan.js — it moved to generationController');
+assert.ok(!scanJs.includes('const hasBackImage = !!backImagePreviewDataUrl'), 'hasBackImage must not be declared in scan.js — it moved to generationController');
 assert.match(scanJs, /const inputEl = event\.currentTarget;/);
 assert.match(scanJs, /await handlePhotoSelected\(which, file\);/);
 assert.ok(

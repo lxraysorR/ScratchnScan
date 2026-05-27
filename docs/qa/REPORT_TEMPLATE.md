@@ -1,48 +1,79 @@
-# QA Report
+# QA Report: [QA FILE NAME]
 
-## Overall Status
-PASS / FAIL / PARTIAL
+## Overview
 
-## Commands Run
-- command:
-  - result:
-  - notes:
-- command:
-  - result:
-  - notes:
+| Field | Value |
+|-------|-------|
+| QA file | `docs/qa/XX-filename.md` |
+| Date | YYYY-MM-DD |
+| Branch | |
+| Tester | Claude Code (automated) |
+| Overall status | PASS / FAIL / FIXED / BLOCKED |
 
-## Areas Tested
-- area:
-  - status:
-  - notes:
-- area:
-  - status:
-  - notes:
+## Commands run
 
-## Critical Blockers
-List blockers.
+```
+npm install
+npm test
+npm run build
+npm run qa:smoke
+npm run qa:flow
+```
 
-## High Priority Issues
-List issues.
+## Pass/fail results
 
-## Medium Priority Issues
-List issues.
+| Command | Result | Notes |
+|---------|--------|-------|
+| `npm install` | | |
+| `npm test` | | |
+| `npm run qa:smoke` | | |
+| `npm run build` | | |
 
-## Low Priority / Polish
-List issues.
+## Checklist results
 
-## Regression Risks
-List risks.
+| # | Check | Result | Notes |
+|---|-------|--------|-------|
+| 1 | | | |
 
-## Screens / Flows Verified
-List flows.
+## Issues found
 
-## Recommended Codex Fix Prompts
-For each issue, include:
-- issue title:
-- affected files:
-- expected behavior:
-- suggested LLM prompt:
+### Issue 1 — [Severity: Critical/High/Medium/Low]
 
-## Final Recommendation
-State whether the repo is ready for the next implementation task.
+**File:** `path/to/file.js`
+**Description:**
+**Impact:**
+
+## Fixes made
+
+### Fix 1 — [Issue reference]
+
+**Files changed:**
+- `path/to/file.js`
+
+**What changed:**
+
+## Files changed
+
+- `path/to/file.js` — description
+
+## Tests rerun after fixes
+
+| Command | Result |
+|---------|--------|
+| `npm test` | |
+| `npm run build` | |
+
+## Remaining issues
+
+| ID | Description | Severity | Recommended action |
+|----|-------------|----------|--------------------|
+
+## Recommended next QA file
+
+`docs/qa/XX-next-qa-file.md`
+
+## Recommended Codex prompt for unresolved issues
+
+```
+[Codex prompt if any issues remain unresolved]
+```

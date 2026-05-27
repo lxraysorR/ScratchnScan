@@ -1,8 +1,13 @@
 // Regression guard for the Manual Entry "Generate Homemade Version" submit
-// flow. These bugs were runtime ReferenceErrors (hasFrontImage / hasBackImage /
-// recipeError / barcode) that token-only tests missed. This file asserts, at
-// the source level, that the undefined-variable patterns cannot return, and at
-// the behavior level that generation never requires a barcode.
+// flow. These bugs were runtime ReferenceErrors (recipeError / barcode) that
+// token-only tests missed. This file asserts, at the source level, that the
+// undefined-variable patterns cannot return, and at the behavior level that
+// generation never requires a barcode.
+//
+// Architecture note: hasFrontImage / hasBackImage were removed from scan.js
+// when the generation record was moved into generationController.js. The
+// controller computes those flags from the photos object directly. scan.js
+// only needs to pass the raw data URLs.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -14,29 +19,26 @@ const scan = readFileSync('app/js/scan.js', 'utf8');
 assert.ok(!/recipeError\s*=/.test(scan), 'scan.js must not assign to undeclared recipeError');
 assert.ok(!scan.includes('void recipeError'), 'scan.js must not reference recipeError via void');
 
-// --- Every variable used in the submit payload must be declared. -----------
-for (const name of ['hasFrontImage', 'hasBackImage', 'barcode', 'frontImagePreviewDataUrl', 'backImagePreviewDataUrl']) {
+// --- Core submit variables must be declared. --------------------------------
+for (const name of ['barcode', 'frontImagePreviewDataUrl', 'backImagePreviewDataUrl']) {
   assert.ok(
     new RegExp(`const\\s+${name}\\s*=`).test(scan),
-    `scan.js must declare ${name} (const ${name} = ...) before using it`,
+    `scan.js must declare ${name} with const before using it`,
   );
 }
 
-// Declaration must come before first *use* for the photo flags and barcode.
+// --- barcode must be used after its declaration (not dead). ----------------
 function declaredBeforeUse(name) {
   const declIdx = scan.search(new RegExp(`const\\s+${name}\\s*=`));
-  // First use beyond the declaration: the next occurrence of the bare token.
   const afterDecl = scan.slice(declIdx + `const ${name} =`.length);
   const useIdx = afterDecl.search(new RegExp(`\\b${name}\\b`));
   return declIdx >= 0 && useIdx >= 0;
 }
-for (const name of ['hasFrontImage', 'hasBackImage', 'barcode']) {
-  assert.ok(declaredBeforeUse(name), `${name} should be declared before it is used`);
-}
+assert.ok(declaredBeforeUse('barcode'), 'barcode should be declared and then used in runGenerationFlow input');
 
-// The saved record must preserve the (optional) barcode, not hardcode null.
-assert.ok(!/barcode:\s*null/.test(scan), 'saved payload must use `barcode,` so a scanned/manual UPC survives');
-assert.ok(/source:\s*"manual",\s*\n\s*barcode,/.test(scan), 'saved payload should carry the local barcode');
+// --- barcode must be forwarded into runGenerationFlow, not hardcoded null. --
+assert.ok(!/barcode:\s*null/.test(scan), 'scan.js must not hardcode barcode: null');
+assert.ok(/input:\s*\{[^}]*\bbarcode\b/.test(scan), 'barcode must appear in the runGenerationFlow input object');
 
 // --- Behavior: generation works with no barcode and no images. -------------
 const { buildGenerationPayload } = await import(pathToFileURL(resolve('app/js/generationPayload.js')).href);
