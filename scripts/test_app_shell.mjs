@@ -58,6 +58,10 @@ const htmlChecks = [
   'draft-barcode',
   'Scan package',
   'Enter manually instead',
+  'result-label-tip-slot',
+  'manual-ingredient-label-tip-slot',
+  'manual-photo-label-tip-slot',
+  'home-label-tip-slot',
 ];
 for (const token of htmlChecks) {
   if (!html.includes(token)) throw new Error(`Missing token in app/index.html: ${token}`);

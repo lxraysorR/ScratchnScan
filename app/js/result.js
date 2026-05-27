@@ -1,7 +1,8 @@
 import { lastGeneratedRecord } from "./scan.js";
-import { saveMvpRecipe } from "./localDb.js";
+import { saveRecipe } from "./recipeStorage.js";
 import { showToast } from "./app.js";
 import { refreshUsageStrips } from "./usage.js";
+import { normalizeProductContext } from "./productContext.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -25,6 +26,35 @@ function sanitizePlaceholders(items = []) {
   return uniqNonEmpty(items).filter(
     (x) => !/(?:base|flavor|seasoning) ingredient|placeholder/i.test(x),
   );
+}
+function confidenceText(ctx) {
+  if (ctx.confidenceLabel === "high") return "High confidence";
+  if (ctx.confidenceLabel === "medium") return "Medium confidence";
+  if (ctx.confidenceLabel === "low") return "Low confidence — please review";
+  return "Unknown confidence — add details to improve";
+}
+function renderAccordion(section, openByDefault) {
+  if (!section) return;
+  const title = section.querySelector("h3");
+  if (!title) return;
+  const label = title.textContent;
+  const content = [...section.children].filter((n) => n !== title);
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "accordion-toggle";
+  btn.setAttribute("aria-expanded", openByDefault ? "true" : "false");
+  btn.textContent = label;
+  const body = document.createElement("div");
+  body.className = "recipe-accordion-content";
+  if (!openByDefault) body.hidden = true;
+  content.forEach((n) => body.appendChild(n));
+  btn.onclick = () => {
+    const next = btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", String(next));
+    body.hidden = !next;
+  };
+  section.innerHTML = "";
+  section.append(btn, body);
 }
 
 function renderBadges(fallbackUsed) {
@@ -53,9 +83,35 @@ export function initResultView() {
   refreshUsageStrips();
 
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
+  const productContext = normalizeProductContext(
+    record.productContext || {
+      productName: record.productName || record.scratchRecipe?.originalProductName || "",
+      ingredientsText: record.ingredientsText || record.inputIngredients || "",
+      source: record.source || "manual",
+    },
+  );
   renderBadges(fallbackUsed);
+  el("result-product-summary").innerHTML = `
+    <h3>Product detected</h3>
+    <p><strong>${productContext.productName || record.scratchRecipe.originalProductName || "Homemade target"}</strong></p>
+    <p class="details-meta">${[productContext.brand, productContext.category, productContext.flavor].filter(Boolean).join(" · ")}</p>
+    <p class="details-meta">${[productContext.source ? `Detected from ${productContext.source}` : "", confidenceText(productContext)].filter(Boolean).join(" · ")}</p>
+  `;
+  const understoodRows = [
+    productContext.productName ? `<div class="understood-row"><strong>Product:</strong> ${productContext.productName}</div>` : "",
+    productContext.ingredientsText ? `<div class="understood-row"><strong>Ingredients read:</strong> ${productContext.ingredientsText}</div>` : "",
+    productContext.claims?.length ? `<div class="understood-row"><strong>Claims read:</strong> ${productContext.claims.join(", ")}</div>` : "",
+    `<div class="understood-row"><strong>Source:</strong> ${productContext.source || "unknown"}</div>`,
+    `<div class="understood-row"><strong>Confidence:</strong> ${confidenceText(productContext)}</div>`,
+  ].filter(Boolean);
+  el("result-understood-panel").innerHTML = `<h3>What the app understood</h3>${understoodRows.join("")}<p class="helper">We use these details to make the homemade version more specific. Ingredients matter most because they show what the packaged food is made from.</p>`;
+  el("result-quick-facts").innerHTML = `
+    <div class="quick-fact"><span>Method</span><strong>${/(bake|air[- ]?fry)/i.test(record.scratchRecipe.steps?.join(" ")) ? "Bake / air fry" : "Homemade"}</strong></div>
+    <div class="quick-fact"><span>Time</span><strong>${record.scratchRecipe.steps?.length ? "35–50 min" : "Varies"}</strong></div>
+    <div class="quick-fact"><span>Base</span><strong>${(productContext.detectedIngredients?.[0] || productContext.category || "Pantry staples")}</strong></div>
+  `;
   el("result-name").textContent = record.scratchRecipe.title;
-  const originalName = record.scratchRecipe.originalProductName || record.productName || "";
+  const originalName = productContext.productName || record.scratchRecipe.originalProductName || record.productName || "";
   const originalEl = el("result-original");
   if (originalEl) {
     originalEl.textContent = originalName ? `Inspired by: ${originalName}` : "";
@@ -108,6 +164,10 @@ export function initResultView() {
       tipsBlock.hidden = true;
     }
   }
+  renderAccordion(el("result-why-block"), false);
+  renderAccordion(el("result-tips-block"), false);
+  renderAccordion(el("result-homemade-ingredients")?.closest(".recipe-block"), true);
+  renderAccordion(el("result-homemade-steps")?.closest(".recipe-block"), true);
 
   const saveBtn = el("result-save-btn");
   if (!saveBtn) return;
@@ -119,7 +179,8 @@ export function initResultView() {
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
     try {
-      const id = await saveMvpRecipe({ ...record, fallbackUsed });
+      const saved = await saveRecipe({ ...record, fallbackUsed });
+      const id = saved?.id;
       sessionStorage.removeItem("scratchnscan:lastGenerated");
       if (id) {
         showToast("Recipe saved.");

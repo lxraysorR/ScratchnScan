@@ -1,5 +1,6 @@
 import { getMvpRecipeById, toggleMvpFavorite, deleteMvpRecipe } from "./localDb.js";
 import { showToast } from "./app.js";
+import { normalizeProductContext } from "./productContext.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -45,12 +46,48 @@ function renderMetrics(container, { ingredients, steps }) {
     <div class="metric"><strong>10m</strong><span>Estimate</span></div>
   `;
 }
+function confidenceText(ctx) {
+  if (ctx.confidenceLabel === "high") return "High confidence";
+  if (ctx.confidenceLabel === "medium") return "Medium confidence";
+  if (ctx.confidenceLabel === "low") return "Low confidence — please review";
+  return "Unknown confidence — add details to improve";
+}
+function renderAccordion(section, openByDefault) {
+  if (!section) return;
+  const title = section.querySelector("h3");
+  if (!title) return;
+  const label = title.textContent;
+  const content = [...section.children].filter((n) => n !== title);
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "accordion-toggle";
+  btn.setAttribute("aria-expanded", openByDefault ? "true" : "false");
+  btn.textContent = label;
+  const body = document.createElement("div");
+  body.className = "recipe-accordion-content";
+  if (!openByDefault) body.hidden = true;
+  content.forEach((n) => body.appendChild(n));
+  btn.onclick = () => {
+    const next = btn.getAttribute("aria-expanded") !== "true";
+    btn.setAttribute("aria-expanded", String(next));
+    body.hidden = !next;
+  };
+  section.innerHTML = "";
+  section.append(btn, body);
+}
 
 export async function initDetailsView(id) {
   const record = await getMvpRecipeById(id);
   if (!record) { window.location.hash = "#history"; return; }
 
   const fav = !!(record.favorite ?? record.isFavorite);
+  const productContext = normalizeProductContext(
+    record.productContext || {
+      productName: record.productName || record.scratchRecipe?.originalProductName || "",
+      ingredientsText: record.ingredientsText || record.inputIngredients || "",
+      source: record.source || "manual",
+    },
+  );
   const recipeTitle = record.recipeTitle || record.scratchRecipe?.title || "Homemade alternative";
   const ingredientsList = record.recipeIngredients?.length
     ? record.recipeIngredients
@@ -63,9 +100,33 @@ export async function initDetailsView(id) {
     : (record.scratchRecipe?.tips || []);
 
   renderBadges(el("details-badges"), { favorite: fav, fallbackUsed: !!record.fallbackUsed });
+  el("details-product-summary").innerHTML = `
+    <h3>Product detected</h3>
+    <p><strong>${productContext.productName || "Saved homemade target"}</strong></p>
+    <p class="details-meta">${[productContext.brand, productContext.category, productContext.flavor].filter(Boolean).join(" · ")}</p>
+    <p class="details-meta">${[productContext.source ? `Detected from ${productContext.source}` : "", confidenceText(productContext)].filter(Boolean).join(" · ")}</p>
+  `;
+  const understoodRows = [
+    productContext.productName ? `<div class="understood-row"><strong>Product:</strong> ${productContext.productName}</div>` : "",
+    productContext.ingredientsText ? `<div class="understood-row"><strong>Ingredients read:</strong> ${escapeHtml(productContext.ingredientsText)}</div>` : "",
+    productContext.claims?.length ? `<div class="understood-row"><strong>Claims read:</strong> ${productContext.claims.join(", ")}</div>` : "",
+    `<div class="understood-row"><strong>Source:</strong> ${productContext.source || "unknown"}</div>`,
+    `<div class="understood-row"><strong>Confidence:</strong> ${confidenceText(productContext)}</div>`,
+  ].filter(Boolean);
+  el("details-understood-panel").innerHTML = `<h3>What the app understood</h3>${understoodRows.join("")}`;
+  el("details-quick-facts").innerHTML = `
+    <div class="quick-fact"><span>Method</span><strong>${/(bake|air[- ]?fry)/i.test(stepsList.join(" ")) ? "Bake / air fry" : "Homemade"}</strong></div>
+    <div class="quick-fact"><span>Time</span><strong>${stepsList.length ? "35–50 min" : "Varies"}</strong></div>
+    <div class="quick-fact"><span>Base</span><strong>${(productContext.detectedIngredients?.[0] || productContext.category || "Pantry staples")}</strong></div>
+  `;
 
   el("details-name").textContent = recipeTitle;
-  el("details-meta").textContent = `Based on: ${record.productName || "untitled product"}`;
+  const metaBits = [
+    `Based on: ${productContext.productName || "untitled product"}`,
+    productContext.category ? `Category: ${productContext.category}` : "",
+    productContext.confidenceLabel !== "unknown" ? `Confidence: ${productContext.confidenceLabel}` : "",
+  ].filter(Boolean);
+  el("details-meta").textContent = metaBits.join(" • ");
   el("details-date").textContent = record.createdAt ? `Saved ${formatDate(record.createdAt)}` : "";
 
   const photoRow = el("details-photo-row");
@@ -135,6 +196,10 @@ export async function initDetailsView(id) {
       tipsBlock.hidden = true;
     }
   }
+  renderAccordion(el("details-ingredients")?.closest(".recipe-block"), false);
+  renderAccordion(el("details-steps")?.closest(".recipe-block"), false);
+  renderAccordion(el("details-why-block"), false);
+  renderAccordion(el("details-tips-block"), false);
 
   const sourceText = record.ingredientsText || record.inputIngredients;
   const sourceEl = el("details-input");

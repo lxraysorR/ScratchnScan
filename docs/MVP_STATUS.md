@@ -24,6 +24,7 @@ The app currently supports entering packaged food details manually, generating a
 - Scanner/camera flow is not part of this checkpoint.
 - No billing or subscription flows.
 - AI generation may be unavailable without worker/provider config; fallback remains available.
+- Scanner is in beta: native-capable devices can attempt barcode scanning; unsupported or denied-permission states route users to manual/photo entry with clear messaging.
 
 ## Manual MVP test steps
 1. Open the app and go to Manual Entry.
@@ -40,6 +41,14 @@ The app currently supports entering packaged food details manually, generating a
 
 
 ## Photo/product context behavior
+- ProductContext normalization layer now standardizes manual, photo, popular starter, AI response, and scanner-ready product data into one shared contract.
+- Photo-only upload is valid input: users can submit front photo only, back photo only, or both photos without typing a product name first.
 - Photo analysis should produce product-specific recipes when package context is available.
-- If product extraction fails or confidence is too low, the app should ask for manual product name/ingredients input before generation.
+- If photo-only extraction fails or confidence is too low, the app asks for manual product name/ingredients confirmation and retry (instead of generating misleading generic output).
+- Manual text entry remains available as fallback for all users.
 - Generic placeholder ingredients should never be shown to users.
+- Result/details UI now includes a Product detected summary, a What-the-app-understood panel, confidence/source messaging, and sticky mobile actions.
+- Generated Result defaults: Ingredients/Steps open, Why cleaner/Tips closed.
+- Saved Details defaults: all recipe accordions closed by default.
+- Generation orchestration is now handled by `generationController`, while `scan.js` focuses on manual form wiring and event handling.
+- Durable storage plan now targets Supabase tables/media refs, with IndexedDB retained as local fallback/cache and pending-sync buffer.

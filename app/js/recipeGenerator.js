@@ -1,20 +1,6 @@
+import { contextToRecipeInput, normalizeProductContext } from "./productContext.js";
 function nowIso() { return new Date().toISOString(); }
 function cleanText(v) { return String(v || "").trim(); }
-
-function buildProductContext(input = {}) {
-  const productName = cleanText(input.productName || input.name);
-  const brand = cleanText(input.brand);
-  const flavor = cleanText(input.flavor);
-  const category = cleanText(input.category);
-  const packageText = cleanText(input.packageText);
-  const ingredientsText = cleanText(input.ingredientsText || input.inputIngredients);
-  const detectedIngredients = Array.isArray(input.detectedIngredients) ? input.detectedIngredients.map((x) => cleanText(x)).filter(Boolean) : [];
-  const nutritionFacts = input.nutritionFacts || null;
-  const claims = Array.isArray(input.claims) ? input.claims.map((x) => cleanText(x)).filter(Boolean) : [];
-  const confidence = typeof input.confidence === "number" ? input.confidence : null;
-  const source = cleanText(input.source || "manual");
-  return { productName, brand, flavor, category, packageText, ingredientsText, detectedIngredients, nutritionFacts, claims, confidence, source };
-}
 
 function baseRecipe(originalProductName) {
   return {
@@ -80,7 +66,8 @@ function chipsRecipeFromContext(ctx) {
 }
 
 export function generateHealthierScratchRecipe(input = {}) {
-  const ctx = buildProductContext(input);
+  const baseCtx = normalizeProductContext(input, { source: input?.source || "manual" });
+  const ctx = contextToRecipeInput(baseCtx);
   const normalizedName = ctx.productName;
   if (!normalizedName) throw new Error("Type a packaged food name first.");
 

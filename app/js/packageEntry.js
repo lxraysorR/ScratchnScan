@@ -15,6 +15,7 @@ import {
 } from "./scannerService.js";
 import { isNativePlatform } from "./platform.js";
 import { showToast } from "./app.js";
+import { normalizeProductContext } from "./productContext.js";
 
 let wired = false;
 
@@ -36,11 +37,11 @@ const STATUS_COPY = {
   },
   unsupported: {
     tone: "warn",
-    text: "Scanning isn't available on this device yet. Enter the package manually below.",
+    text: "We could not start the scanner on this device. You can still type the product name or upload package photos.",
   },
   error: {
     tone: "warn",
-    text: "We couldn't start the scanner. Enter the package manually below.",
+    text: "We could not start the scanner on this device. You can still type the product name or upload package photos.",
   },
 };
 
@@ -90,8 +91,20 @@ async function handleScanClick() {
     setStatus(result.status);
 
     if (result.status === "success") {
+      const scannerContext = normalizeProductContext({
+        source: "scanner",
+        sourceBasis: ["barcode"],
+        sourceMetadata: {
+          barcode: result.barcode,
+          provider: "scanner",
+          lookupStatus: "pending",
+        },
+      });
+      try {
+        sessionStorage.setItem("scratchnscan:lastScannerContext", JSON.stringify(scannerContext));
+      } catch { /* ignore */ }
       refreshBarcodeBanner();
-      showToast("Barcode captured");
+      showToast("Barcode captured. Add product details or photos to continue.");
       // Move user into the manual context screen so they can add details.
       setTimeout(() => {
         window.location.hash = "#manual";
@@ -112,7 +125,7 @@ async function handleScanClick() {
       // Native scanning is not available here. Show the honest fallback
       // message, then route into manual/photo entry so Scan is never a dead
       // action. No barcode was captured, so nothing counts as a generation.
-      showToast("Scanner unavailable — switching to manual entry");
+      showToast("We could not start the scanner on this device. You can still type the product name or upload package photos.");
       setTimeout(() => {
         window.location.hash = "#manual";
       }, 700);
@@ -126,12 +139,12 @@ async function applyAvailabilityHint() {
   const button = el("scan-start-btn");
   if (!button) return;
   if (isNativePlatform()) {
-    button.textContent = "Scan package";
+    button.textContent = "Start scanner";
     return;
   }
   const available = await isScannerAvailable();
   if (!available) {
-    button.textContent = "Scan package";
+    button.textContent = "Start scanner";
     setStatus("unsupported");
   }
 }

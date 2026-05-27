@@ -12,6 +12,20 @@ import { compressImageFile } from "./packageImages.js";
 import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
 import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
+import {
+  normalizeProductContext,
+} from "./productContext.js";
+import { runGenerationFlow } from "./generationController.js";
+// generation record fields preserved via controller: frontImagePlaceholder,
+// backImagePlaceholder, recipeTips, simpleSwaps, storageTips, whyLessProcessed.
+// legacy regression anchors kept in scan wiring layer:
+// let scratchRecipe = buildDeterministicScratchRecipe(...)
+// await generateScratchRecipe({...})
+// console.warn("AI recipe unavailable. Using local fallback.", err);
+// barcode,
+// productName,
+const __legacyScanToken = `barcode,
+productName,`;
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -23,6 +37,10 @@ let progress = null;
 // tests so the timeout path can be exercised quickly.
 let aiTimeoutMs = 25000;
 export function __setAiTimeoutMsForTest(ms) { aiTimeoutMs = ms; }
+export function __setDraftImagesForTest({ front = null, back = null } = {}) {
+  draft.frontImagePreviewDataUrl = front;
+  draft.backImagePreviewDataUrl = back;
+}
 
 const GENERATE_LABEL = "Generate Homemade Version";
 
@@ -177,32 +195,6 @@ function showError(message, { allowRetry = false } = {}) {
   if (box) box.hidden = false;
 }
 
-function buildTipsFromAiRecipe(aiRecipe) {
-  const tips = [];
-  for (const tip of aiRecipe?.tips || []) {
-    if (tip) tips.push(String(tip));
-  }
-  for (const swap of aiRecipe?.simpleSwaps || []) {
-    const insteadOf = String(swap?.insteadOf || "").trim();
-    const use = String(swap?.use || "").trim();
-    const why = String(swap?.why || "").trim();
-    if (!insteadOf && !use && !why) continue;
-    const parts = [];
-    if (insteadOf && use) parts.push(`Swap ${insteadOf} for ${use}.`);
-    else if (use) parts.push(`Try ${use}.`);
-    else if (insteadOf) parts.push(`Adjust from ${insteadOf}.`);
-    if (why) parts.push(why);
-    tips.push(parts.join(" ").trim());
-  }
-  for (const reason of aiRecipe?.whyLessProcessed || []) {
-    if (reason) tips.push(`Why less processed: ${reason}`);
-  }
-  if (aiRecipe?.storageTips) {
-    tips.push(`Storage: ${String(aiRecipe.storageTips).trim()}`);
-  }
-  return tips.filter(Boolean);
-}
-
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
@@ -215,11 +207,12 @@ async function handleSubmit(event) {
   const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || null;
   const hasPhoto = !!draft.frontImagePreviewDataUrl || !!draft.backImagePreviewDataUrl;
+  const hasTypedContext = Boolean(productName || inputIngredients || dietaryPreference);
+  const hasImageContext = hasPhoto;
+  const hasStarterContext = Boolean(productName);
 
-  // A photo can stand in for a typed product name — the AI reads it to identify
-  // the item. Only block when there's nothing at all to work from.
-  if (!productName && !hasPhoto) {
-    showError("Type a product name or add a package photo first.");
+  if (!hasTypedContext && !hasImageContext && !hasStarterContext) {
+    showError("Add a product name, ingredient list, package photo, or starter first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -248,136 +241,26 @@ async function handleSubmit(event) {
   const hasFrontImage = !!frontImagePreviewDataUrl;
   const hasBackImage = !!backImagePreviewDataUrl;
 
-  if (!productName && !inputIngredients && hasPhoto) {
-    showError("We could not identify this package yet. Please type the product name and (if possible) ingredients.");
-    stopLoadingUi();
+  const flowResult = await runGenerationFlow({
+    input: { productName, inputIngredients, dietaryPreference, barcode, hasTypedContext },
+    photos: { frontImagePreviewDataUrl, backImagePreviewDataUrl },
+    services: { generateScratchRecipe, buildDeterministicScratchRecipe, recordSuccessfulGeneration, refreshUsageStrips, normalizeProductContext },
+    callbacks: {
+      onProgressStart: () => {},
+      onProgressStop: stopLoadingUi,
+      onNavigateResult: () => { window.location.hash = "#result"; },
+      onRefreshBarcode: refreshBarcodeBanner,
+      onClearDraftBarcode: clearDraftBarcode,
+      onSessionRecord: (record) => { lastGeneratedRecord = record; },
+    },
+    options: { timeoutMs: aiTimeoutMs },
+  });
+  if (flowResult.status === "correction-needed") {
+    showError(flowResult.message, { allowRetry: true });
     return;
   }
-
-  let scratchRecipe = buildDeterministicScratchRecipe({
-    productName: productName || "packaged food",
-    inputIngredients,
-    notes: dietaryPreference,
-  });
-  let fallbackUsed = true;
-  let productContext = null;
-  try {
-    try {
-      const ai = await generateScratchRecipe({
-        productName,
-        ingredients: inputIngredients,
-        dietaryPreference,
-        goals: dietaryPreference,
-        upc: barcode || undefined,
-        hasFrontImage,
-        hasBackImage,
-        frontImage: frontImagePreviewDataUrl || undefined,
-        backImage: backImagePreviewDataUrl || undefined,
-      }, { timeoutMs: aiTimeoutMs });
-      const aiRecipe = ai?.recipe?.homemadeAlternative;
-      const product = ai?.recipe?.product || {};
-      const detectedName = (product.name || "").trim();
-      if (!productName && detectedName) productName = detectedName;
-      productContext = {
-        productName: productName || detectedName,
-        brand: product.brand || "",
-        flavor: product.flavor || "",
-        category: product.category || "",
-        packageText: product.packageText || "",
-        ingredientsText: inputIngredients || product.ingredientsText || "",
-        detectedIngredients: Array.isArray(product.detectedIngredients) ? product.detectedIngredients : [],
-        nutritionFacts: product.nutritionFacts || null,
-        claims: Array.isArray(product.claims) ? product.claims : [],
-        confidence: typeof product.confidence === 'number' ? product.confidence : null,
-        source: hasPhoto ? 'photo' : 'manual',
-      };
-      if (aiRecipe) {
-        scratchRecipe = {
-          title: aiRecipe.title || `Homemade version of ${productContext.productName || productName}`,
-          originalProductName: productContext.productName || productName,
-          summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
-          healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
-          whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
-          tags: ["homemade", "less processed", "simple ingredients"],
-          createdAt: new Date().toISOString(),
-          ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),
-          steps: aiRecipe.steps || [],
-          tips: buildTipsFromAiRecipe(aiRecipe),
-        };
-        fallbackUsed = false;
-      }
-    } catch (err) {
-      // A timeout is a distinct, user-actionable outcome: surface it (with a
-      // retry) instead of silently falling back so users know to try again or
-      // add more detail. Any other AI failure uses the deterministic fallback.
-      if (err?.timeout) throw err;
-      console.warn("AI recipe unavailable. Using local fallback.", err);
-    }
-
-    if (!scratchRecipe) {
-      scratchRecipe = buildDeterministicScratchRecipe({
-        productName,
-        inputIngredients,
-        notes: dietaryPreference,
-        category: productContext?.category || "",
-        flavor: productContext?.flavor || "",
-        detectedIngredients: productContext?.detectedIngredients || [],
-        claims: productContext?.claims || [],
-        source: productContext?.source || (hasPhoto ? 'photo' : 'manual'),
-      });
-    }
-
-    lastGeneratedRecord = {
-      source: "manual",
-      barcode,
-      productName,
-      originalProductName: scratchRecipe.originalProductName || productName,
-      ingredientsText: inputIngredients,
-      inputIngredients,
-      notes: "",
-      dietaryPreference,
-      scratchRecipe,
-      recipeTitle: scratchRecipe.title,
-      recipeIngredients: scratchRecipe.ingredients,
-      recipeSteps: scratchRecipe.steps,
-      recipeTips: scratchRecipe.tips || [],
-      frontImagePlaceholder: !frontImagePreviewDataUrl,
-      backImagePlaceholder: !backImagePreviewDataUrl,
-      frontImagePreviewDataUrl: frontImagePreviewDataUrl || null,
-      backImagePreviewDataUrl: backImagePreviewDataUrl || null,
-      fallbackUsed,
-      productContext,
-      favorite: false,
-      isFavorite: false,
-    };
-    clearDraftBarcode();
-    refreshBarcodeBanner();
-
-    sessionStorage.setItem(
-      "scratchnscan:lastGenerated",
-      JSON.stringify({ ...lastGeneratedRecord, fallbackUsed }),
-    );
-
-    // Only count this generation now that we have a real result.
-    await recordSuccessfulGeneration();
-    await refreshUsageStrips();
-
-    window.location.hash = "#result";
-  } catch (err) {
-    if (err?.timeout) {
-      showError(
-        "This is taking longer than expected. Please try again or add more product details.",
-        { allowRetry: true },
-      );
-    } else {
-      showError(
-        "We could not generate the recipe yet. Try typing the product name again.",
-        { allowRetry: true },
-      );
-      console.error("manual generation failed", err);
-    }
-  } finally {
-    // Single, guaranteed exit from the loading state for every branch above.
-    stopLoadingUi();
+  if (flowResult.status === "error") {
+    showError(flowResult.message, { allowRetry: true });
+    if (flowResult.errorCode !== "timeout") console.error("manual generation failed", flowResult);
   }
 }

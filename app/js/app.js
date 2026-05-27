@@ -4,6 +4,7 @@ import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
+import { renderLabelLiteracyTips } from "./labelTip.js";
 import { initDatabase } from "./localDb.js";
 import {
   refreshUsageStrips,
@@ -177,12 +178,6 @@ function wireGlobalActions() {
     showToast("More options coming after MVP polish");
   });
 
-  document.getElementById("scan-coming-soon")?.addEventListener("click", () => {
-    // Scanner is optional for the MVP. There is no native scanner wired in
-    // yet, so always guide the user to the working manual path.
-    showToast("Scanner unavailable. Type the product name to continue.");
-    goto("manual");
-  });
 }
 
 // Dev-only helpers — intentionally not surfaced in the customer UI.
@@ -215,6 +210,7 @@ window.addEventListener("hashchange", route);
 // always respond even if IndexedDB init is slow, fails, or is blocked by
 // another open tab during an upgrade.
 wireGlobalActions();
+renderLabelLiteracyTips();
 renderPopularChips([]);
 route();
 void loadPopularItems();
