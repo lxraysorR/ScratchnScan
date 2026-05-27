@@ -51,3 +51,4 @@ The app currently supports entering packaged food details manually, generating a
 - Generated Result defaults: Ingredients/Steps open, Why cleaner/Tips closed.
 - Saved Details defaults: all recipe accordions closed by default.
 - Generation orchestration is now handled by `generationController`, while `scan.js` focuses on manual form wiring and event handling.
+- Durable storage plan now targets Supabase tables/media refs, with IndexedDB retained as local fallback/cache and pending-sync buffer.

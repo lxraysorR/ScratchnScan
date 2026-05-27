@@ -1,5 +1,5 @@
 import { lastGeneratedRecord } from "./scan.js";
-import { saveMvpRecipe } from "./localDb.js";
+import { saveRecipe } from "./recipeStorage.js";
 import { showToast } from "./app.js";
 import { refreshUsageStrips } from "./usage.js";
 import { normalizeProductContext } from "./productContext.js";
@@ -179,7 +179,8 @@ export function initResultView() {
     saveBtn.disabled = true;
     saveBtn.textContent = "Saving…";
     try {
-      const id = await saveMvpRecipe({ ...record, fallbackUsed });
+      const saved = await saveRecipe({ ...record, fallbackUsed });
+      const id = saved?.id;
       sessionStorage.removeItem("scratchnscan:lastGenerated");
       if (id) {
         showToast("Recipe saved.");

@@ -139,6 +139,10 @@ export function saveMvpRecipe(input) {
     recipeTips: Array.isArray(input.recipeTips)
       ? input.recipeTips
       : (scratchRecipe?.tips || []),
+    mediaRefs: Array.isArray(input.mediaRefs) ? input.mediaRefs : [],
+    syncStatus: normalizeText(input.syncStatus) || "local_only",
+    remoteId: normalizeText(input.remoteId) || "",
+    lastSyncError: normalizeText(input.lastSyncError) || "",
     fallbackUsed: !!input.fallbackUsed,
     favorite,
     isFavorite: favorite,
