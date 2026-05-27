@@ -238,8 +238,6 @@ async function handleSubmit(event) {
 
   const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl || null;
   const backImagePreviewDataUrl = draft.backImagePreviewDataUrl || null;
-  const hasFrontImage = !!frontImagePreviewDataUrl;
-  const hasBackImage = !!backImagePreviewDataUrl;
 
   const flowResult = await runGenerationFlow({
     input: { productName, inputIngredients, dietaryPreference, barcode, hasTypedContext },
