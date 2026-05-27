@@ -54,6 +54,11 @@ function fillForm({ name = "Crunchy Oat Granola Bar", ingredients = "oats, sugar
   $("ingredients-input").value = ingredients;
   $("dietary-input").value = pref;
 }
+function fillPhotoOnlyForm() {
+  $("product-name-input").value = "";
+  $("ingredients-input").value = "";
+  $("dietary-input").value = "";
+}
 
 function submitForm() {
   $("manual-lookup-form").dispatchEvent(new window.Event("submit", { cancelable: true }));
@@ -108,6 +113,56 @@ await gotoManual();
 }
 
 // ---------------------------------------------------------------------------
+// 1b. PHOTO-ONLY (front/back) is a valid generation input.
+// ---------------------------------------------------------------------------
+for (const scenario of [
+  { name: "front-only", front: "data:image/jpeg;base64,FRONT", back: null },
+  { name: "back-only", front: null, back: "data:image/jpeg;base64,BACK" },
+  { name: "front-and-back", front: "data:image/jpeg;base64,FRONT", back: "data:image/jpeg;base64,BACK" },
+]) {
+  resetFlowState();
+  scan.__setDraftImagesForTest({ front: scenario.front, back: scenario.back });
+  fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      recipe: {
+        product: { name: "Photo Snack", category: "snack", confidence: "high", detectedIngredients: ["corn"] },
+        plainEnglishExplanation: "Identified from package photo.",
+        homemadeAlternative: {
+          title: "Photo Snack Homemade",
+          healthGoal: "Use simpler pantry ingredients.",
+          whyCleaner: ["Fewer additives."],
+          ingredients: [{ item: "2 cups corn meal" }],
+          steps: ["Mix and bake."],
+          tips: ["Season to taste."],
+        },
+      },
+    }),
+  });
+  fillPhotoOnlyForm();
+  submitForm();
+  await sleep(220);
+  ok(`${scenario.name} photo-only routes to #result`, window.location.hash === "#result", window.location.hash);
+  ok(`${scenario.name} photo-only clears loading`, loadingHidden());
+  const saved = JSON.parse(window.sessionStorage.getItem("scratchnscan:lastGenerated"));
+  ok(`${scenario.name} marks source=photo`, saved.productContext?.source === "photo");
+}
+
+// ---------------------------------------------------------------------------
+// 1c. No input at all is blocked with a helpful message.
+// ---------------------------------------------------------------------------
+{
+  resetFlowState();
+  scan.__setDraftImagesForTest({ front: null, back: null });
+  fillPhotoOnlyForm();
+  submitForm();
+  await sleep(60);
+  ok("empty input stays on manual", window.location.hash === "#manual");
+  ok("empty input shows helpful validation", /add a product name, ingredient list, package photo, or starter first/i.test($("scan-error-msg").textContent));
+}
+
+// ---------------------------------------------------------------------------
 // 2. FALLBACK: a network failure still produces a deterministic result.
 // ---------------------------------------------------------------------------
 {
@@ -123,6 +178,31 @@ await gotoManual();
   const ingText = (saved.scratchRecipe.ingredients || []).join("\n").toLowerCase();
   ok("fallback has no placeholder ingredients", !/(base|flavor|seasoning) ingredient|placeholder/.test(ingText), ingText);
   ok("fallback recipe is granola/oat themed", /oat|granola|cereal/i.test(saved.scratchRecipe.title), saved.scratchRecipe.title);
+}
+
+// ---------------------------------------------------------------------------
+// 2b. Photo-only low-confidence response shows correction state (no fake recipe).
+// ---------------------------------------------------------------------------
+{
+  resetFlowState();
+  scan.__setDraftImagesForTest({ front: "data:image/jpeg;base64,FRONT", back: null });
+  fetchImpl = async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      recipe: {
+        product: { name: "", category: "", confidence: "low", detectedIngredients: [] },
+        plainEnglishExplanation: "",
+      },
+    }),
+  });
+  fillPhotoOnlyForm();
+  submitForm();
+  await sleep(220);
+  ok("photo low-confidence does not route to result", window.location.hash !== "#result", window.location.hash);
+  ok("photo low-confidence stops loading", loadingHidden());
+  ok("photo low-confidence shows correction message", /could not confidently identify this product from the photo/i.test($("scan-error-msg").textContent), $("scan-error-msg").textContent);
+  ok("photo low-confidence keeps uploaded photo context", !$("scan-error").hidden);
 }
 
 // ---------------------------------------------------------------------------

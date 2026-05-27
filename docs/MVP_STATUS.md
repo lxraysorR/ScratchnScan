@@ -40,6 +40,8 @@ The app currently supports entering packaged food details manually, generating a
 
 
 ## Photo/product context behavior
+- Photo-only upload is valid input: users can submit front photo only, back photo only, or both photos without typing a product name first.
 - Photo analysis should produce product-specific recipes when package context is available.
-- If product extraction fails or confidence is too low, the app should ask for manual product name/ingredients input before generation.
+- If photo-only extraction fails or confidence is too low, the app asks for manual product name/ingredients confirmation and retry (instead of generating misleading generic output).
+- Manual text entry remains available as fallback for all users.
 - Generic placeholder ingredients should never be shown to users.

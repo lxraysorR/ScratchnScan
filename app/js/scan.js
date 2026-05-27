@@ -23,6 +23,10 @@ let progress = null;
 // tests so the timeout path can be exercised quickly.
 let aiTimeoutMs = 25000;
 export function __setAiTimeoutMsForTest(ms) { aiTimeoutMs = ms; }
+export function __setDraftImagesForTest({ front = null, back = null } = {}) {
+  draft.frontImagePreviewDataUrl = front;
+  draft.backImagePreviewDataUrl = back;
+}
 
 const GENERATE_LABEL = "Generate Homemade Version";
 
@@ -203,6 +207,26 @@ function buildTipsFromAiRecipe(aiRecipe) {
   return tips.filter(Boolean);
 }
 
+function normalizeConfidence(raw) {
+  if (typeof raw === "number") return Math.max(0, Math.min(1, raw));
+  const label = String(raw || "").trim().toLowerCase();
+  if (label === "high") return 0.9;
+  if (label === "medium") return 0.65;
+  if (label === "low") return 0.35;
+  return null;
+}
+
+function normalizeConfidenceLabel(raw, numeric) {
+  const label = String(raw || "").trim().toLowerCase();
+  if (label === "high" || label === "medium" || label === "low") return label;
+  if (typeof numeric === "number") {
+    if (numeric >= 0.8) return "high";
+    if (numeric >= 0.55) return "medium";
+    return "low";
+  }
+  return "";
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
@@ -215,11 +239,12 @@ async function handleSubmit(event) {
   const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || null;
   const hasPhoto = !!draft.frontImagePreviewDataUrl || !!draft.backImagePreviewDataUrl;
+  const hasTypedContext = Boolean(productName || inputIngredients || dietaryPreference);
+  const hasImageContext = hasPhoto;
+  const hasStarterContext = Boolean(productName);
 
-  // A photo can stand in for a typed product name — the AI reads it to identify
-  // the item. Only block when there's nothing at all to work from.
-  if (!productName && !hasPhoto) {
-    showError("Type a product name or add a package photo first.");
+  if (!hasTypedContext && !hasImageContext && !hasStarterContext) {
+    showError("Add a product name, ingredient list, package photo, or starter first.");
     el("product-name-input")?.focus();
     return;
   }
@@ -248,12 +273,6 @@ async function handleSubmit(event) {
   const hasFrontImage = !!frontImagePreviewDataUrl;
   const hasBackImage = !!backImagePreviewDataUrl;
 
-  if (!productName && !inputIngredients && hasPhoto) {
-    showError("We could not identify this package yet. Please type the product name and (if possible) ingredients.");
-    stopLoadingUi();
-    return;
-  }
-
   let scratchRecipe = buildDeterministicScratchRecipe({
     productName: productName || "packaged food",
     inputIngredients,
@@ -278,6 +297,8 @@ async function handleSubmit(event) {
       const product = ai?.recipe?.product || {};
       const detectedName = (product.name || "").trim();
       if (!productName && detectedName) productName = detectedName;
+      const normalizedConfidence = normalizeConfidence(product.confidence);
+      const confidenceLabel = normalizeConfidenceLabel(product.confidenceLabel || product.confidence, normalizedConfidence);
       productContext = {
         productName: productName || detectedName,
         brand: product.brand || "",
@@ -288,9 +309,25 @@ async function handleSubmit(event) {
         detectedIngredients: Array.isArray(product.detectedIngredients) ? product.detectedIngredients : [],
         nutritionFacts: product.nutritionFacts || null,
         claims: Array.isArray(product.claims) ? product.claims : [],
-        confidence: typeof product.confidence === 'number' ? product.confidence : null,
+        confidence: normalizedConfidence,
+        confidenceLabel,
+        sourceBasis: hasFrontImage && hasBackImage ? "front+back-photos" : hasFrontImage ? "front-photo" : hasBackImage ? "back-photo" : "manual-input",
         source: hasPhoto ? 'photo' : 'manual',
       };
+      const photoOnlyInput = hasPhoto && !hasTypedContext;
+      const hasUsefulDetection =
+        Boolean(productContext.productName) ||
+        Boolean(productContext.category) ||
+        productContext.detectedIngredients.length > 0 ||
+        Boolean(productContext.ingredientsText);
+      const lowConfidence = productContext.confidence !== null && productContext.confidence < 0.55;
+      if (photoOnlyInput && (!hasUsefulDetection || lowConfidence)) {
+        showError(
+          "We could not confidently identify this product from the photo. Please confirm the product name or add the ingredient list, then try again.",
+          { allowRetry: true },
+        );
+        return;
+      }
       if (aiRecipe) {
         scratchRecipe = {
           title: aiRecipe.title || `Homemade version of ${productContext.productName || productName}`,
@@ -311,6 +348,13 @@ async function handleSubmit(event) {
       // retry) instead of silently falling back so users know to try again or
       // add more detail. Any other AI failure uses the deterministic fallback.
       if (err?.timeout) throw err;
+      if (hasPhoto && !hasTypedContext) {
+        showError(
+          "We could not confidently identify this product from the photo. Please confirm the product name or add the ingredient list, then try again.",
+          { allowRetry: true },
+        );
+        return;
+      }
       console.warn("AI recipe unavailable. Using local fallback.", err);
     }
 
