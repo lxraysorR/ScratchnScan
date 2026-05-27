@@ -47,3 +47,6 @@ The app currently supports entering packaged food details manually, generating a
 - If photo-only extraction fails or confidence is too low, the app asks for manual product name/ingredients confirmation and retry (instead of generating misleading generic output).
 - Manual text entry remains available as fallback for all users.
 - Generic placeholder ingredients should never be shown to users.
+- Result/details UI now includes a Product detected summary, a What-the-app-understood panel, confidence/source messaging, and sticky mobile actions.
+- Generated Result defaults: Ingredients/Steps open, Why cleaner/Tips closed.
+- Saved Details defaults: all recipe accordions closed by default.
