@@ -1,93 +1,148 @@
-# ScratchNScan MVP (Manual Entry First)
+# ScratchnScan MVP
 
-Turn packaged foods into simple homemade alternatives. This first cut is a
-local-only manual-entry MVP: enter a product, generate a "scratch version"
-of it, and save the result in your browser. No login, no cloud, no payments.
+**ScratchnScan turns packaged foods into homemade scratch-made alternatives.**
+Snap (or describe) a packaged food, and the app produces a simple
+scratch-made recipe with ingredients, steps, and smart swaps. It runs
+fully on-device — no account, no cloud, no payment.
 
-## Run locally
+## Run locally (Node / NPM only)
 
-```
+```bash
 npm install
-npm run build    # copies app/ -> dist/
-npm start        # prints how to open the static shell
-npm test         # smoke checks app/index.html + localDb + fallback recipe
+npm run build
+npx --yes serve dist --listen 3000
 ```
 
-For local development you can open `app/index.html` directly in a browser,
-or serve the `app/` directory with any static file server (the app does not
-require the Cloudflare Worker to run). The worker preview is available via
-`npm run preview` if you want to exercise the AI proxy.
+Then open: <http://localhost:3000>
 
-## MVP workflow
+For quick checks you can also open `app/index.html` directly in a browser.
 
-1. **Home** -> tap **Start Manual Entry** (or use the header nav).
-2. **Manual Entry** -> enter a packaged product name (required). Optional:
-   brand, category, ingredients text, dietary preference, notes.
-3. Tap **Generate Scratch Version**.
-4. **Result** -> the app shows a homemade alternative. Tap **Save to history**
-   to persist it locally; you'll land on the saved record's Details page.
-5. **History** -> review saved recipes, favorite/unfavorite, or delete
-   (with confirmation).
-6. **Details** -> see the full saved scratch recipe; favorite or delete.
+## Test
 
-## Fallback (no AI provider configured)
-
-If the Cloudflare Worker AI endpoint is unreachable or returns no recipe,
-the app uses a deterministic local fallback in `app/js/manualRecipe.js`.
-The fallback:
-
-- matches common product names (mayonnaise, ketchup, ranch, granola, bread,
-  mac and cheese, yogurt, ...) to category-aware templates;
-- falls back further to a category template (condiment, dressing, snack,
-  bakery, ...) when no specific match is found;
-- otherwise emits a generic ingredient/step skeleton;
-- adds a dietary tip when a preference is selected.
-
-Fallback recipes are clearly labeled in the Result and Details views as a
-starter suggestion, not an exact copy of the packaged product.
-
-## Local storage
-
-Saved recipes live in IndexedDB:
-
-- **DB**: `scan_scratch_local_db`
-- **Store**: `mvp_history` (keyed by `id`, indexed by `createdAt` and
-  `favorite`)
-
-Each saved record has:
-
-```
-id, source, createdAt, updatedAt,
-productName, brand, category, ingredientsText, dietaryPreference, notes,
-recipeTitle, recipeIngredients, recipeSteps, scratchRecipe (full object),
-fallbackUsed, favorite (alias: isFavorite),
-upc (reserved for the barcode flow; empty for manual entries)
+```bash
+npm test           # app shell + localDb + usage meter + manual fallback
+npm run qa:smoke   # required-files / scripts smoke check
+npm run build      # writes app/ -> dist/
+npm start          # prints local start hint
 ```
 
-You can clear everything with `clearLocalData()` from the dev console.
+Optional integration probes:
+
+```bash
+node scripts/test_manual_mvp.mjs
+node scripts/test_manual_mvp_generated.mjs
+node scripts/test_n8n_repo_access_generated.mjs
+```
+
+## Current MVP features
+
+- Mobile-first home, package entry, result, history, and details screens.
+- Package entry with **front package** and **back label** photo tiles
+  (capture/replace/remove, compressed local preview thumbnails).
+- **Scan a package** button that opens the native camera barcode scanner
+  on installed (Capacitor) builds, and falls back honestly to manual/photo
+  entry in a plain browser instead of pretending to scan.
+- Manual product name, ingredients-from-package text, and preference fields.
+- Optional UPC/barcode input with a visible captured-barcode banner that
+  carries scan context into manual entry.
+- Sample chips that prefill a known packaged food (Mayonnaise, Ranch,
+  Ketchup, Mac & cheese, Granola bar).
+- AI-assisted homemade recipe with a deterministic fallback when the AI
+  provider is unreachable.
+- Save / view / favorite / delete saved ideas, persisted locally in
+  IndexedDB.
+- **10 free successful homemade creations per device.** After the limit,
+  a polished upgrade screen appears and new generation is blocked, but
+  history, details, favorite, and delete keep working.
+
+
+## Manual-entry MVP quick test
+
+1. Run `npm install` then `npm run build`.
+2. Start locally with `npm start` (prints the recommended static serve command).
+3. Open the app and enter a product name in Manual Entry.
+4. (Optional) Add ingredients/notes and generate.
+5. If no AI key/provider is configured, a deterministic fallback recipe is generated so the flow still works.
+6. Save the result, then verify History, Details, Favorite toggle, Delete, and Empty state.
+7. Refresh the browser and confirm saved data is still present (IndexedDB local persistence).
+
+## Storage
+
+All persistence is local to the browser via IndexedDB.
+
+- DB name: `scan_scratch_local_db` (version `4`)
+- Saved ideas store: `mvp_history`
+- Usage meter store: `scratchnscan_usage_meter`
+  (singleton row keyed by `"singleton"`)
+
+The usage meter row matches:
+
+```js
+{
+  id: "singleton",
+  freeGenerationLimit: 10,
+  successfulGenerationCount: 0,
+  firstUsedAt: null,
+  lastGeneratedAt: null,
+  isLocalPremiumUnlocked: false,
+  updatedAt: null,
+}
+```
+
+Only successful homemade generations count. Opening the app, opening the
+scanner view, cancelled scans, failed scans, viewing history, opening
+details, editing a saved idea, and favorite/delete actions are **not**
+counted.
+
+### Dev-only console helpers
+
+These exist for development only and are not surfaced in the customer UI.
+Run them in DevTools:
+
+```js
+await scratchnscan.dev.resetUsage();      // clears the meter
+await scratchnscan.dev.unlockPremium();   // bypasses the limit
+await scratchnscan.dev.getUsage();        // inspects current state
+```
+
+## Free generation policy
+
+- 10 successful homemade creations per device.
+- The counter only increments after a generated result actually exists.
+- AI-provider errors fall back to the deterministic recipe builder and
+  still count (the user did receive a result). Validation failures
+  (missing product name) do **not** count.
+- Pricing displayed on the upgrade screen ($4.99/mo, $29.99/yr) is a
+  placeholder. No payment provider is wired in.
 
 ## Configuration
 
-The app reads no secrets in the browser. Optional environment values:
+The app reads no secrets in the browser. The optional Cloudflare worker
+(see `src/worker.js`, `wrangler.jsonc`) proxies an AI provider; keys are
+worker secrets only.
 
-- `VITE_SCAN_SCRATCH_API_BASE` - base URL for the AI worker when serving the
-  frontend from a different origin (defaults to same origin / empty).
+- `VITE_SCAN_SCRATCH_API_BASE` — base URL for the AI worker when the
+  frontend is served from a different origin (defaults to same origin).
 
-The Cloudflare Worker side (see `src/worker.js`, `wrangler.jsonc`) takes its
-provider keys from worker secrets (`wrangler secret put OPENROUTER_API_KEY`,
-etc.). **Do not commit `.dev.vars`** - put any local keys there and rely on
-`.gitignore`. If `.dev.vars` does not exist yet, create it as needed; the
-MVP works without it via the deterministic fallback.
+## What is not built yet
 
-## What this MVP does **not** include
+- Accounts / login / signup.
+- Cloud database or sync (Supabase, etc.).
+- Real payment integration (Stripe, RevenueCat).
+- Real OCR / AI extraction from the photos (today they live as local
+  previews only — the generator still uses typed text plus a flag noting
+  which photos were attached).
+- Native mobile packaging / app-store builds. The Capacitor barcode
+  scanner is wired (`scannerService.js` + `capacitorBarcodeScannerAdapter.js`)
+  and works inside a native build; a plain browser cannot scan and routes
+  to manual entry.
+- Production-grade scanner device testing.
+- n8n automation flows.
 
-Held back per `docs/MVP_SCOPE.md`:
+These are deferred to the next milestone:
 
-- Login / accounts
-- Supabase or any cloud sync
-- n8n automation
-- Barcode scanning (manual UPC entry only, via a future task)
-- Subscriptions / paid gating
-- Design-system rewrite
-
-These will be picked up in later tasks once the manual MVP is stable.
+```
+Native mobile packaging and scanner device testing
+  → payment integration
+  → optional accounts / cloud sync
+```

@@ -22,6 +22,7 @@ export async function initDetailsView(id) {
     favBtn.disabled = true;
     try {
       await toggleMvpFavorite(id, !fav);
+      showToast(!fav ? "Marked as favorite" : "Removed from favorites");
       await initDetailsView(id);
     } finally {
       busy = false;
@@ -32,11 +33,12 @@ export async function initDetailsView(id) {
   delBtn.disabled = false;
   delBtn.onclick = async () => {
     if (busy) return;
-    if (!confirm(`Delete "${record.productName || "this recipe"}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete "${recipeTitle}"? This cannot be undone.`)) return;
     busy = true;
     delBtn.disabled = true;
     try {
       await deleteMvpRecipe(id);
+      showToast("Recipe deleted");
       window.location.hash = "#history";
     } finally {
       busy = false;

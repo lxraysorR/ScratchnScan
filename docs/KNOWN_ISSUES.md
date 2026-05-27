@@ -1,10 +1,8 @@
 # Known Issues
 
-Track active blockers, defects, and environment limitations.
+No known blockers at this time.
 
-## Open
-- 2026-05-16: If worker AI secret (`GEMINI_API_KEY`) is missing, recipe generation falls back to local starter output by design.
-- 2026-05-16: Referenced skill path `.agents/skills/scan-scratch-build/SKILL.md` is missing; closest existing file is `.agents/skills/scratchnscan-build/SKILL.md`.
-
-## Resolved
-- (none)
+## Possible future improvements (non-blocking)
+- Add explicit in-UI label when a recipe came from deterministic fallback vs provider-backed AI.
+- Add more recipe templates for niche product categories.
+- Add broader manual QA matrix across multiple browsers/devices.
