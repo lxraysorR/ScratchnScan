@@ -436,10 +436,94 @@
           <span class="nav-label">Saved</span>
         </button>
       </nav>
+    </header>
+    <main>
+      <section id="view-home" class="view">
+        <div class="hero">
+          <h1>Turn packaged food into something homemade.</h1>
+          <p class="hero-sub">Manual entry MVP: add product details, generate a scratch recipe, and save it locally.</p>
+          <button id="home-manual-btn" class="btn btn-primary btn-lg">Start Manual Entry</button>
+        </div>
+      </section>
 
-      <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    </div>
+      <section id="view-manual" class="view" hidden>
+        <h2 class="view-title">Manual Entry</h2>
+        <form id="manual-lookup-form" class="upc-form" novalidate>
+          <label for="product-name-input" class="label">Packaged product name <span aria-hidden="true">*</span></label>
+          <input id="product-name-input" type="text" class="input" placeholder="e.g. mayonnaise, boxed mac and cheese" required />
+          <label for="brand-input" class="label">Brand (optional)</label>
+          <input id="brand-input" type="text" class="input" placeholder="e.g. Hellmann's" />
+          <label for="category-input" class="label">Category (optional)</label>
+          <select id="category-input" class="input">
+            <option value="">Choose a category…</option>
+            <option value="condiment">Condiment / Sauce</option>
+            <option value="dressing">Salad dressing</option>
+            <option value="snack">Snack / Chips</option>
+            <option value="bakery">Bakery / Bread</option>
+            <option value="cereal">Cereal / Granola</option>
+            <option value="dairy">Dairy / Yogurt</option>
+            <option value="frozen-meal">Frozen meal</option>
+            <option value="beverage">Beverage</option>
+            <option value="soup">Soup / Broth</option>
+            <option value="pasta">Pasta / Boxed mix</option>
+            <option value="dessert">Dessert</option>
+            <option value="other">Other</option>
+          </select>
+          <label for="ingredients-input" class="label">Ingredients (optional)</label>
+          <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste the label ingredients if you have them."></textarea>
+          <label for="dietary-input" class="label">Dietary preference (optional)</label>
+          <select id="dietary-input" class="input">
+            <option value="">No preference</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+            <option value="gluten-free">Gluten-free</option>
+            <option value="dairy-free">Dairy-free</option>
+            <option value="low-sugar">Low-sugar</option>
+          </select>
+          <label for="notes-input" class="label">Notes (optional)</label>
+          <textarea id="notes-input" class="input" rows="2"></textarea>
+          <div class="rescue-actions">
+            <button id="scan-submit-btn" type="submit" class="btn btn-primary">Generate Scratch Version</button>
+            <button id="manual-clear-btn" type="button" class="btn btn-secondary">Clear</button>
+          </div>
+        </form>
+        <div id="scan-loading" class="state-box state-loading" hidden><span class="spinner"></span>Generating result...</div>
+        <div id="scan-error" class="state-box state-error" hidden><p id="scan-error-msg"></p></div>
+      </section>
 
+      <section id="view-result" class="view" hidden>
+        <div class="card-header">
+          <h2 class="view-title">Generated result</h2>
+          <span class="pill accent">Result preview</span>
+        </div>
+        <div id="result-content"></div>
+        <div class="cta-bar">
+          <a href="#manual" class="btn secondary">Edit details</a>
+          <button id="result-save-btn" class="btn primary">Save recipe</button>
+        </div>
+      </section>
+
+      <section id="view-history" class="view" hidden>
+        <h2 class="view-title">History</h2>
+        <ul id="history-list" class="history-list"></ul>
+        <p id="history-empty" class="hint" hidden>No saved recipes yet. Use Manual Entry to create one.</p>
+      </section>
+
+      <section id="view-details" class="view" hidden>
+        <div class="card-header">
+          <h2 class="view-title">Saved recipe</h2>
+          <span class="pill green">Saved recipe</span>
+        </div>
+        <p id="details-date" class="result-source"></p>
+        <div id="details-content"></div>
+        <div class="cta-bar">
+          <a href="#history" class="btn secondary grow-0">Back</a>
+          <button id="details-favorite-btn" class="btn secondary">☆ Favorite</button>
+          <button id="details-delete-btn" class="btn danger grow-0">Delete</button>
+        </div>
+      </section>
+    </main>
+    <footer class="app-footer"><p class="disclaimer">General food information only. Not medical advice.</p></footer>
     <script type="module" src="./js/app.js"></script>
   </body>
 </html>
