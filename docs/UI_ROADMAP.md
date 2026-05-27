@@ -75,6 +75,10 @@ it.
 Home / start-flow  ──(generate)──►  staged progress  ──(success)──►  Result / details
        │                                                                    │
        └── choose: scan / photos / type / popular                          └── save ► history ► details
+
+## ProductContext rendering note
+- Result/details screens should render from normalized ProductContext fields where available (productName, category, flavor, confidence, source/sourceBasis).
+- The “What the app understood” style context area should use normalized ProductContext so manual/photo/popular/scanner-ready flows remain consistent.
 ```
 
 - The two UIs are **separate screens**. Do not merge the result/details layout

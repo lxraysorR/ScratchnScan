@@ -1,5 +1,6 @@
 import { getMvpRecipeById, toggleMvpFavorite, deleteMvpRecipe } from "./localDb.js";
 import { showToast } from "./app.js";
+import { normalizeProductContext } from "./productContext.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -51,6 +52,13 @@ export async function initDetailsView(id) {
   if (!record) { window.location.hash = "#history"; return; }
 
   const fav = !!(record.favorite ?? record.isFavorite);
+  const productContext = normalizeProductContext(
+    record.productContext || {
+      productName: record.productName || record.scratchRecipe?.originalProductName || "",
+      ingredientsText: record.ingredientsText || record.inputIngredients || "",
+      source: record.source || "manual",
+    },
+  );
   const recipeTitle = record.recipeTitle || record.scratchRecipe?.title || "Homemade alternative";
   const ingredientsList = record.recipeIngredients?.length
     ? record.recipeIngredients
@@ -65,7 +73,12 @@ export async function initDetailsView(id) {
   renderBadges(el("details-badges"), { favorite: fav, fallbackUsed: !!record.fallbackUsed });
 
   el("details-name").textContent = recipeTitle;
-  el("details-meta").textContent = `Based on: ${record.productName || "untitled product"}`;
+  const metaBits = [
+    `Based on: ${productContext.productName || "untitled product"}`,
+    productContext.category ? `Category: ${productContext.category}` : "",
+    productContext.confidenceLabel !== "unknown" ? `Confidence: ${productContext.confidenceLabel}` : "",
+  ].filter(Boolean);
+  el("details-meta").textContent = metaBits.join(" • ");
   el("details-date").textContent = record.createdAt ? `Saved ${formatDate(record.createdAt)}` : "";
 
   const photoRow = el("details-photo-row");

@@ -40,6 +40,7 @@ The app currently supports entering packaged food details manually, generating a
 
 
 ## Photo/product context behavior
+- ProductContext normalization layer now standardizes manual, photo, popular starter, AI response, and scanner-ready product data into one shared contract.
 - Photo-only upload is valid input: users can submit front photo only, back photo only, or both photos without typing a product name first.
 - Photo analysis should produce product-specific recipes when package context is available.
 - If photo-only extraction fails or confidence is too low, the app asks for manual product name/ingredients confirmation and retry (instead of generating misleading generic output).

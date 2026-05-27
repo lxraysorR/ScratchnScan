@@ -2,6 +2,7 @@ import { lastGeneratedRecord } from "./scan.js";
 import { saveMvpRecipe } from "./localDb.js";
 import { showToast } from "./app.js";
 import { refreshUsageStrips } from "./usage.js";
+import { normalizeProductContext } from "./productContext.js";
 
 function el(id) { return document.getElementById(id); }
 
@@ -53,9 +54,16 @@ export function initResultView() {
   refreshUsageStrips();
 
   const fallbackUsed = !!(parsed?.fallbackUsed ?? record.fallbackUsed);
+  const productContext = normalizeProductContext(
+    record.productContext || {
+      productName: record.productName || record.scratchRecipe?.originalProductName || "",
+      ingredientsText: record.ingredientsText || record.inputIngredients || "",
+      source: record.source || "manual",
+    },
+  );
   renderBadges(fallbackUsed);
   el("result-name").textContent = record.scratchRecipe.title;
-  const originalName = record.scratchRecipe.originalProductName || record.productName || "";
+  const originalName = productContext.productName || record.scratchRecipe.originalProductName || record.productName || "";
   const originalEl = el("result-original");
   if (originalEl) {
     originalEl.textContent = originalName ? `Inspired by: ${originalName}` : "";

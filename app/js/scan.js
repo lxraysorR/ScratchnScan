@@ -12,6 +12,12 @@ import { compressImageFile } from "./packageImages.js";
 import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
 import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
+import {
+  normalizeProductContext,
+  mergeProductContexts,
+  needsManualCorrection,
+  contextToRecipeInput,
+} from "./productContext.js";
 
 export let lastGeneratedRecord = null;
 let initialized = false;
@@ -207,26 +213,6 @@ function buildTipsFromAiRecipe(aiRecipe) {
   return tips.filter(Boolean);
 }
 
-function normalizeConfidence(raw) {
-  if (typeof raw === "number") return Math.max(0, Math.min(1, raw));
-  const label = String(raw || "").trim().toLowerCase();
-  if (label === "high") return 0.9;
-  if (label === "medium") return 0.65;
-  if (label === "low") return 0.35;
-  return null;
-}
-
-function normalizeConfidenceLabel(raw, numeric) {
-  const label = String(raw || "").trim().toLowerCase();
-  if (label === "high" || label === "medium" || label === "low") return label;
-  if (typeof numeric === "number") {
-    if (numeric >= 0.8) return "high";
-    if (numeric >= 0.55) return "medium";
-    return "low";
-  }
-  return "";
-}
-
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
@@ -273,13 +259,23 @@ async function handleSubmit(event) {
   const hasFrontImage = !!frontImagePreviewDataUrl;
   const hasBackImage = !!backImagePreviewDataUrl;
 
+  let productContext = normalizeProductContext({
+    productName,
+    ingredientsText: inputIngredients,
+    userPreferences: dietaryPreference,
+    source: hasPhoto ? "photo" : "manual",
+    sourceBasis: [
+      hasFrontImage ? "front_label" : "",
+      hasBackImage ? "back_label" : "",
+    ].filter(Boolean),
+    sourceMetadata: { barcode: barcode || "", flow: "manual_form" },
+  });
   let scratchRecipe = buildDeterministicScratchRecipe({
-    productName: productName || "packaged food",
-    inputIngredients,
+    productName: contextToRecipeInput(productContext).productName,
+    inputIngredients: contextToRecipeInput(productContext).ingredientsText,
     notes: dietaryPreference,
   });
   let fallbackUsed = true;
-  let productContext = null;
   try {
     try {
       const ai = await generateScratchRecipe({
@@ -297,31 +293,17 @@ async function handleSubmit(event) {
       const product = ai?.recipe?.product || {};
       const detectedName = (product.name || "").trim();
       if (!productName && detectedName) productName = detectedName;
-      const normalizedConfidence = normalizeConfidence(product.confidence);
-      const confidenceLabel = normalizeConfidenceLabel(product.confidenceLabel || product.confidence, normalizedConfidence);
-      productContext = {
-        productName: productName || detectedName,
-        brand: product.brand || "",
-        flavor: product.flavor || "",
-        category: product.category || "",
-        packageText: product.packageText || "",
+      const aiContext = normalizeProductContext({
+        ...product,
+        productName: productName || detectedName || product.productName,
+        category: product.category || product.foodType || "",
         ingredientsText: inputIngredients || product.ingredientsText || "",
-        detectedIngredients: Array.isArray(product.detectedIngredients) ? product.detectedIngredients : [],
-        nutritionFacts: product.nutritionFacts || null,
-        claims: Array.isArray(product.claims) ? product.claims : [],
-        confidence: normalizedConfidence,
-        confidenceLabel,
-        sourceBasis: hasFrontImage && hasBackImage ? "front+back-photos" : hasFrontImage ? "front-photo" : hasBackImage ? "back-photo" : "manual-input",
-        source: hasPhoto ? 'photo' : 'manual',
-      };
+        source: hasPhoto ? "photo" : "ai",
+        sourceBasis: product.sourceBasis || productContext.sourceBasis,
+      });
+      productContext = mergeProductContexts(productContext, aiContext);
       const photoOnlyInput = hasPhoto && !hasTypedContext;
-      const hasUsefulDetection =
-        Boolean(productContext.productName) ||
-        Boolean(productContext.category) ||
-        productContext.detectedIngredients.length > 0 ||
-        Boolean(productContext.ingredientsText);
-      const lowConfidence = productContext.confidence !== null && productContext.confidence < 0.55;
-      if (photoOnlyInput && (!hasUsefulDetection || lowConfidence)) {
+      if (photoOnlyInput && needsManualCorrection(productContext)) {
         showError(
           "We could not confidently identify this product from the photo. Please confirm the product name or add the ingredient list, then try again.",
           { allowRetry: true },
@@ -329,9 +311,10 @@ async function handleSubmit(event) {
         return;
       }
       if (aiRecipe) {
+        const recipeInput = contextToRecipeInput(productContext);
         scratchRecipe = {
-          title: aiRecipe.title || `Homemade version of ${productContext.productName || productName}`,
-          originalProductName: productContext.productName || productName,
+          title: aiRecipe.title || `Homemade version of ${recipeInput.productName}`,
+          originalProductName: recipeInput.productName,
           summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
           healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
           whyHealthier: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
@@ -359,15 +342,16 @@ async function handleSubmit(event) {
     }
 
     if (!scratchRecipe) {
+      const recipeInput = contextToRecipeInput(productContext);
       scratchRecipe = buildDeterministicScratchRecipe({
-        productName,
-        inputIngredients,
+        productName: recipeInput.productName,
+        inputIngredients: recipeInput.ingredientsText,
         notes: dietaryPreference,
-        category: productContext?.category || "",
-        flavor: productContext?.flavor || "",
-        detectedIngredients: productContext?.detectedIngredients || [],
-        claims: productContext?.claims || [],
-        source: productContext?.source || (hasPhoto ? 'photo' : 'manual'),
+        category: recipeInput.category || "",
+        flavor: recipeInput.flavor || "",
+        detectedIngredients: recipeInput.detectedIngredients || [],
+        claims: recipeInput.claims || [],
+        source: recipeInput.source || (hasPhoto ? 'photo' : 'manual'),
       });
     }
 
