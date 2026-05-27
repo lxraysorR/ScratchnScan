@@ -4,7 +4,7 @@
 |---|---------|--------|------|---------|--------|
 | 01 | `docs/qa/01-smoke-test.md` | Fixed | 2026-05-27 | One blocker: `check:syntax` script missing from package.json. Fixed. All commands pass. | [report](reports/01-smoke-test-report.md) |
 | 02 | `docs/qa/02-generation-flow-qa.md` | Fixed | 2026-05-27 | One medium issue: `whyCleaner` vs `whyLessProcessed` contract mismatch in generationController. Fixed. All tests pass. | [report](reports/02-generation-flow-qa-report.md) |
-| 03 | `docs/qa/03-photo-upload-qa.md` | Not Started | — | — | — |
+| 03 | `docs/qa/03-photo-upload-qa.md` | Fixed | 2026-05-27 | One medium issue: test_frontend_dom.mjs and test_frontend_helpers.mjs excluded from npm test. Added. All 16 suites pass. | [report](reports/03-photo-upload-qa-report.md) |
 | 04 | `docs/qa/04-product-context-qa.md` | Not Started | — | — | — |
 | 05 | `docs/qa/05-popular-starters-qa.md` | Not Started | — | — | — |
 | 06 | `docs/qa/06-scanner-flow-qa.md` | Not Started | — | — | — |
