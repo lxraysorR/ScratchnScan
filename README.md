@@ -17,6 +17,22 @@ Then open: <http://localhost:3000>
 
 For quick checks you can also open `app/index.html` directly in a browser.
 
+## UI design previews
+
+The approved **home / start-flow** UI concept lives as a standalone, static
+HTML preview — no npm, build step, or dev server required:
+
+```
+docs/ui/scratch-n-scan-home-flow-preview.html
+```
+
+To view it, just open that file directly in any browser (double-click it, or
+drag it into a browser tab). It is a design reference only and is **not** wired
+into the production app.
+
+See `docs/UI_ROADMAP.md` for how the two UI tracks (home/start-flow vs.
+result/details) fit together and why they are kept as separate screens.
+
 ## Test
 
 ```bash
