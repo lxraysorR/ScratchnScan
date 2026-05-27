@@ -36,11 +36,15 @@ needed to generate a homemade version.
 `docs/ui/scratch-n-scan-home-flow-preview.html` (static, open directly in a
 browser).
 
-**Current implementation status:** The live MVP already implements the working
-parts of this track in `app/` — manual product entry, front/back photo tiles,
-popular chips, and the staged generation progress (`app/js/progress.js`,
-wired in `app/js/scan.js`). The HTML preview is the visual target for further
-polish; it is **not** the production code.
+**Current implementation status:** The live MVP implements this track in
+`app/`. The home screen (`#view-home` in `app/index.html`) now uses the
+start-flow layout — hero "Pick how you want to start." plus the four start
+cards (Scan Barcode, Upload Package Photos, Type Product Details, Popular Right
+Now) — rendered in the app's green/gold theme. Manual product entry, front/back
+photo tiles, popular chips, and the staged generation progress
+(`app/js/progress.js`, wired in `app/js/scan.js`) are all live. The standalone
+HTML previews in `docs/ui/` remain the visual reference for further polish; they
+are **not** the production code.
 
 ---
 

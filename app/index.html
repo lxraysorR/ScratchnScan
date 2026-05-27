@@ -47,50 +47,62 @@
         <section id="view-home" class="screen" aria-label="Home">
           <div class="hero">
             <span class="eyebrow">Homemade alternatives in seconds</span>
-            <h1 class="hero-title">Turn packaged foods into scratch-made recipes.</h1>
-            <p class="hero-sub">Take front and back package photos, or enter the item manually. ScratchnScan gives you a simpler homemade version with ingredients, steps, and smart swaps.</p>
+            <h1 class="hero-title">Pick how you want to start.</h1>
+            <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name and ingredients. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
             <div class="hero-actions">
               <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
-              <button class="btn btn-ghost-light" type="button" data-go="scan">Scan Barcode</button>
               <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
             </div>
             <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
           </div>
 
           <div class="section-head">
-            <h2>How it works</h2>
-            <p>A clean mobile path from packaged food to homemade option.</p>
+            <h2>Start with one clear path</h2>
+            <p>Separate scanner, photos, and manual details so it never feels like one crowded form.</p>
           </div>
 
-          <ul class="feature-list" role="list">
-            <li class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v12H3z" /><path d="M3 11h18" /><path d="M9 7V4h6v3" /></svg>
+          <nav class="start-grid" aria-label="Ways to start">
+            <button class="start-card" type="button" data-go="scan">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
               </span>
-              <div>
-                <h3>Show us the package</h3>
-                <p>Capture front and back package photos, or type the item by hand.</p>
-              </div>
-            </li>
-            <li class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M4 11h16l-1 8H5z" /><path d="M12 4V2" /></svg>
+              <span class="start-text">
+                <span class="start-card-title">Scan Barcode</span>
+                <span class="start-card-desc">Use the camera to identify a packaged food.</span>
               </span>
-              <div>
-                <h3>Get the homemade version</h3>
-                <p>A practical scratch-made recipe using common pantry ingredients.</p>
-              </div>
-            </li>
-            <li class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z" /></svg>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card" type="button" data-go="manual">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.6" /><path d="m4 17 5-5 4 4 3-3 4 4" /></svg>
               </span>
-              <div>
-                <h3>Save your best ideas</h3>
-                <p>Favorite the keepers and build a personal cleaner-food playbook.</p>
-              </div>
-            </li>
-          </ul>
+              <span class="start-text">
+                <span class="start-card-title">Upload Package Photos</span>
+                <span class="start-card-desc">Add front package and back label photos.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card" type="button" data-go="manual">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16z" /><path d="m14 5 4 4" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Type Product Details</span>
+                <span class="start-card-desc">Enter product name, ingredients, and preferences.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card accent" type="button" data-scroll="home-samples">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-.5-3 2 1.5 3.5 4 3.5 7a8 8 0 1 1-16 0c0-4 3-6 4-9 1 1 1 2 1 3" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Popular Right Now</span>
+                <span class="start-card-desc">Start from a trending packaged food.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+          </nav>
 
           <div class="section-head">
             <h2>Popular right now</h2>
