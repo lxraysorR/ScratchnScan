@@ -13,6 +13,7 @@
     "app:status": "node scripts/app-status.js",
     "agent:next": "node scripts/agent-next-task.js",
     "qa:smoke": "node scripts/qa-smoke.js",
+    "check:syntax": "node scripts/check-js-syntax.mjs",
     "qa:flow": "npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
   },
   "devDependencies": {
