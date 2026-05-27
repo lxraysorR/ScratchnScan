@@ -80,7 +80,7 @@ for (const target of ["scan", "manual", "history", "home"]) {
 // button. In the browser/MVP build it routes the user to manual entry with a
 // clear "scanner unavailable" message (no native scanner is wired in yet).
 await goto("scan");
-const scanBtn = document.getElementById("scan-coming-soon");
+const scanBtn = document.getElementById("scan-start-btn");
 check("Scan view action button present", !!scanBtn);
 if (scanBtn) {
   scanBtn.click();
@@ -88,7 +88,7 @@ if (scanBtn) {
   const toast = document.getElementById("toast");
   check(
     "Scan routes to manual with a friendly fallback",
-    window.location.hash === "#manual" && /scanner unavailable/i.test(toast.textContent),
+    window.location.hash === "#manual" && /could not start the scanner/i.test(toast.textContent),
     `${window.location.hash} | ${toast.textContent.trim()}`,
   );
 }

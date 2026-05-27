@@ -24,6 +24,7 @@ The app currently supports entering packaged food details manually, generating a
 - Scanner/camera flow is not part of this checkpoint.
 - No billing or subscription flows.
 - AI generation may be unavailable without worker/provider config; fallback remains available.
+- Scanner is in beta: native-capable devices can attempt barcode scanning; unsupported or denied-permission states route users to manual/photo entry with clear messaging.
 
 ## Manual MVP test steps
 1. Open the app and go to Manual Entry.
