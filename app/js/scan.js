@@ -2,7 +2,6 @@ import { generateScratchRecipe } from "./api.js";
 import { generateHealthierScratchRecipe } from "./recipeGenerator.js";
 import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 import { createGenerationProgress } from "./progress.js";
-import { showToast } from "./app.js";
 import {
   canGenerate,
   recordSuccessfulGeneration,
@@ -31,6 +30,7 @@ export let lastGeneratedRecord = null;
 let initialized = false;
 let submitting = false;
 let progress = null;
+let currentManualStep = "product";
 
 // Upper bound for the AI request. The deterministic fallback is synchronous, so
 // the network call is the only thing that can stall the flow. Overridable in
@@ -93,6 +93,9 @@ const SAMPLES = {
 };
 
 function el(id) { return document.getElementById(id); }
+function showToast(message) {
+  if (window?.scratchnscan?.showToast) return window.scratchnscan.showToast(message);
+}
 
 function resetDraftUi() {
   draft.frontImagePreviewDataUrl = null;
@@ -149,7 +152,7 @@ function wirePhotoControls() {
   });
 }
 
-export async function initScanView() {
+export async function initScanView(step = null) {
   // Wire listeners first so the form always works even if IDB is slow/failing.
   if (!initialized) {
     el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
@@ -164,6 +167,12 @@ export async function initScanView() {
       el("scan-error").hidden = true;
       el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true }));
     });
+    el("scan-edit-btn")?.addEventListener("click", () => setManualStep("details"));
+    el("manual-next-product")?.addEventListener("click", () => setManualStep("details"));
+    el("manual-back-details")?.addEventListener("click", () => setManualStep("product"));
+    el("manual-next-details")?.addEventListener("click", () => { renderReviewSummary(); setManualStep("review"); });
+    el("manual-edit-product")?.addEventListener("click", () => setManualStep("product"));
+    el("manual-edit-details")?.addEventListener("click", () => setManualStep("details"));
     wirePhotoControls();
     initialized = true;
   }
@@ -172,6 +181,7 @@ export async function initScanView() {
   } catch (err) {
     console.warn("refreshUsageStrips (manual) failed", err);
   }
+  setManualStep(step || currentManualStep);
 }
 
 export function applySample(name) {
@@ -195,10 +205,43 @@ function showError(message, { allowRetry = false } = {}) {
   if (box) box.hidden = false;
 }
 
+export function setManualStep(step = "product") {
+  currentManualStep = step;
+  document.querySelectorAll("[data-manual-step]").forEach((section) => {
+    section.hidden = section.dataset.manualStep !== step;
+  });
+  const order = ["product", "details", "review", "creating"];
+  const idx = order.indexOf(step);
+  document.querySelectorAll("[data-step-dot]").forEach((dot) => {
+    const dotIdx = order.indexOf(dot.dataset.stepDot);
+    dot.classList.toggle("is-active", dotIdx === idx);
+    dot.classList.toggle("is-done", dotIdx > -1 && dotIdx < idx);
+  });
+}
+
+function renderReviewSummary() {
+  const card = el("manual-review-summary");
+  if (!card) return;
+  const productName = (el("product-name-input")?.value || "").trim() || "Not added";
+  const ingredients = (el("ingredients-input")?.value || "").trim();
+  const preference = (el("dietary-input")?.value || "").trim() || "None";
+  const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
+  const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
+  const barcode = draftBarcode || manualBarcode || "None";
+  card.innerHTML = `<h3>Review before creating</h3>
+    <p><strong>Product name:</strong> ${productName}</p>
+    <p><strong>Front photo added:</strong> ${draft.frontImagePreviewDataUrl ? "Yes" : "No"}</p>
+    <p><strong>Back label photo added:</strong> ${draft.backImagePreviewDataUrl ? "Yes" : "No"}</p>
+    <p><strong>Ingredients added:</strong> ${ingredients ? "Yes" : "No"}</p>
+    <p><strong>Preference:</strong> ${preference}</p>
+    <p><strong>Barcode:</strong> ${barcode}</p>`;
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
 
+  setManualStep("creating");
   el("scan-error").hidden = true;
   let productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
@@ -212,6 +255,7 @@ async function handleSubmit(event) {
   const hasStarterContext = Boolean(productName);
 
   if (!hasTypedContext && !hasImageContext && !hasStarterContext) {
+    setManualStep("review");
     showError("Add a product name, ingredient list, package photo, or starter first.");
     el("product-name-input")?.focus();
     return;
@@ -254,10 +298,12 @@ async function handleSubmit(event) {
     options: { timeoutMs: aiTimeoutMs },
   });
   if (flowResult.status === "correction-needed") {
+    setManualStep("review");
     showError(flowResult.message, { allowRetry: true });
     return;
   }
   if (flowResult.status === "error") {
+    setManualStep("creating");
     showError(flowResult.message, { allowRetry: true });
     if (flowResult.errorCode !== "timeout") console.error("manual generation failed", flowResult);
   }

@@ -1,17 +1,18 @@
 # Workflow Status
 
 ## Task
-Create a structured QA prompt pack for Claude under `docs/qa/` so QA can be run in focused passes without changing production behavior.
+Final mobile UX polish: convert overloaded manual package entry into a guided multi-step wizard flow (product → details → review → creating) without removing existing recipe creation functionality.
 
 ## File-level patch plan
-1. **Create `docs/qa/README.md`** with usage rules, constraints, and recommended execution sequence.
-2. **Create `docs/qa/00-master-qa-runbook.md`** as the orchestration prompt for full QA execution.
-3. **Create focused QA prompts** in `docs/qa/01` through `docs/qa/10` covering smoke, generation, photo upload, ProductContext, popular starters, scanner flow, result/details UI, storage fallback, accessibility/mobile, and regression.
-4. **Create `docs/qa/REPORT_TEMPLATE.md`** as the standard output format for all QA runs.
-5. **Run validation commands** (`npm test`, `npm run build`, `npm run qa:smoke`) and report outcomes.
+1. **Update `app/index.html`** to split manual entry UI into step sections/screens and focused action areas.
+2. **Update `app/styles.css`** to style wizard steps as mobile-friendly page-like cards, compact banners/meters, and focused progress/error states.
+3. **Update `app/js/packageEntry.js`** to manage wizard state/navigation, preserve form/photo/barcode data across steps, and route validation errors to review/creating screens.
+4. **Update supporting JS (`app/js/app.js`, `app/js/scan.js`, `app/js/progress.js`, and/or `app/js/manualRecipe.js` as needed)** to integrate step transitions with existing generation lifecycle and preserve success/failure routing.
+5. **Update/add automated tests** for the wizard flow while keeping existing behavior intact.
+6. **Run required checks**: `npm test`, `npm run build`, `npm run qa:flow`.
 
 ## Constraints honored
-- Documentation-only change set.
-- No production behavior changes.
-- No auth/billing/scanner implementation/Supabase feature work.
-- Keep prompts focused so Claude reports issues first and proposes separate Codex fix prompts.
+- No unrelated features or architecture rewrites.
+- No bottom-nav additions for wizard steps.
+- Preserve uploaded photo previews, scanned barcode, and existing result/history behavior.
+- Keep free-generation counter behavior unchanged (no increment until success).
