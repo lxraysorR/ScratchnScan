@@ -6,6 +6,15 @@ import { normalizeProductContext } from "./productContext.js";
 
 function el(id) { return document.getElementById(id); }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 let saving = false;
 
 function uniqNonEmpty(items = []) {
@@ -98,9 +107,9 @@ export function initResultView() {
     <p class="details-meta">${[productContext.source ? `Detected from ${productContext.source}` : "", confidenceText(productContext)].filter(Boolean).join(" · ")}</p>
   `;
   const understoodRows = [
-    productContext.productName ? `<div class="understood-row"><strong>Product:</strong> ${productContext.productName}</div>` : "",
-    productContext.ingredientsText ? `<div class="understood-row"><strong>Ingredients read:</strong> ${productContext.ingredientsText}</div>` : "",
-    productContext.claims?.length ? `<div class="understood-row"><strong>Claims read:</strong> ${productContext.claims.join(", ")}</div>` : "",
+    productContext.productName ? `<div class="understood-row"><strong>Product:</strong> ${escapeHtml(productContext.productName)}</div>` : "",
+    productContext.ingredientsText ? `<div class="understood-row"><strong>Ingredients read:</strong> ${escapeHtml(productContext.ingredientsText)}</div>` : "",
+    productContext.claims?.length ? `<div class="understood-row"><strong>Claims read:</strong> ${productContext.claims.map(escapeHtml).join(", ")}</div>` : "",
     `<div class="understood-row"><strong>Source:</strong> ${productContext.source || "unknown"}</div>`,
     `<div class="understood-row"><strong>Confidence:</strong> ${confidenceText(productContext)}</div>`,
   ].filter(Boolean);

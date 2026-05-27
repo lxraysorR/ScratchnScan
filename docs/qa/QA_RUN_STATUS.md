@@ -8,7 +8,7 @@
 | 04 | `docs/qa/04-product-context-qa.md` | Passed | 2026-05-27 | All normalization, confidence, needsManualCorrection, contextToRecipeInput checks pass. Low gap: mergeProductContexts has no direct unit test. | [report](reports/04-product-context-qa-report.md) |
 | 05 | `docs/qa/05-popular-starters-qa.md` | Fixed | 2026-05-27 | One medium issue: app.js had a local duplicate of renderPopularChips/STARTER_PANTRY_ITEMS instead of importing popularChips.js. Fixed. | [report](reports/05-popular-starters-qa-report.md) |
 | 06 | `docs/qa/06-scanner-flow-qa.md` | Fixed | 2026-05-27 | Two medium issues: dead hasFrontImage/hasBackImage declarations in scan.js; test_scan_submit_regression.mjs excluded from npm test. Both fixed; stale regression assertions updated. | [report](reports/06-scanner-flow-qa-report.md) |
-| 07 | `docs/qa/07-result-details-ui-qa.md` | Not Started | — | — | — |
+| 07 | `docs/qa/07-result-details-ui-qa.md` | Fixed | 2026-05-27 | One medium issue: result.js lacked escapeHtml and interpolated user strings (ingredientsText, productName, claims) raw into innerHTML. Fixed; details.js was already correct. | [report](reports/07-result-details-ui-qa-report.md) |
 | 08 | `docs/qa/08-storage-supabase-indexeddb-qa.md` | Not Started | — | — | — |
 | 09 | `docs/qa/09-accessibility-mobile-qa.md` | Not Started | — | — | — |
 | 10 | `docs/qa/10-regression-checklist.md` | Not Started | — | — | — |
