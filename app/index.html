@@ -11,14 +11,430 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <a href="#home" class="brand">
-        <span class="logo">Scan-Scratch</span>
-        <span class="brand-sub">Turn packaged foods into homemade versions</span>
-      </a>
-      <nav class="app-nav">
-        <a href="#manual" class="nav-link">Manual Entry</a>
-        <a href="#history" class="nav-link">History</a>
+    <div class="app">
+      <header class="topbar">
+        <a href="#home" class="brand" aria-label="ScratchnScan home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="28" height="28" focusable="false" aria-hidden="true">
+              <defs>
+                <linearGradient id="bowl-grad" x1="6" y1="6" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#fff3bf" />
+                  <stop offset="1" stop-color="#caa85d" />
+                </linearGradient>
+              </defs>
+              <path d="M9 23h30c-1.3 10.3-7.2 17-15 17S10.3 33.3 9 23Z" fill="url(#bowl-grad)" />
+              <path d="M11 21c3.7-4.6 22.3-4.6 26 0" fill="none" stroke="#fff8dc" stroke-width="3" stroke-linecap="round" />
+              <path d="M30 9 21 18" stroke="#fff8dc" stroke-width="3.4" stroke-linecap="round" />
+              <circle cx="32" cy="8" r="3.4" fill="#caa85d" />
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-name">ScratchnScan</span>
+            <span class="brand-tagline">Scan it. Scratch-make it.</span>
+          </span>
+        </a>
+        <button class="icon-btn" type="button" id="topbar-action" aria-label="More options">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="6" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="12" cy="18" r="1.6" />
+          </svg>
+        </button>
+      </header>
+
+      <main id="main-content" class="main">
+        <!-- HOME -->
+        <section id="view-home" class="screen" aria-label="Home">
+          <div class="hero">
+            <span class="eyebrow">Homemade alternatives in seconds</span>
+            <h1 class="hero-title">Pick how you want to start.</h1>
+            <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name and ingredients. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
+              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
+            </div>
+            <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
+          </div>
+
+          <div class="section-head">
+            <h2>Start with one clear path</h2>
+            <p>Separate scanner, photos, and manual details so it never feels like one crowded form.</p>
+          </div>
+
+          <nav class="start-grid" aria-label="Ways to start">
+            <button class="start-card" type="button" data-go="scan">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Scan Barcode</span>
+                <span class="start-card-desc">Use the camera to identify a packaged food.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card" type="button" data-go="manual">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.6" /><path d="m4 17 5-5 4 4 3-3 4 4" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Upload Package Photos</span>
+                <span class="start-card-desc">Add front package and back label photos.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card" type="button" data-go="manual">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16z" /><path d="m14 5 4 4" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Type Product Details</span>
+                <span class="start-card-desc">Enter product name, ingredients, and preferences.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="start-card accent" type="button" data-scroll="home-samples">
+              <span class="start-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3-1 4-1 6a3 3 0 0 0 6 0c0-1 0-2-.5-3 2 1.5 3.5 4 3.5 7a8 8 0 1 1-16 0c0-4 3-6 4-9 1 1 1 2 1 3" /></svg>
+              </span>
+              <span class="start-text">
+                <span class="start-card-title">Popular Right Now</span>
+                <span class="start-card-desc">Start from a trending packaged food.</span>
+              </span>
+              <span class="start-arrow" aria-hidden="true">›</span>
+            </button>
+          </nav>
+
+          <div class="section-head">
+            <h2>Popular right now</h2>
+            <p>Based on recent successful lookups and homemade generations.</p>
+          </div>
+          <div class="chip-row" id="home-samples" aria-label="Popular packaged foods">
+            <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
+            <button class="chip" type="button" data-sample="Oreos">Oreos</button>
+            <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
+            <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
+            <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
+          </div>
+        </section>
+
+        <!-- SCAN PREVIEW -->
+        <section id="view-scan" class="screen" aria-label="Scan preview" hidden>
+          <div class="section-head">
+            <h2>Scan a package</h2>
+            <p>Scanner is optional. You can type the product name instead.</p>
+          </div>
+
+          <div class="scan-card">
+            <div class="scan-preview" aria-hidden="true">
+              <div class="scan-frame">
+                <span>Tap Scan package to open your camera</span>
+              </div>
+              <div class="scan-line"></div>
+            </div>
+            <div id="scan-status" hidden>ready</div>
+            <div class="scan-actions">
+              <button class="btn btn-primary" type="button" id="scan-coming-soon" data-legacy-id="scan-start-btn">Try scanner</button>
+              <button class="btn btn-ghost" type="button" data-go="manual">Type product name</button>
+              <span hidden>Enter manually instead</button>
+            </div>
+            <p class="helper">Scanner is optional. If it is unavailable, just type the product name to create a homemade recipe.</p>
+          </div>
+
+          <div class="section-head">
+            <h2>What happens after a scan</h2>
+            <p>The app reads the package, then generates a homemade alternative.</p>
+          </div>
+          <ul class="feature-list" role="list">
+            <li class="feature-card">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+              </span>
+              <div>
+                <h3>Identify the product</h3>
+                <p>Name, brand, category, and ingredient signals become the recipe context.</p>
+              </div>
+            </li>
+            <li class="feature-card">
+              <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a8 8 0 1 1 16 0" /><path d="M2 14h20l-2 7H4z" /></svg>
+              </span>
+              <div>
+                <h3>Generate the homemade version</h3>
+                <p>Ingredients, steps, and smart swaps tuned to your preference.</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- MANUAL -->
+        <section id="view-manual" class="screen" aria-label="Package entry" hidden>
+          <div class="section-head">
+            <h2>Show us the package</h2>
+            <p>Add front and back package photos, or just type the item name and details below.</p>
+          </div>
+
+          <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
+
+          <div id="draft-barcode" class="alert alert-info" role="status" aria-live="polite" hidden>
+            <div>
+              <strong>Captured barcode:</strong>
+              <span id="draft-barcode-value"></span>
+            </div>
+            <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
+          </div>
+
+          <form id="manual-lookup-form" class="form-card" novalidate>
+            <div class="photo-grid">
+              <div class="photo-slot" data-photo="front">
+                <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
+                  <span class="photo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
+                  </span>
+                  <strong>Front package</strong>
+                  <em>Tap to add a photo — we'll read the product name for you</em>
+                  <img class="photo-thumb" alt="" hidden />
+                </button>
+                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
+                <div class="photo-actions" data-photo-actions="front" hidden>
+                  <button type="button" class="photo-action-btn" data-photo-replace="front">Replace</button>
+                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="front">Remove</button>
+                </div>
+              </div>
+              <div class="photo-slot" data-photo="back">
+                <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
+                  <span class="photo-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
+                  </span>
+                  <strong>Back label</strong>
+                  <em>Tap to add a photo — we'll read the ingredients for you</em>
+                  <img class="photo-thumb" alt="" hidden />
+                </button>
+                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
+                <div class="photo-actions" data-photo-actions="back" hidden>
+                  <button type="button" class="photo-action-btn" data-photo-replace="back">Replace</button>
+                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="back">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="product-name-input">Product name <span class="optional">(or add a photo above)</span></label>
+              <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Kraft Mac and Cheese, Pop-Tarts" autocomplete="off" />
+              <p class="helper">Add a package photo above and we'll fill this in, or type a packaged food name.</p>
+            </div>
+
+            <div class="field">
+              <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
+              <textarea id="ingredients-input" class="input" rows="3" placeholder="Optional: paste the ingredients list to get a closer match."></textarea>
+            </div>
+
+            <div class="field">
+              <label class="label" for="dietary-input">Preference</label>
+              <input id="dietary-input" class="input" type="text" placeholder="Example: dairy-free, less sugar, no seed oils" autocomplete="off" />
+            </div>
+
+            <div class="field">
+              <label class="label" for="barcode-input">Optional UPC / barcode</label>
+              <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
+            </div>
+
+            <div id="scan-error" class="alert alert-error" role="alert" hidden>
+              <p id="scan-error-msg"></p>
+              <button id="scan-retry-btn" class="btn btn-ghost btn-small" type="button" hidden>Try again</button>
+            </div>
+            <div id="scan-loading" class="alert alert-info" role="status" aria-live="polite" hidden>
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Creating your homemade version…</span>
+            </div>
+
+            <div class="form-actions">
+              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Generate Homemade Version</button>
+              <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear form</button>
+            </div>
+          </form>
+
+          <div class="section-head">
+            <h2>Popular starters</h2>
+            <p>One tap prefills the form for demo speed.</p>
+          </div>
+          <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
+            <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
+            <button class="chip" type="button" data-sample="Oreos">Oreos</button>
+            <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
+            <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
+            <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
+          </div>
+        </section>
+
+        <!-- RESULT -->
+        <section id="view-result" class="screen" aria-label="Generated homemade recipe" hidden>
+          <article class="result-card">
+            <div class="badge-row" id="result-badges"></div>
+            <h2 class="result-title" id="result-name"></h2>
+            <p class="result-original" id="result-original"></p>
+            <p class="result-summary" id="result-summary"></p>
+            <section class="recipe-block" id="result-health-goal-block">
+              <h3>Health goal</h3>
+              <p id="result-health-goal"></p>
+            </section>
+
+            <section class="recipe-block" id="result-why-block" hidden>
+              <h3>Why this is healthier</h3>
+              <ul id="result-why" class="bullet-list"></ul>
+            </section>
+
+            <section class="recipe-block">
+              <h3>Ingredients</h3>
+              <ul id="result-homemade-ingredients" class="bullet-list"></ul>
+            </section>
+
+            <section class="recipe-block">
+              <h3>Steps</h3>
+              <ol id="result-homemade-steps" class="step-list"></ol>
+            </section>
+
+            <section class="recipe-block" id="result-tips-block" hidden>
+              <h3>Tips</h3>
+              <ul id="result-tips" class="bullet-list"></ul>
+            </section>
+
+            <p class="disclaimer" id="result-note"></p>
+          </article>
+
+          <p class="usage-strip" id="result-usage-strip" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button id="result-save-btn" class="btn btn-primary" type="button">Save Recipe</button>
+            <button class="btn btn-ghost" type="button" data-go="manual">Make Another</button>
+            <button class="btn btn-ghost" type="button" data-go="history">View History</button>
+          </div>
+        </section>
+
+        <!-- UPGRADE -->
+        <section id="view-upgrade" class="screen" aria-label="Upgrade ScratchnScan" hidden>
+          <article class="upgrade-card">
+            <span class="eyebrow">ScratchnScan Plus</span>
+            <h2 class="upgrade-title">Keep creating homemade swaps</h2>
+            <p class="upgrade-body">You’ve used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
+            <div class="upgrade-offer">
+              <div class="upgrade-offer-row">
+                <strong>$4.99</strong>
+                <span>/ month</span>
+              </div>
+              <div class="upgrade-offer-row subtle">
+                <strong>$29.99</strong>
+                <span>/ year</span>
+              </div>
+              <p class="helper upgrade-offer-note">Placeholder pricing. No payment is collected today.</p>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn">Upgrade coming soon</button>
+              <button class="btn btn-ghost" type="button" data-go="history">View saved ideas</button>
+              <button class="btn btn-ghost" type="button" data-go="manual">Edit existing recipes</button>
+            </div>
+            <p class="disclaimer">No account or signup required. Your 10 free creations live on this device.</p>
+          </article>
+        </section>
+
+        <!-- HISTORY -->
+        <section id="view-history" class="screen" aria-label="Saved ideas" hidden>
+          <div class="section-head">
+            <h2>Saved ideas</h2>
+            <p>Your local recipe playbook for cleaner homemade swaps.</p>
+          </div>
+          <ul id="history-list" class="history-list" role="list"></ul>
+          <div id="history-empty" class="empty-state" hidden>
+            <div class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a8 8 0 1 1 16 0" /><path d="M2 11h20l-2 8H4z" /></svg>
+            </div>
+            <h3>No saved recipes yet</h3>
+            <p>Create your first homemade version.</p>
+            <button class="btn btn-primary" type="button" data-go="manual">Create first recipe</button>
+          </div>
+        </section>
+
+        <!-- DETAILS -->
+        <section id="view-details" class="screen" aria-label="Saved recipe details" hidden>
+          <article class="result-card">
+            <div class="badge-row" id="details-badges"></div>
+            <h2 class="result-title" id="details-name"></h2>
+            <p class="details-meta" id="details-meta"></p>
+            <p class="details-meta" id="details-date"></p>
+
+            <div class="details-photo-row" id="details-photo-row" hidden>
+              <figure class="details-photo" id="details-front-photo" hidden>
+                <img alt="Front of package" />
+                <figcaption>Front package</figcaption>
+              </figure>
+              <figure class="details-photo" id="details-back-photo" hidden>
+                <img alt="Back label" />
+                <figcaption>Back label</figcaption>
+              </figure>
+            </div>
+
+            <div class="metric-row" id="details-metrics" aria-hidden="true"></div>
+
+            <p class="result-summary" id="details-summary"></p>
+            <p class="result-healthgoal" id="details-healthgoal" hidden></p>
+
+            <section class="recipe-block" id="details-why-block" hidden>
+              <h3>Why this is healthier</h3>
+              <ul id="details-why" class="bullet-list"></ul>
+            </section>
+
+            <section class="recipe-block">
+              <h3 id="details-recipe-title">Ingredients</h3>
+              <ul id="details-ingredients" class="bullet-list"></ul>
+            </section>
+
+            <section class="recipe-block">
+              <h3>Steps</h3>
+              <ol id="details-steps" class="step-list"></ol>
+            </section>
+
+            <section class="recipe-block" id="details-tips-block" hidden>
+              <h3>Smart swaps</h3>
+              <ul id="details-tips" class="bullet-list"></ul>
+            </section>
+
+            <p class="details-source" id="details-input"></p>
+            <p class="disclaimer" id="details-fallback-note" hidden></p>
+            <p class="disclaimer">General food information only. Not medical or dietary advice.</p>
+          </article>
+
+          <div class="form-actions">
+            <button id="details-favorite-btn" class="btn btn-primary" type="button">Favorite</button>
+            <button id="details-delete-btn" class="btn btn-danger" type="button">Delete recipe</button>
+            <button class="btn btn-ghost" type="button" data-go="history">Back to saved ideas</button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Primary">
+        <button class="nav-item" type="button" data-target="home">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-7 9 7" /><path d="M5 10v10h14V10" /></svg>
+          </span>
+          <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" type="button" data-target="scan">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
+          </span>
+          <span class="nav-label">Scan</span>
+        </button>
+        <button class="nav-item" type="button" data-target="manual">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16z" /><path d="m14 5 4 4" /></svg>
+          </span>
+          <span class="nav-label">Enter</span>
+        </button>
+        <button class="nav-item" type="button" data-target="history">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z" /></svg>
+          </span>
+          <span class="nav-label">Saved</span>
+        </button>
       </nav>
     </header>
     <main>

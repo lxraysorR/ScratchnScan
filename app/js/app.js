@@ -145,6 +145,15 @@ function wireGlobalActions() {
     });
   });
 
+  document.querySelectorAll("[data-scroll]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const target = document.getElementById(el.dataset.scroll);
+      if (typeof target?.scrollIntoView === "function") {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+
   document.body.addEventListener("click", async (event) => {
     const btn = event.target.closest("[data-sample]");
     if (!btn) return;
