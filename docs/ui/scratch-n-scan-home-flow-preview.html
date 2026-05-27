@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scratch-N-Scan Flow UI Preview</title>
+  <style>
+    :root {
+      --bg: #f7f4ec;
+      --surface: #fffdf8;
+      --surface-2: #f1eadc;
+      --text: #211f1b;
+      --muted: #746b5f;
+      --line: #e4dbc9;
+      --accent: #e46f31;
+      --accent-dark: #9f3f1b;
+      --green: #2f7d46;
+      --green-soft: #e7f4ea;
+      --yellow: #f2b84b;
+      --danger: #a13f2c;
+      --shadow: 0 16px 40px rgba(43, 31, 18, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(228, 111, 49, 0.16), transparent 32rem),
+        radial-gradient(circle at top right, rgba(47, 125, 70, 0.10), transparent 28rem),
+        linear-gradient(180deg, #fff8ef 0%, var(--bg) 42%, #f4efe4 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell {
+      width: min(100%, var(--max));
+      margin: 0 auto;
+      padding: 18px 14px 118px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 900;
+      background: linear-gradient(145deg, var(--accent), #be4f24);
+      box-shadow: 0 10px 22px rgba(228, 111, 49, 0.25);
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      font-size: 1rem;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 1px 0 0;
+      color: var(--muted);
+      font-size: 0.79rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.78);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero {
+      background: rgba(255, 253, 248, 0.92);
+      border: 1px solid rgba(228, 219, 201, 0.9);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      top: -80px;
+      width: 220px;
+      height: 220px;
+      background: rgba(228, 111, 49, 0.10);
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(2rem, 9vw, 4.2rem);
+      line-height: 0.96;
+      letter-spacing: -0.07em;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 58ch;
+    }
+
+    .hero-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 18px;
+      min-height: 52px;
+      padding: 0 16px;
+      font-weight: 900;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(145deg, var(--accent), var(--accent-dark));
+      color: white;
+      box-shadow: 0 12px 24px rgba(228, 111, 49, 0.25);
+    }
+
+    .btn.secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--accent-dark);
+      border: 1px solid rgba(228, 111, 49, 0.28);
+    }
+
+    .mock-phone {
+      background: #282017;
+      border-radius: 34px;
+      padding: 12px;
+      box-shadow: 0 18px 38px rgba(43, 31, 18, 0.20);
+      min-height: 360px;
+    }
+
+    .phone-screen {
+      min-height: 336px;
+      border-radius: 25px;
+      background: linear-gradient(180deg, #fff8ef, #f1eadc);
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    .scan-window {
+      height: 170px;
+      border-radius: 22px;
+      background:
+        linear-gradient(135deg, rgba(47, 125, 70, 0.72), rgba(228, 111, 49, 0.72)),
+        linear-gradient(180deg, #d9cab3, #fff4dc);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan-window::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 50%;
+      height: 3px;
+      background: rgba(255,255,255,0.85);
+      box-shadow: 0 0 18px rgba(255,255,255,0.95);
+      animation: scanline 2s infinite ease-in-out;
+    }
+
+    @keyframes scanline {
+      0%, 100% { transform: translateY(-58px); }
+      50% { transform: translateY(58px); }
+    }
+
+    .phone-card {
+      margin-top: 12px;
+      padding: 14px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(228, 219, 201, 0.85);
+      border-radius: 20px;
+    }
+
+    .phone-card strong { display: block; font-size: 0.95rem; }
+    .phone-card span { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 3px; }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+      margin: 24px 2px 12px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: 1.22rem;
+      letter-spacing: -0.035em;
+    }
+
+    .section-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .choice-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .choice-card {
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.94);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 26px rgba(43, 31, 18, 0.07);
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 13px;
+      align-items: center;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .choice-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: var(--surface-2);
+      font-size: 1.25rem;
+    }
+
+    .choice-card h4 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: -0.025em;
+    }
+
+    .choice-card p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .arrow { color: var(--muted); font-weight: 900; }
+
+    .workbench {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: rgba(255, 253, 248, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 26px rgba(43, 31, 18, 0.07);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px;
+      border-bottom: 1px solid rgba(228, 219, 201, 0.72);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .card-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.025em;
+    }
+
+    .card-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .form-body { padding: 16px; display: grid; gap: 13px; }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 0.84rem;
+      font-weight: 900;
+      color: #3a3127;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fffcf5;
+      border-radius: 16px;
+      padding: 13px 14px;
+      outline: none;
+      color: var(--text);
+    }
+
+    .field textarea { min-height: 110px; resize: vertical; }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: rgba(228, 111, 49, 0.65);
+      box-shadow: 0 0 0 4px rgba(228, 111, 49, 0.10);
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .upload-box {
+      min-height: 114px;
+      border-radius: 18px;
+      border: 1px dashed #d3c7b2;
+      background: linear-gradient(145deg, #fffbf3, #eee4d2);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .upload-box strong { color: var(--text); font-size: 0.92rem; }
+    .upload-box span:last-child { color: var(--green); font-weight: 900; }
+
+    .popular-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 16px;
+    }
+
+    .starter {
+      border: 1px solid rgba(228, 219, 201, 0.86);
+      background: #f8f1e7;
+      border-radius: 18px;
+      padding: 12px;
+      min-height: 92px;
+    }
+
+    .starter small {
+      display: inline-flex;
+      color: var(--green);
+      font-size: 0.7rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+
+    .starter strong { display: block; font-size: 0.94rem; line-height: 1.15; }
+    .starter span { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 5px; }
+
+    .progress-card {
+      padding: 16px;
+    }
+
+    .progress-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 4px solid #eadfce;
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .progress-head h3 { margin: 0; font-size: 1rem; }
+    .progress-head p { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+
+    .stage-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 11px;
+      background: #f6efe4;
+      border-radius: 16px;
+      border: 1px solid rgba(228, 219, 201, 0.7);
+    }
+
+    .dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: #e7dccb;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+
+    .stage.done .dot { background: var(--green-soft); color: var(--green); }
+    .stage.active .dot { background: rgba(228, 111, 49, 0.16); color: var(--accent-dark); animation: pulse 1.4s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(228, 111, 49, 0.32); }
+      50% { box-shadow: 0 0 0 8px rgba(228, 111, 49, 0); }
+    }
+
+    .stage strong { display: block; font-size: 0.88rem; }
+    .stage span { display: block; color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+
+    .result-card .recipe-title { padding: 18px 16px 8px; }
+    .recipe-title h2 { margin: 0; font-size: clamp(1.35rem, 5vw, 2rem); line-height: 1.06; letter-spacing: -0.045em; }
+    .recipe-title p { margin: 8px 0 0; color: var(--muted); font-size: 0.93rem; }
+
+    .chip-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: var(--surface-2);
+      color: #594d3f;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+    .chip.good { background: var(--green-soft); color: var(--green); }
+
+    .quick-facts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 12px 16px 18px;
+    }
+
+    .fact { background: #f6efe4; border-radius: 16px; padding: 10px; min-height: 68px; }
+    .fact small { display: block; color: var(--muted); font-size: 0.68rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+    .fact strong { display: block; margin-top: 5px; font-size: 0.9rem; line-height: 1.12; }
+
+    .accordion { border-top: 1px solid rgba(228, 219, 201, 0.72); }
+    .accordion button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 900;
+      text-align: left;
+    }
+    .accordion button span:first-child { display: flex; align-items: center; gap: 9px; }
+    .accordion-content { padding: 0 16px 16px 46px; color: #3d362e; display: none; }
+    .accordion.open .accordion-content { display: block; }
+    .accordion.open .chevron { transform: rotate(180deg); }
+    ul, ol { margin: 0; padding-left: 1.1rem; }
+    li + li { margin-top: 8px; }
+
+    .cta-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(247, 244, 236, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(228, 219, 201, 0.9);
+      z-index: 10;
+    }
+
+    .cta-inner {
+      width: min(100%, var(--max));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (min-width: 760px) {
+      .app-shell { padding: 28px 22px 120px; }
+      .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr); align-items: center; }
+      .hero-actions { grid-template-columns: auto auto; justify-content: start; }
+      .choice-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .choice-card { grid-template-columns: 1fr; min-height: 190px; align-content: space-between; }
+      .choice-icon { width: 54px; height: 54px; font-size: 1.45rem; }
+      .workbench { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+      .side-stack { position: sticky; top: 18px; display: grid; gap: 14px; }
+      .popular-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">S</div>
+        <div>
+          <h1>Scratch-N-Scan</h1>
+          <p>Simple homemade swaps for packaged foods</p>
+        </div>
+      </div>
+      <span class="pill">UI preview</span>
+    </header>
+
+    <section class="hero" aria-label="Home entry preview">
+      <div class="hero-grid">
+        <div>
+          <div class="chip-row">
+            <span class="chip good">✓ MVP flow</span>
+            <span class="chip">Manual</span>
+            <span class="chip">Photos</span>
+            <span class="chip">Scanner next</span>
+          </div>
+          <h2>Pick how you want to start.</h2>
+          <p>Scan a barcode, upload the front and back of a package, or type the product name and ingredients. Scratch-N-Scan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#create">Create homemade version</a>
+            <a class="btn secondary" href="#popular">Use popular starter</a>
+          </div>
+        </div>
+
+        <div class="mock-phone" aria-hidden="true">
+          <div class="phone-screen">
+            <div class="scan-window"></div>
+            <div class="phone-card">
+              <strong>Barcode scanner</strong>
+              <span>Center barcode inside the frame. Manual entry remains available.</span>
+            </div>
+            <div class="phone-card">
+              <strong>Photo product rescue</strong>
+              <span>Upload front and back labels when scanning is not enough.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-title" aria-labelledby="start-title">
+      <div>
+        <h3 id="start-title">Start with one clear path</h3>
+        <p>Separate scanner, photos, and manual details so users do not feel trapped in one crowded form.</p>
+      </div>
+    </section>
+
+    <nav class="choice-grid" aria-label="Create options">
+      <a class="choice-card" href="#scanner">
+        <div class="choice-icon">📷</div>
+        <div>
+          <h4>Scan barcode</h4>
+          <p>Use the camera to identify a packaged food.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="choice-card" href="#photos">
+        <div class="choice-icon">🖼️</div>
+        <div>
+          <h4>Upload package photos</h4>
+          <p>Add front and back label photos.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="choice-card" href="#manual">
+        <div class="choice-icon">✍🏾</div>
+        <div>
+          <h4>Type product details</h4>
+          <p>Enter product name, ingredients, and preferences.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="choice-card" href="#popular">
+        <div class="choice-icon">🔥</div>
+        <div>
+          <h4>Popular right now</h4>
+          <p>Use the same list everywhere: home, starters, and quick picks.</p>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+    </nav>
+
+    <section class="workbench" id="create">
+      <article class="card" aria-label="Create homemade version form">
+        <div class="card-header">
+          <div>
+            <h3>Create a homemade version</h3>
+            <p>This mockup separates photos from manual details but keeps both available.</p>
+          </div>
+          <span class="pill">Step 1</span>
+        </div>
+        <div class="form-body">
+          <div class="upload-grid" id="photos">
+            <label class="upload-box">
+              <strong>Front package photo</strong>
+              <span>Brand, product name, flavor</span>
+              <span>Choose photo</span>
+            </label>
+            <label class="upload-box">
+              <strong>Back label photo</strong>
+              <span>Ingredients, nutrition, claims</span>
+              <span>Choose photo</span>
+            </label>
+          </div>
+
+          <div class="field" id="manual">
+            <label for="product-name">Product name</label>
+            <input id="product-name" value="Krinkle Cut Pink Salt Potato Chips" />
+          </div>
+
+          <div class="field">
+            <label for="ingredients">Ingredients or package text</label>
+            <textarea id="ingredients">Potatoes, vegetable oil, pink salt. I want a homemade version with less oil and simple ingredients.</textarea>
+          </div>
+
+          <button class="btn primary" id="generate-btn" type="button">Generate homemade version</button>
+          <button class="btn ghost" type="button">Save details and finish later</button>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <section class="card" id="popular" aria-label="Popular right now">
+          <div class="card-header">
+            <div>
+              <h3>Popular right now</h3>
+              <p>This same source should power Popular Starters and Popular Right Now.</p>
+            </div>
+          </div>
+          <div class="popular-grid">
+            <button class="starter" type="button">
+              <small>Trending</small>
+              <strong>Potato chips</strong>
+              <span>Baked or air-fried pink salt chips</span>
+            </button>
+            <button class="starter" type="button">
+              <small>Trending</small>
+              <strong>Granola bars</strong>
+              <span>Oat, honey, and nut butter bars</span>
+            </button>
+            <button class="starter" type="button">
+              <small>Trending</small>
+              <strong>Mac and cheese</strong>
+              <span>Simple stovetop cheese sauce</span>
+            </button>
+            <button class="starter" type="button">
+              <small>Trending</small>
+              <strong>Cookies</strong>
+              <span>Small-batch homemade cookie swap</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="card" aria-label="Generation progress">
+          <div class="card-header">
+            <div>
+              <h3>Generation progress</h3>
+              <p>Replace the endless spinner with moving stages.</p>
+            </div>
+          </div>
+          <div class="progress-card">
+            <div class="progress-head">
+              <div class="spinner" aria-hidden="true"></div>
+              <div>
+                <h3 id="progress-title">Building your natural recipe…</h3>
+                <p id="progress-subtitle">Reading the package details and choosing a homemade direction.</p>
+              </div>
+            </div>
+            <div class="stage-list" aria-label="Recipe generation stages">
+              <div class="stage done">
+                <div class="dot">✓</div>
+                <div>
+                  <strong>Product details received</strong>
+                  <span>Using product name, photos, ingredients, or starter selection.</span>
+                </div>
+              </div>
+              <div class="stage active">
+                <div class="dot">2</div>
+                <div>
+                  <strong>Identifying food type</strong>
+                  <span>Finding the base ingredient, flavor, and best homemade method.</span>
+                </div>
+              </div>
+              <div class="stage">
+                <div class="dot">3</div>
+                <div>
+                  <strong>Creating real ingredients</strong>
+                  <span>Replacing placeholders with actual pantry ingredients.</span>
+                </div>
+              </div>
+              <div class="stage">
+                <div class="dot">4</div>
+                <div>
+                  <strong>Writing step-by-step instructions</strong>
+                  <span>Making sure the recipe is clear before showing it.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <section class="workbench">
+      <article class="card result-card" aria-label="Generated result preview">
+        <div class="recipe-title">
+          <div class="chip-row">
+            <span class="chip good">Homemade version</span>
+            <span class="chip">From package details</span>
+            <span class="chip">Bake or air fry</span>
+          </div>
+          <h2>Crispy Pink Salt Potato Chips</h2>
+          <p>A homemade version inspired by kettle-style pink salt chips, using real potatoes, controlled oil, and clear cooking steps.</p>
+        </div>
+
+        <div class="quick-facts">
+          <div class="fact"><small>Time</small><strong>35–50 min</strong></div>
+          <div class="fact"><small>Method</small><strong>Air fry / bake</strong></div>
+          <div class="fact"><small>Base</small><strong>Potatoes</strong></div>
+        </div>
+
+        <div class="accordion open">
+          <button type="button" aria-expanded="true"><span>🥔 Ingredients</span><span class="chevron">⌄</span></button>
+          <div class="accordion-content">
+            <ul>
+              <li>2 large russet or Yukon gold potatoes</li>
+              <li>1 to 2 tablespoons avocado, olive, or sunflower oil</li>
+              <li>1/2 teaspoon pink salt, plus more to taste</li>
+              <li>Optional garlic powder or smoked paprika</li>
+              <li>Cold water for soaking slices</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="accordion open">
+          <button type="button" aria-expanded="true"><span>👨🏾‍🍳 Steps</span><span class="chevron">⌄</span></button>
+          <div class="accordion-content">
+            <ol>
+              <li>Wash potatoes and slice very thin with a mandoline or crinkle cutter.</li>
+              <li>Soak slices in cold water for 20 to 30 minutes to remove starch.</li>
+              <li>Drain and pat slices completely dry.</li>
+              <li>Toss with oil and pink salt until lightly coated.</li>
+              <li>Bake at 400°F for 15 to 25 minutes, or air fry at 350°F for 10 to 16 minutes.</li>
+              <li>Cool for several minutes so the chips crisp before serving.</li>
+            </ol>
+          </div>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h3>What the app understood</h3>
+              <p>Keep this visible so users trust the result.</p>
+            </div>
+          </div>
+          <div class="popular-grid">
+            <div class="starter"><small>Product</small><strong>Pink salt potato chips</strong><span>Detected from package/manual details</span></div>
+            <div class="starter"><small>Ingredients</small><strong>Potatoes, oil, pink salt</strong><span>No placeholder ingredients</span></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <nav class="cta-bar" aria-label="Result actions">
+    <div class="cta-inner">
+      <button class="btn secondary" type="button">Edit details</button>
+      <button class="btn primary" type="button">Save recipe</button>
+    </div>
+  </nav>
+
+  <script>
+    document.querySelectorAll('.accordion button').forEach((button) => {
+      button.addEventListener('click', () => {
+        const section = button.closest('.accordion');
+        const isOpen = section.classList.toggle('open');
+        button.setAttribute('aria-expanded', String(isOpen));
+      });
+    });
+
+    const stages = Array.from(document.querySelectorAll('.stage'));
+    const title = document.getElementById('progress-title');
+    const subtitle = document.getElementById('progress-subtitle');
+    const copy = [
+      ['Reading package details…', 'Checking product name, photos, ingredients, and preferences.'],
+      ['Identifying food type…', 'Finding the base ingredient, flavor, and homemade method.'],
+      ['Creating real ingredients…', 'Building a natural pantry ingredient list.'],
+      ['Writing clear cooking steps…', 'Making the recipe useful before showing the result.']
+    ];
+    let idx = 0;
+    setInterval(() => {
+      idx = (idx + 1) % stages.length;
+      stages.forEach((stage, i) => {
+        stage.classList.toggle('done', i < idx);
+        stage.classList.toggle('active', i === idx);
+      });
+      title.textContent = copy[idx][0];
+      subtitle.textContent = copy[idx][1];
+    }, 2100);
+  </script>
+</body>
+</html>
