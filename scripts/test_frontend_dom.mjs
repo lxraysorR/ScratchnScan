@@ -10,6 +10,7 @@ import { resolve } from 'node:path';
 const { applyThumbToTile } = await import(pathToFileURL(resolve('app/js/photoTiles.js')).href);
 const { renderPopularChips, pickChipNames, STARTER_PANTRY_ITEMS } =
   await import(pathToFileURL(resolve('app/js/popularChips.js')).href);
+const { createLabelTip } = await import(pathToFileURL(resolve('app/js/labelTip.js')).href);
 
 let passed = 0;
 function test(name, fn) {
@@ -147,3 +148,18 @@ test('re-rendering clears stale chips (no duplicates)', () => {
 void pickChipNames; // (covered in test_frontend_helpers.mjs)
 
 console.log(`Frontend DOM tests passed (${passed} cases).`);
+
+
+test('label tip disclosure is free and accessible with aria-expanded toggling', () => {
+  const dom = new JSDOM('<!DOCTYPE html><body></body>');
+  const tip = createLabelTip({ title: 'Label tip', body: '<p>Front labels help identify the product.</p>', defaultOpen: false }, dom.window.document);
+  dom.window.document.body.appendChild(tip);
+  const toggle = tip.querySelector('.label-tip-toggle');
+  const body = tip.querySelector('.label-tip-body');
+  assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+  assert.equal(body.hidden, true);
+  assert.ok(!/premium|upgrade|lock/i.test(tip.textContent), 'no premium gating language');
+  toggle.click();
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(body.hidden, false);
+});

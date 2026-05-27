@@ -4,6 +4,7 @@ import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
 import { initDetailsView } from "./details.js";
+import { renderLabelLiteracyTips } from "./labelTip.js";
 import { initDatabase } from "./localDb.js";
 import {
   refreshUsageStrips,
@@ -215,6 +216,7 @@ window.addEventListener("hashchange", route);
 // always respond even if IndexedDB init is slow, fails, or is blocked by
 // another open tab during an upgrade.
 wireGlobalActions();
+renderLabelLiteracyTips();
 renderPopularChips([]);
 route();
 void loadPopularItems();
