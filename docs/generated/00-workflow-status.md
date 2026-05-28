@@ -1,18 +1,11 @@
 # Workflow Status
 
 ## Task
-Final mobile UX polish: convert overloaded manual package entry into a guided multi-step wizard flow (product → details → review → creating) without removing existing recipe creation functionality.
+Refine manual Generate flow into a calmer mobile-first layout with three explicit input methods (typed product, photos, barcode), compact confirmation, dedicated generating state, and friendly recovery.
 
 ## File-level patch plan
-1. **Update `app/index.html`** to split manual entry UI into step sections/screens and focused action areas.
-2. **Update `app/styles.css`** to style wizard steps as mobile-friendly page-like cards, compact banners/meters, and focused progress/error states.
-3. **Update `app/js/packageEntry.js`** to manage wizard state/navigation, preserve form/photo/barcode data across steps, and route validation errors to review/creating screens.
-4. **Update supporting JS (`app/js/app.js`, `app/js/scan.js`, `app/js/progress.js`, and/or `app/js/manualRecipe.js` as needed)** to integrate step transitions with existing generation lifecycle and preserve success/failure routing.
-5. **Update/add automated tests** for the wizard flow while keeping existing behavior intact.
-6. **Run required checks**: `npm test`, `npm run build`, `npm run qa:flow`.
-
-## Constraints honored
-- No unrelated features or architecture rewrites.
-- No bottom-nav additions for wizard steps.
-- Preserve uploaded photo previews, scanned barcode, and existing result/history behavior.
-- Keep free-generation counter behavior unchanged (no increment until success).
+1. Rebuild `view-manual` markup in `app/index.html` into: header, input-method selector, method-specific cards, advanced/help accordions, compact confirmation, dedicated creating state.
+2. Refactor `app/js/scan.js` to manage method state, visibility, CTA state, friendly error recovery, and popular starters empty-state behavior.
+3. Update `app/styles.css` with method card, accordion, compact confirmation, and focused progress/error styles.
+4. Update/add tests for method visibility, empty-state starters, generate gating, friendly error recovery, and generating state visibility.
+5. Run required checks: `npm test`, `npm run build`, `npm run qa:flow`.

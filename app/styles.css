@@ -1284,3 +1284,13 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
 .review-card h3 { margin: 0 0 10px; font-size: 16px; }
 .review-card p { margin: 6px 0; font-size: 14px; color: var(--ink-soft); }
 #scan-loading { padding: 0; border: 0; background: transparent; }
+
+.manual-flow { gap: 16px; }
+.method-tabs { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.method-tab { border:1px solid var(--line); background:var(--surface); border-radius:14px; padding:12px; font-weight:700; text-align:left; }
+.method-tab.is-active { border-color: var(--green-3); background: rgba(31,107,84,0.08); color: var(--green); }
+.manual-flow [data-method-panel] { display:grid; gap:12px; }
+.collapse-block { border:1px solid var(--line); border-radius:14px; background:var(--surface-2); padding:10px 12px; }
+.collapse-block summary { cursor:pointer; font-weight:700; color:var(--green); }
+#manual-creating-state .review-card { background: var(--surface); border:1px solid var(--line); }
+#manual-friendly-error p { margin: 0; }

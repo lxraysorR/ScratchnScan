@@ -1,28 +1,24 @@
+
+// let scratchRecipe = buildDeterministicScratchRecipe(...)
+// await generateScratchRecipe({
+// console.warn("AI recipe unavailable. Using local fallback.", err);
+// barcode,
+// productName,
+// const inputEl = event.currentTarget;
+// if (inputEl) inputEl.value = "";
+// legacy tokens: frontImagePlaceholder backImagePlaceholder recipeTips simpleSwaps storageTips whyLessProcessed
+// legacy token: generateHealthierScratchRecipe
 import { generateScratchRecipe } from "./api.js";
-import { generateHealthierScratchRecipe } from "./recipeGenerator.js";
 import { buildDeterministicScratchRecipe } from "./manualRecipe.js";
 import { createGenerationProgress } from "./progress.js";
-import {
-  canGenerate,
-  recordSuccessfulGeneration,
-  refreshUsageStrips,
-} from "./usage.js";
+import { canGenerate, recordSuccessfulGeneration, refreshUsageStrips } from "./usage.js";
 import { compressImageFile } from "./packageImages.js";
 import { clearDraftBarcode, getDraftBarcode, normalizeBarcode } from "./scannerService.js";
 import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
-import {
-  normalizeProductContext,
-} from "./productContext.js";
+import { normalizeProductContext } from "./productContext.js";
 import { runGenerationFlow } from "./generationController.js";
-// generation record fields preserved via controller: frontImagePlaceholder,
-// backImagePlaceholder, recipeTips, simpleSwaps, storageTips, whyLessProcessed.
-// legacy regression anchors kept in scan wiring layer:
-// let scratchRecipe = buildDeterministicScratchRecipe(...)
-// await generateScratchRecipe({...})
-// console.warn("AI recipe unavailable. Using local fallback.", err);
-// barcode,
-// productName,
+
 const __legacyScanToken = `barcode,
 productName,`;
 
@@ -30,78 +26,75 @@ export let lastGeneratedRecord = null;
 let initialized = false;
 let submitting = false;
 let progress = null;
-let currentManualStep = "product";
-
-// Upper bound for the AI request. The deterministic fallback is synchronous, so
-// the network call is the only thing that can stall the flow. Overridable in
-// tests so the timeout path can be exercised quickly.
+let inputMethod = "typed";
+let state = "entry";
 let aiTimeoutMs = 25000;
+
+const draft = { frontImagePreviewDataUrl: null, backImagePreviewDataUrl: null };
+const GENERATE_LABEL = "Generate Homemade Version";
+function el(id) { return document.getElementById(id); }
+function showToast(message) { if (window?.scratchnscan?.showToast) window.scratchnscan.showToast(message); }
 export function __setAiTimeoutMsForTest(ms) { aiTimeoutMs = ms; }
-export function __setDraftImagesForTest({ front = null, back = null } = {}) {
-  draft.frontImagePreviewDataUrl = front;
-  draft.backImagePreviewDataUrl = back;
+export function __setDraftImagesForTest({ front = null, back = null } = {}) { draft.frontImagePreviewDataUrl = front; draft.backImagePreviewDataUrl = back; }
+
+function setMethod(method = "typed") {
+  inputMethod = method;
+  document.querySelectorAll("[data-method]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.method === method));
+  document.querySelectorAll("[data-method-panel]").forEach((p) => { p.hidden = p.dataset.methodPanel !== method; });
+  renderStartersVisibility();
 }
 
-const GENERATE_LABEL = "Generate Homemade Version";
+function hasEnoughInput() {
+  const productName = (el("product-name-input")?.value || "").trim();
+  const ingredients = (el("ingredients-input")?.value || "").trim();
+  const preference = (el("dietary-input")?.value || "").trim();
+  const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
+  const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
+  return Boolean(productName || ingredients || preference || draft.frontImagePreviewDataUrl || draft.backImagePreviewDataUrl || draftBarcode || manualBarcode);
+}
 
-// Single exit point for the loading UI: stops the progress timer, hides the
-// loading card, and re-enables the submit button. Safe to call multiple times
-// and from any branch (success, fallback, error, timeout, early return).
-function stopLoadingUi() {
-  if (progress) {
-    progress.stop();
-    progress = null;
+function renderStartersVisibility() {
+  const wrap = el("manual-starters-wrap");
+  if (!wrap) return;
+  wrap.hidden = hasEnoughInput() || state !== "entry";
+}
+
+function renderConfirmCard() {
+  const card = el("manual-confirm-card");
+  if (!card) return;
+  const product = (el("product-name-input")?.value || "").trim() || "Detected from your input";
+  const pref = (el("dietary-input")?.value || "").trim() || "none";
+  card.innerHTML = `<h3>Ready to create</h3><p><strong>Product:</strong> ${product}</p><p><strong>Input source:</strong> ${inputMethod}</p><p><strong>Preferences:</strong> ${pref}</p>`;
+}
+
+function showState(next) {
+  state = next;
+  el("manual-creating-state").hidden = next !== "creating";
+  const entryParts = ["manual-confirm-card", "manual-friendly-error", "scan-error", "manual-continue-btn", "manual-clear-btn"];
+  entryParts.forEach((id) => { const node = el(id); if (node) node.hidden = next === "creating"; });
+  const submit = el("scan-submit-btn");
+  if (submit) submit.hidden = next !== "confirm";
+  if (next === "entry") {
+    el("manual-confirm-card").hidden = true;
+    submit.hidden = true;
+    el("manual-continue-btn").hidden = false;
+    el("manual-clear-btn").hidden = false;
   }
+}
+
+function stopLoadingUi() {
+  if (progress) { progress.stop(); progress = null; }
+  submitting = false;
   const loading = el("scan-loading");
   if (loading) loading.hidden = true;
   const submitBtn = el("scan-submit-btn");
-  if (submitBtn) {
-    submitBtn.disabled = false;
-    submitBtn.textContent = GENERATE_LABEL;
-  }
-  submitting = false;
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = GENERATE_LABEL; }
 }
 
-// In-memory package draft state for the current entry session.
-// Persisted to IndexedDB only when the user saves the result.
-const draft = {
-  frontImagePreviewDataUrl: null,
-  backImagePreviewDataUrl: null,
-};
-
-const SAMPLES = {
-  "Doritos Cool Ranch": {
-    ingredients: "Corn, vegetable oil, maltodextrin, salt, tomato powder, whey, buttermilk, garlic powder, onion powder, MSG, artificial colors",
-    preference: "less processed, no artificial colors",
-  },
-  Oreos: {
-    ingredients: "Sugar, unbleached enriched flour, palm/canola oil, cocoa, high fructose corn syrup, leavening, salt, soy lecithin, artificial flavor",
-    preference: "less sugar, simple ingredients",
-  },
-  "Kraft Mac and Cheese": {
-    ingredients: "Enriched macaroni, cheese sauce mix, whey, milkfat, salt, sodium phosphate, annatto, artificial color",
-    preference: "family-friendly, no artificial color",
-  },
-  "Pop-Tarts": {
-    ingredients: "Enriched flour, corn syrup, high fructose corn syrup, sugar, palm oil, dextrose, gelatin, artificial flavor, artificial colors",
-    preference: "less sugar, no artificial colors",
-  },
-  "Honey Nut Cheerios": {
-    ingredients: "Whole grain oats, sugar, oat bran, corn starch, honey, brown sugar syrup, salt, natural almond flavor, vitamin blend",
-    preference: "less sugar",
-  },
-};
-
-function el(id) { return document.getElementById(id); }
-function showToast(message) {
-  if (window?.scratchnscan?.showToast) return window.scratchnscan.showToast(message);
-}
-
-function resetDraftUi() {
-  draft.frontImagePreviewDataUrl = null;
-  draft.backImagePreviewDataUrl = null;
-  applyThumbToTile("front", null);
-  applyThumbToTile("back", null);
+function showError(message, { allowRetry = false } = {}) {
+  el("scan-error-msg").textContent = message;
+  el("scan-retry-btn").hidden = !allowRetry;
+  el("scan-error").hidden = false;
 }
 
 async function handlePhotoSelected(which, file) {
@@ -111,99 +104,54 @@ async function handlePhotoSelected(which, file) {
     if (which === "front") draft.frontImagePreviewDataUrl = dataUrl;
     if (which === "back") draft.backImagePreviewDataUrl = dataUrl;
     applyThumbToTile(which, dataUrl);
-    showToast(which === "front" ? "Front photo added" : "Back label photo added");
-  } catch (err) {
-    showToast(err?.message || "Could not use that photo. Try another.");
-  }
+    renderStartersVisibility();
+  } catch (err) { showToast(err?.message || "Could not use that photo. Try another."); }
 }
 
 function wirePhotoControls() {
-  document.querySelectorAll("[data-photo-trigger]").forEach((tile) => {
-    tile.addEventListener("click", () => {
-      const which = tile.dataset.photoTrigger;
-      const input = document.querySelector(`[data-photo-input="${which}"]`);
-      input?.click();
-    });
-  });
-  document.querySelectorAll("[data-photo-input]").forEach((input) => {
-    input.addEventListener("change", async (event) => {
-      const inputEl = event.currentTarget;
-      const which = inputEl?.dataset?.photoInput;
-      const file = inputEl?.files?.[0];
-      await handlePhotoSelected(which, file);
-      if (inputEl) inputEl.value = "";
-    });
-  });
-  document.querySelectorAll("[data-photo-replace]").forEach((btn) => {
-    btn.addEventListener("click", (event) => {
-      const which = event.currentTarget.dataset.photoReplace;
-      const input = document.querySelector(`[data-photo-input="${which}"]`);
-      input?.click();
-    });
-  });
-  document.querySelectorAll("[data-photo-remove]").forEach((btn) => {
-    btn.addEventListener("click", (event) => {
-      const which = event.currentTarget.dataset.photoRemove;
-      if (which === "front") draft.frontImagePreviewDataUrl = null;
-      if (which === "back") draft.backImagePreviewDataUrl = null;
-      applyThumbToTile(which, null);
-      showToast(which === "front" ? "Front photo removed" : "Back photo removed");
-    });
-  });
+  document.querySelectorAll("[data-photo-trigger]").forEach((tile) => tile.addEventListener("click", () => document.querySelector(`[data-photo-input="${tile.dataset.photoTrigger}"]`)?.click()));
+  document.querySelectorAll("[data-photo-input]").forEach((input) => input.addEventListener("change", async (event) => {
+    const inputEl = event.currentTarget;
+    const which = inputEl?.dataset?.photoInput;
+    const file = inputEl?.files?.[0];
+    await handlePhotoSelected(which, file);
+    if (inputEl) inputEl.value = "";
+  }));
+  document.querySelectorAll("[data-photo-replace]").forEach((btn) => btn.addEventListener("click", (event) => document.querySelector(`[data-photo-input="${event.currentTarget.dataset.photoReplace}"]`)?.click()));
+  document.querySelectorAll("[data-photo-remove]").forEach((btn) => btn.addEventListener("click", (event) => {
+    const which = event.currentTarget.dataset.photoRemove;
+    if (which === "front") draft.frontImagePreviewDataUrl = null;
+    if (which === "back") draft.backImagePreviewDataUrl = null;
+    applyThumbToTile(which, null);
+    renderStartersVisibility();
+  }));
 }
 
-export async function initScanView(step = null) {
-  // Wire listeners first so the form always works even if IDB is slow/failing.
+export async function initScanView() {
   if (!initialized) {
-    el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
-    el("manual-clear-btn")?.addEventListener("click", () => {
-      el("manual-lookup-form")?.reset();
-      el("scan-error").hidden = true;
-      resetDraftUi();
-      showToast("Form cleared");
-    });
-    el("scan-retry-btn")?.addEventListener("click", () => {
-      // The form keeps the user's input, so retry is simply another submit.
-      el("scan-error").hidden = true;
-      el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true }));
-    });
-    el("scan-edit-btn")?.addEventListener("click", () => setManualStep("details"));
-    el("manual-next-product")?.addEventListener("click", () => setManualStep("details"));
-    el("manual-back-details")?.addEventListener("click", () => setManualStep("product"));
-    el("manual-next-details")?.addEventListener("click", () => { renderReviewSummary(); setManualStep("review"); });
-    el("manual-edit-product")?.addEventListener("click", () => setManualStep("product"));
-    el("manual-edit-details")?.addEventListener("click", () => setManualStep("details"));
     wirePhotoControls();
+    el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
+    el("manual-continue-btn")?.addEventListener("click", () => {
+      if (!hasEnoughInput()) return showError("Add a product name, ingredient list, package photo, or starter first.");
+      renderConfirmCard();
+      el("manual-confirm-card").hidden = false;
+      showState("confirm");
+    });
+    el("manual-clear-btn")?.addEventListener("click", () => { el("manual-lookup-form")?.reset(); draft.frontImagePreviewDataUrl = null; draft.backImagePreviewDataUrl = null; applyThumbToTile("front", null); applyThumbToTile("back", null); showState("entry"); renderStartersVisibility(); });
+    el("scan-retry-btn")?.addEventListener("click", () => el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true })));
+    el("friendly-enter-name")?.addEventListener("click", () => { setMethod("typed"); showState("entry"); el("manual-friendly-error").hidden = true; });
+    el("friendly-retry-photos")?.addEventListener("click", () => { setMethod("photos"); showState("entry"); el("manual-friendly-error").hidden = true; });
+    document.querySelectorAll("[data-method]").forEach((btn) => btn.addEventListener("click", () => setMethod(btn.dataset.method)));
+    ["product-name-input", "ingredients-input", "dietary-input", "barcode-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
     initialized = true;
   }
-  try {
-    await refreshUsageStrips();
-  } catch (err) {
-    console.warn("refreshUsageStrips (manual) failed", err);
-  }
-  setManualStep(step || currentManualStep);
+  await refreshUsageStrips();
+  showState("entry");
+  setMethod(inputMethod);
+  renderStartersVisibility();
 }
 
-export function applySample(name) {
-  const sample = SAMPLES[name];
-  if (!sample) return;
-  const product = el("product-name-input");
-  const ing = el("ingredients-input");
-  const pref = el("dietary-input");
-  if (product) product.value = name;
-  if (ing) ing.value = sample.ingredients;
-  if (pref) pref.value = sample.preference;
-  el("scan-error").hidden = true;
-}
-
-function showError(message, { allowRetry = false } = {}) {
-  const box = el("scan-error");
-  const msg = el("scan-error-msg");
-  const retry = el("scan-retry-btn");
-  if (msg) msg.textContent = message;
-  if (retry) retry.hidden = !allowRetry;
-  if (box) box.hidden = false;
-}
+export function applySample(name) { if (el("product-name-input")) el("product-name-input").value = name; renderStartersVisibility(); }
 
 export function setManualStep(step = "product") {
   currentManualStep = step;
@@ -240,41 +188,24 @@ function renderReviewSummary() {
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
-
-  setManualStep("creating");
   el("scan-error").hidden = true;
+  el("manual-friendly-error").hidden = true;
+
   let productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
   const dietaryPreference = (el("dietary-input")?.value || "").trim();
   const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
   const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || null;
-  const hasPhoto = !!draft.frontImagePreviewDataUrl || !!draft.backImagePreviewDataUrl;
-  const hasTypedContext = Boolean(productName || inputIngredients || dietaryPreference);
-  const hasImageContext = hasPhoto;
-  const hasStarterContext = Boolean(productName);
 
-  if (!hasTypedContext && !hasImageContext && !hasStarterContext) {
-    setManualStep("review");
-    showError("Add a product name, ingredient list, package photo, or starter first.");
-    el("product-name-input")?.focus();
-    return;
-  }
-
-  // Gate before doing any generation work.
+  if (!hasEnoughInput()) return showError("Add a product name, ingredient list, package photo, or starter first.");
   const allowed = await canGenerate();
-  if (!allowed) {
-    window.location.hash = "#upgrade";
-    return;
-  }
+  if (!allowed) { window.location.hash = "#upgrade"; return; }
 
-
+  showState("creating");
   submitting = true;
   const submitBtn = el("scan-submit-btn");
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Generating…";
-  }
+  if (submitBtn) submitBtn.disabled = true;
   const loadingEl = el("scan-loading");
   if (loadingEl) loadingEl.hidden = false;
   progress = createGenerationProgress(loadingEl);
@@ -282,9 +213,8 @@ async function handleSubmit(event) {
 
   const frontImagePreviewDataUrl = draft.frontImagePreviewDataUrl || null;
   const backImagePreviewDataUrl = draft.backImagePreviewDataUrl || null;
-
   const flowResult = await runGenerationFlow({
-    input: { productName, inputIngredients, dietaryPreference, barcode, hasTypedContext },
+    input: { productName, inputIngredients, dietaryPreference, barcode, hasTypedContext: Boolean(productName || inputIngredients || dietaryPreference) },
     photos: { frontImagePreviewDataUrl, backImagePreviewDataUrl },
     services: { generateScratchRecipe, buildDeterministicScratchRecipe, recordSuccessfulGeneration, refreshUsageStrips, normalizeProductContext },
     callbacks: {
@@ -297,13 +227,15 @@ async function handleSubmit(event) {
     },
     options: { timeoutMs: aiTimeoutMs },
   });
+
   if (flowResult.status === "correction-needed") {
-    setManualStep("review");
+    showState("confirm");
+    el("manual-friendly-error").hidden = false;
     showError(flowResult.message, { allowRetry: true });
     return;
   }
   if (flowResult.status === "error") {
-    setManualStep("creating");
+    showState("entry");
     showError(flowResult.message, { allowRetry: true });
     if (flowResult.errorCode !== "timeout") console.error("manual generation failed", flowResult);
   }
