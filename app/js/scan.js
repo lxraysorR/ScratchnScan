@@ -82,14 +82,12 @@ function renderConfirmCard() {
 function showState(next) {
   state = next;
   el("manual-creating-state").hidden = next !== "creating";
-  const entryParts = ["manual-confirm-card", "manual-friendly-error", "scan-error", "manual-continue-btn", "manual-clear-btn"];
+  const entryParts = ["manual-confirm-card", "manual-friendly-error", "scan-error", "manual-clear-btn"];
   entryParts.forEach((id) => { const node = el(id); if (node) node.hidden = next === "creating"; });
   const submit = el("scan-submit-btn");
-  if (submit) submit.hidden = next !== "confirm";
+  if (submit) submit.hidden = next === "creating";
   if (next === "entry") {
     el("manual-confirm-card").hidden = true;
-    submit.hidden = true;
-    el("manual-continue-btn").hidden = false;
     el("manual-clear-btn").hidden = false;
   }
 }
@@ -143,17 +141,6 @@ export async function initScanView(mode = "typed") {
   if (!initialized) {
     wirePhotoControls();
     el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
-    el("manual-continue-btn")?.addEventListener("click", () => {
-      if (!hasEnoughInput()) {
-        const msg = inputMethod === "photos"
-          ? "Add at least one package photo to continue."
-          : "Enter a product name or preference to continue.";
-        return showError(msg);
-      }
-      renderConfirmCard();
-      el("manual-confirm-card").hidden = false;
-      showState("confirm");
-    });
     el("manual-clear-btn")?.addEventListener("click", () => {
       el("manual-lookup-form")?.reset();
       draft.frontImagePreviewDataUrl = null;

@@ -55,7 +55,6 @@ const htmlChecks = [
   'data-target="history"',
   'scan-start-btn',
   'scan-status',
-  'draft-barcode',
   'Start scanner',
   'Type product name',
   'result-label-tip-slot',

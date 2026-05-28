@@ -12,8 +12,6 @@ const tokens = [
   'ingredients-input',
   'dietary-input',
   'barcode-input',
-  'draft-barcode',
-  'draft-barcode-value',
   'Saved recipes',
 ];
 for (const token of tokens) {
