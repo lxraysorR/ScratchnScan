@@ -70,7 +70,10 @@ export function createGenerationProgress(container, options = {}) {
     list.appendChild(li);
     return { li, mark };
   });
-  container.append(head, list);
+  const note = document.createElement("p");
+  note.className = "gp-note";
+  note.textContent = "This usually takes a few seconds. Your details stay here if we need you to review anything.";
+  container.append(head, list, note);
 
   function render() {
     const stage = stages[index] || stages[stages.length - 1];

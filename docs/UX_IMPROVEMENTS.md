@@ -137,7 +137,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - Style as `font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center;`
   - No change to timing logic.
 - **Risk:** LOW — additive UI only.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `gp-note` paragraph appended after stage list in `progress.js`; `.gp-note` rule added to `styles.css`.
 
 ---
 
