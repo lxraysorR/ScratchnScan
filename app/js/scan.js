@@ -153,6 +153,38 @@ export async function initScanView() {
 
 export function applySample(name) { if (el("product-name-input")) el("product-name-input").value = name; renderStartersVisibility(); }
 
+export function setManualStep(step = "product") {
+  currentManualStep = step;
+  document.querySelectorAll("[data-manual-step]").forEach((section) => {
+    section.hidden = section.dataset.manualStep !== step;
+  });
+  const order = ["product", "details", "review", "creating"];
+  const idx = order.indexOf(step);
+  document.querySelectorAll("[data-step-dot]").forEach((dot) => {
+    const dotIdx = order.indexOf(dot.dataset.stepDot);
+    dot.classList.toggle("is-active", dotIdx === idx);
+    dot.classList.toggle("is-done", dotIdx > -1 && dotIdx < idx);
+  });
+}
+
+function renderReviewSummary() {
+  const card = el("manual-review-summary");
+  if (!card) return;
+  const productName = (el("product-name-input")?.value || "").trim() || "Not added";
+  const ingredients = (el("ingredients-input")?.value || "").trim();
+  const preference = (el("dietary-input")?.value || "").trim() || "None";
+  const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
+  const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
+  const barcode = draftBarcode || manualBarcode || "None";
+  card.innerHTML = `<h3>Review before creating</h3>
+    <p><strong>Product name:</strong> ${productName}</p>
+    <p><strong>Front photo added:</strong> ${draft.frontImagePreviewDataUrl ? "Yes" : "No"}</p>
+    <p><strong>Back label photo added:</strong> ${draft.backImagePreviewDataUrl ? "Yes" : "No"}</p>
+    <p><strong>Ingredients added:</strong> ${ingredients ? "Yes" : "No"}</p>
+    <p><strong>Preference:</strong> ${preference}</p>
+    <p><strong>Barcode:</strong> ${barcode}</p>`;
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
