@@ -134,8 +134,8 @@ export async function runGenerationFlow({ input, photos, services, callbacks = {
           originalProductName: recipeInput.productName,
           summary: ai?.recipe?.plainEnglishExplanation || "AI-assisted scratch recipe.",
           healthGoal: aiRecipe.healthGoal || "Use simpler, less processed ingredients while keeping familiar flavor.",
-          whyHealthier: Array.isArray(aiRecipe.whyLessProcessed) ? aiRecipe.whyLessProcessed
-            : Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner : [],
+          whyCleaner: Array.isArray(aiRecipe.whyCleaner) ? aiRecipe.whyCleaner
+            : Array.isArray(aiRecipe.whyLessProcessed) ? aiRecipe.whyLessProcessed : [],
           tags: ["homemade", "less processed", "simple ingredients"],
           createdAt: new Date().toISOString(),
           ingredients: (aiRecipe.ingredients || []).map((x) => x.item || x),

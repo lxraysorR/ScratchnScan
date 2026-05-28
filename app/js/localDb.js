@@ -233,6 +233,7 @@ async function putUsageState(state) {
 }
 
 export async function canGenerate() {
+  if (new URLSearchParams(location.search).has("demo")) return true;
   const state = await getUsageState();
   if (state.isLocalPremiumUnlocked) return true;
   return state.successfulGenerationCount < state.freeGenerationLimit;

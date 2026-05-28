@@ -98,7 +98,7 @@ export async function refreshUsageStrips() {
     if (state.isLocalPremiumUnlocked) {
       homeStrip.textContent = "Developer unlock active. Unlimited creations on this device.";
     } else if (copy.blocked) {
-      homeStrip.textContent = "Free creations used. Upgrade coming soon.";
+      homeStrip.textContent = "You've used your 10 free recipes. More coming soon.";
     } else if (state.successfulGenerationCount === 0) {
       homeStrip.textContent = `${FREE_GENERATION_LIMIT} free homemade creations included on this device.`;
     } else {

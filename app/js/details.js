@@ -1,19 +1,11 @@
 import { getMvpRecipeById, toggleMvpFavorite, deleteMvpRecipe } from "./localDb.js";
 import { showToast } from "./app.js";
 import { normalizeProductContext } from "./productContext.js";
+import { escapeHtml, renderAccordion, renderProductSummaryInto, renderUnderstoodPanelInto, renderQuickFactsInto } from "./resultComponents.js";
 
 function el(id) { return document.getElementById(id); }
 
 let busy = false;
-
-function escapeHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -46,36 +38,6 @@ function renderMetrics(container, { ingredients, steps }) {
     <div class="metric"><strong>10m</strong><span>Estimate</span></div>
   `;
 }
-function confidenceText(ctx) {
-  if (ctx.confidenceLabel === "high") return "High confidence";
-  if (ctx.confidenceLabel === "medium") return "Medium confidence";
-  if (ctx.confidenceLabel === "low") return "Low confidence — please review";
-  return "Unknown confidence — add details to improve";
-}
-function renderAccordion(section, openByDefault) {
-  if (!section) return;
-  const title = section.querySelector("h3");
-  if (!title) return;
-  const label = title.textContent;
-  const content = [...section.children].filter((n) => n !== title);
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "accordion-toggle";
-  btn.setAttribute("aria-expanded", openByDefault ? "true" : "false");
-  btn.textContent = label;
-  const body = document.createElement("div");
-  body.className = "recipe-accordion-content";
-  if (!openByDefault) body.hidden = true;
-  content.forEach((n) => body.appendChild(n));
-  btn.onclick = () => {
-    const next = btn.getAttribute("aria-expanded") !== "true";
-    btn.setAttribute("aria-expanded", String(next));
-    body.hidden = !next;
-  };
-  section.innerHTML = "";
-  section.append(btn, body);
-}
-
 export async function initDetailsView(id) {
   const record = await getMvpRecipeById(id);
   if (!record) { window.location.hash = "#history"; return; }
@@ -100,25 +62,9 @@ export async function initDetailsView(id) {
     : (record.scratchRecipe?.tips || []);
 
   renderBadges(el("details-badges"), { favorite: fav, fallbackUsed: !!record.fallbackUsed });
-  el("details-product-summary").innerHTML = `
-    <h3>Product detected</h3>
-    <p><strong>${productContext.productName || "Saved homemade target"}</strong></p>
-    <p class="details-meta">${[productContext.brand, productContext.category, productContext.flavor].filter(Boolean).join(" · ")}</p>
-    <p class="details-meta">${[productContext.source ? `Detected from ${productContext.source}` : "", confidenceText(productContext)].filter(Boolean).join(" · ")}</p>
-  `;
-  const understoodRows = [
-    productContext.productName ? `<div class="understood-row"><strong>Product:</strong> ${productContext.productName}</div>` : "",
-    productContext.ingredientsText ? `<div class="understood-row"><strong>Ingredients read:</strong> ${escapeHtml(productContext.ingredientsText)}</div>` : "",
-    productContext.claims?.length ? `<div class="understood-row"><strong>Claims read:</strong> ${productContext.claims.join(", ")}</div>` : "",
-    `<div class="understood-row"><strong>Source:</strong> ${productContext.source || "unknown"}</div>`,
-    `<div class="understood-row"><strong>Confidence:</strong> ${confidenceText(productContext)}</div>`,
-  ].filter(Boolean);
-  el("details-understood-panel").innerHTML = `<h3>What the app understood</h3>${understoodRows.join("")}`;
-  el("details-quick-facts").innerHTML = `
-    <div class="quick-fact"><span>Method</span><strong>${/(bake|air[- ]?fry)/i.test(stepsList.join(" ")) ? "Bake / air fry" : "Homemade"}</strong></div>
-    <div class="quick-fact"><span>Time</span><strong>${(() => { const t = (record.scratchRecipe?.prepTimeMinutes || 0) + (record.scratchRecipe?.cookTimeMinutes || 0); return t > 0 ? `${t} min` : "Varies"; })()}</strong></div>
-    <div class="quick-fact"><span>Base</span><strong>${(productContext.detectedIngredients?.[0] || productContext.category || "Pantry staples")}</strong></div>
-  `;
+  renderProductSummaryInto(el("details-product-summary"), productContext, "Saved homemade target");
+  renderUnderstoodPanelInto(el("details-understood-panel"), productContext);
+  renderQuickFactsInto(el("details-quick-facts"), record.scratchRecipe, productContext);
 
   el("details-name").textContent = recipeTitle;
   const metaBits = [
@@ -167,7 +113,7 @@ export async function initDetailsView(id) {
     goalEl.hidden = !healthGoal;
   }
 
-  const whyList = record.scratchRecipe?.whyHealthier || record.scratchRecipe?.whyCleaner || [];
+  const whyList = record.scratchRecipe?.whyCleaner || record.scratchRecipe?.whyHealthier || [];
   const whyBlock = el("details-why-block");
   const whyEl = el("details-why");
   if (whyEl && whyBlock) {

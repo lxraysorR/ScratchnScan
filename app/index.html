@@ -11,6 +11,17 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!-- Desktop-only marketing panel — hidden on mobile via CSS -->
+    <aside class="desktop-promo" aria-hidden="true">
+      <span class="desktop-promo-eyebrow">Scratch-N-Scan</span>
+      <h2 class="desktop-promo-title">Turn packaged snacks into homemade recipes.</h2>
+      <p class="desktop-promo-sub">Scan a barcode, upload the front and back of a package, or type the product name. We create a simpler homemade version with real ingredients and clear steps.</p>
+      <ul class="desktop-promo-features">
+        <li>Works offline — no account needed</li>
+        <li>10 free recipes on your device</li>
+        <li>Barcode, photo scan, or typed entry</li>
+      </ul>
+    </aside>
     <div class="app">
       <header class="topbar">
         <a href="#home" class="brand" aria-label="ScratchnScan home">
@@ -46,8 +57,8 @@
         <!-- HOME -->
         <section id="view-home" class="screen" aria-label="Home">
           <div class="hero">
-            <span class="eyebrow">Homemade alternatives in seconds</span>
-            <h1 class="hero-title">Pick how you want to start.</h1>
+            <span class="eyebrow">Real ingredients. No packaged shortcuts.</span>
+            <h1 class="hero-title">Turn packaged snacks into homemade recipes.</h1>
             <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
             <div class="hero-actions">
               <button class="btn btn-primary" type="button" data-go="manual/typed">Create Homemade Version</button>
@@ -57,8 +68,8 @@
           </div>
 
           <div class="section-head">
-            <h2>Start with one clear path</h2>
-            <p>Separate scanner, photos, and manual details so it never feels like one crowded form.</p>
+            <h2>Choose how to add your packaged food</h2>
+            <p>Start with a barcode, package photos, typed details, or a popular example.</p>
           </div>
 
           <nav class="start-grid" aria-label="Ways to start">
@@ -170,6 +181,11 @@
                 <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Doritos Cool Ranch, Pink Salt Chips" autocomplete="off" />
               </div>
               <div class="field">
+                <label class="label" for="ingredients-input">Ingredients or package text <span class="optional">(optional)</span></label>
+                <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste the ingredients list from the back of the package." autocomplete="off"></textarea>
+                <p class="helper">More detail = more accurate homemade version.</p>
+              </div>
+              <div class="field">
                 <label class="label" for="dietary-input">Preference <span class="optional">(optional)</span></label>
                 <input id="dietary-input" class="input" type="text" placeholder="less sugar, dairy-free, no seed oils" autocomplete="off" />
               </div>
@@ -208,12 +224,12 @@
 
             <!-- hidden inputs preserved for JS compatibility -->
             <input id="barcode-input" type="hidden" />
-            <textarea id="ingredients-input" hidden></textarea>
 
             <section id="manual-confirm-card" class="review-card" hidden></section>
 
             <div id="manual-friendly-error" class="alert alert-info" hidden>
-              <p>We could not identify this product with confidence. You can still continue by entering the product name.</p>
+              <strong>Help us confirm this package</strong>
+              <p>We found some label details but need a little more to create the best homemade version. Add the product name or ingredient list below.</p>
               <div class="form-actions form-actions-inline">
                 <button type="button" class="btn btn-ghost" id="friendly-enter-name">Enter product name</button>
                 <button type="button" class="btn btn-ghost" id="friendly-retry-photos">Try photos again</button>
@@ -252,20 +268,8 @@
             <h2 class="result-title" id="result-name"></h2>
             <p class="result-original" id="result-original"></p>
             <p class="result-summary" id="result-summary"></p>
-            <div class="product-summary-card" id="result-product-summary"></div>
-            <div class="understood-panel" id="result-understood-panel"></div>
             <div class="quick-facts" id="result-quick-facts"></div>
             <div id="result-label-tip-slot"></div>
-
-            <section class="recipe-block" id="result-health-goal-block">
-              <h3>Health goal</h3>
-              <p id="result-health-goal"></p>
-            </section>
-
-            <section class="recipe-block recipe-accordion" id="result-why-block" hidden>
-              <h3>Why this is healthier</h3>
-              <ul id="result-why" class="bullet-list"></ul>
-            </section>
 
             <section class="recipe-block recipe-accordion">
               <h3>Ingredients</h3>
@@ -277,9 +281,22 @@
               <ol id="result-homemade-steps" class="step-list"></ol>
             </section>
 
+            <section class="recipe-block" id="result-health-goal-block">
+              <h3>Health goal</h3>
+              <p id="result-health-goal"></p>
+            </section>
+
             <section class="recipe-block recipe-accordion" id="result-tips-block" hidden>
               <h3>Tips</h3>
               <ul id="result-tips" class="bullet-list"></ul>
+            </section>
+
+            <section class="recipe-block recipe-accordion" id="result-understood-panel"></section>
+            <section class="recipe-block recipe-accordion" id="result-product-summary"></section>
+
+            <section class="recipe-block recipe-accordion" id="result-why-block" hidden>
+              <h3>Why this is cleaner</h3>
+              <ul id="result-why" class="bullet-list"></ul>
             </section>
 
             <p class="disclaimer" id="result-note"></p>
@@ -301,23 +318,24 @@
         <section id="view-upgrade" class="screen" aria-label="Upgrade ScratchnScan" hidden>
           <article class="upgrade-card">
             <span class="eyebrow">ScratchnScan Plus</span>
-            <h2 class="upgrade-title">Keep creating homemade swaps</h2>
-            <p class="upgrade-body">You've used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
+            <h2 class="upgrade-title">You've hit the free limit</h2>
+            <p class="upgrade-body">Paid tier is coming soon — no payment needed today. Browse the recipes you've already saved.</p>
             <!-- TODO: Phase 2 — pricing tiers ($4.99/mo, $29.99/yr) go here -->
             <div class="form-actions">
-              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn" hidden>Upgrade coming soon</button>
-              <button class="btn btn-ghost" type="button" data-go="history">View saved ideas</button>
-              <button class="btn btn-ghost" type="button" data-go="manual/typed">Edit existing recipes</button>
+              <button class="btn btn-ghost" type="button" data-go="history">View saved recipes</button>
             </div>
+            <p id="dev-reset-link" class="dev-reset-link" hidden>
+              <button type="button" id="dev-reset-btn" class="btn-link">Reset for demo</button>
+            </p>
             <p class="disclaimer">No account or signup required. Your 10 free creations live on this device.</p>
           </article>
         </section>
 
         <!-- HISTORY -->
-        <section id="view-history" class="screen" aria-label="Saved ideas" hidden>
+        <section id="view-history" class="screen" aria-label="Saved recipes" hidden>
           <div class="section-head">
-            <h2>Saved ideas</h2>
-            <p>Your local recipe playbook for cleaner homemade swaps.</p>
+            <h2>Saved recipes</h2>
+            <p>Your homemade versions, saved locally on this device.</p>
           </div>
           <ul id="history-list" class="history-list" role="list"></ul>
           <div id="history-empty" class="empty-state" hidden>
@@ -358,7 +376,7 @@
             <p class="result-healthgoal" id="details-healthgoal" hidden></p>
 
             <section class="recipe-block recipe-accordion" id="details-why-block" hidden>
-              <h3>Why this is healthier</h3>
+              <h3>Why this is cleaner</h3>
               <ul id="details-why" class="bullet-list"></ul>
             </section>
 
