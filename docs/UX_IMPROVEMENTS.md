@@ -51,7 +51,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
 - **Problem:** `details.js` was fixed in U-02 to compute time from `prepTimeMinutes + cookTimeMinutes`, but `result.js` still uses `"35–50 min"`.
 - **Fix:** Apply the identical IIFE pattern: `${(() => { const t = (record.scratchRecipe?.prepTimeMinutes || 0) + (record.scratchRecipe?.cookTimeMinutes || 0); return t > 0 ? \`${t} min\` : "Varies"; })()}`
 - **Risk:** LOW — pure display fix, no logic change.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — applied same IIFE pattern as `details.js`; falls back to "Varies" when both fields absent.
 
 ---
 

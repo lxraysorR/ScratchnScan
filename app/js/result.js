@@ -116,7 +116,7 @@ export function initResultView() {
   el("result-understood-panel").innerHTML = `<h3>What the app understood</h3>${understoodRows.join("")}<p class="helper">We use these details to make the homemade version more specific. Ingredients matter most because they show what the packaged food is made from.</p>`;
   el("result-quick-facts").innerHTML = `
     <div class="quick-fact"><span>Method</span><strong>${/(bake|air[- ]?fry)/i.test(record.scratchRecipe.steps?.join(" ")) ? "Bake / air fry" : "Homemade"}</strong></div>
-    <div class="quick-fact"><span>Time</span><strong>${record.scratchRecipe.steps?.length ? "35–50 min" : "Varies"}</strong></div>
+    <div class="quick-fact"><span>Time</span><strong>${(() => { const t = (record.scratchRecipe?.prepTimeMinutes || 0) + (record.scratchRecipe?.cookTimeMinutes || 0); return t > 0 ? `${t} min` : "Varies"; })()}</strong></div>
     <div class="quick-fact"><span>Base</span><strong>${(productContext.detectedIngredients?.[0] || productContext.category || "Pantry staples")}</strong></div>
   `;
   el("result-name").textContent = record.scratchRecipe.title;
