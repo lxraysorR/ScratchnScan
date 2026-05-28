@@ -31,6 +31,7 @@ let initialized = false;
 let submitting = false;
 let progress = null;
 let currentManualStep = "product";
+let selectedInputMethod = "typed";
 
 // Upper bound for the AI request. The deterministic fallback is synchronous, so
 // the network call is the only thing that can stall the flow. Overridable in
@@ -159,20 +160,22 @@ export async function initScanView(step = null) {
     el("manual-clear-btn")?.addEventListener("click", () => {
       el("manual-lookup-form")?.reset();
       el("scan-error").hidden = true;
+  el("friendly-recovery").hidden = true;
       resetDraftUi();
       showToast("Form cleared");
     });
     el("scan-retry-btn")?.addEventListener("click", () => {
       // The form keeps the user's input, so retry is simply another submit.
       el("scan-error").hidden = true;
+  el("friendly-recovery").hidden = true;
       el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true }));
     });
-    el("scan-edit-btn")?.addEventListener("click", () => setManualStep("details"));
-    el("manual-next-product")?.addEventListener("click", () => setManualStep("details"));
-    el("manual-back-details")?.addEventListener("click", () => setManualStep("product"));
-    el("manual-next-details")?.addEventListener("click", () => { renderReviewSummary(); setManualStep("review"); });
+    el("scan-edit-btn")?.addEventListener("click", () => setManualStep("product"));
+    el("manual-next-product")?.addEventListener("click", () => { renderReviewSummary(); setManualStep("review"); });
     el("manual-edit-product")?.addEventListener("click", () => setManualStep("product"));
-    el("manual-edit-details")?.addEventListener("click", () => setManualStep("details"));
+    el("friendly-enter-name")?.addEventListener("click", () => { selectInputMethod("typed"); setManualStep("product"); el("product-name-input")?.focus(); });
+    el("friendly-retry-photos")?.addEventListener("click", () => { selectInputMethod("photos"); setManualStep("product"); });
+    document.querySelectorAll("[data-input-method]").forEach((btn) => btn.addEventListener("click", () => selectInputMethod(btn.dataset.inputMethod || "typed")));
     wirePhotoControls();
     initialized = true;
   }
@@ -182,6 +185,8 @@ export async function initScanView(step = null) {
     console.warn("refreshUsageStrips (manual) failed", err);
   }
   setManualStep(step || currentManualStep);
+  selectInputMethod(selectedInputMethod);
+  ["product-name-input","ingredients-input","dietary-input","barcode-input"].forEach((id)=> el(id)?.addEventListener("input", updatePopularStartersVisibility));
 }
 
 export function applySample(name) {
@@ -194,6 +199,7 @@ export function applySample(name) {
   if (ing) ing.value = sample.ingredients;
   if (pref) pref.value = sample.preference;
   el("scan-error").hidden = true;
+  el("friendly-recovery").hidden = true;
 }
 
 function showError(message, { allowRetry = false } = {}) {
@@ -212,13 +218,23 @@ export function setManualStep(step = "product") {
   });
   const order = ["product", "details", "review", "creating"];
   const idx = order.indexOf(step);
-  document.querySelectorAll("[data-step-dot]").forEach((dot) => {
-    const dotIdx = order.indexOf(dot.dataset.stepDot);
-    dot.classList.toggle("is-active", dotIdx === idx);
-    dot.classList.toggle("is-done", dotIdx > -1 && dotIdx < idx);
-  });
+  updatePopularStartersVisibility();
 }
 
+
+function updatePopularStartersVisibility() {
+  const wrap = el("manual-popular-starters-wrap");
+  if (!wrap) return;
+  const hasInput = Boolean((el("product-name-input")?.value || "").trim() || (el("ingredients-input")?.value || "").trim() || (el("dietary-input")?.value || "").trim() || (el("barcode-input")?.value || "").trim() || draft.frontImagePreviewDataUrl || draft.backImagePreviewDataUrl || getDraftBarcode?.());
+  wrap.hidden = hasInput || currentManualStep !== "product";
+}
+
+function selectInputMethod(method = "typed") {
+  selectedInputMethod = method;
+  document.querySelectorAll("[data-input-method]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.inputMethod === method));
+  document.querySelectorAll("[data-method-panel]").forEach((panel) => { panel.hidden = panel.dataset.methodPanel !== method; });
+  updatePopularStartersVisibility();
+}
 function renderReviewSummary() {
   const card = el("manual-review-summary");
   if (!card) return;
@@ -228,12 +244,12 @@ function renderReviewSummary() {
   const draftBarcode = normalizeBarcode(getDraftBarcode?.() || "");
   const manualBarcode = normalizeBarcode(document.getElementById("barcode-input")?.value || "");
   const barcode = draftBarcode || manualBarcode || "None";
-  card.innerHTML = `<h3>Review before creating</h3>
+  card.innerHTML = `<h3>Ready to create</h3>
     <p><strong>Product name:</strong> ${productName}</p>
-    <p><strong>Front photo added:</strong> ${draft.frontImagePreviewDataUrl ? "Yes" : "No"}</p>
-    <p><strong>Back label photo added:</strong> ${draft.backImagePreviewDataUrl ? "Yes" : "No"}</p>
+    <p><strong>Product:</strong> ${productName}</p>
+    <p><strong>Input source:</strong> ${selectedInputMethod}</p>
+    <p><strong>Preferences:</strong> ${preference}</p>
     <p><strong>Ingredients added:</strong> ${ingredients ? "Yes" : "No"}</p>
-    <p><strong>Preference:</strong> ${preference}</p>
     <p><strong>Barcode:</strong> ${barcode}</p>`;
 }
 
@@ -243,6 +259,7 @@ async function handleSubmit(event) {
 
   setManualStep("creating");
   el("scan-error").hidden = true;
+  el("friendly-recovery").hidden = true;
   let productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
   const dietaryPreference = (el("dietary-input")?.value || "").trim();
@@ -299,6 +316,8 @@ async function handleSubmit(event) {
   });
   if (flowResult.status === "correction-needed") {
     setManualStep("review");
+    const recovery = el("friendly-recovery");
+    if (recovery) recovery.hidden = false;
     showError(flowResult.message, { allowRetry: true });
     return;
   }
