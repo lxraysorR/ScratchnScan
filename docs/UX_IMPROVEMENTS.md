@@ -169,7 +169,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   10. Why this is cleaner (accordion)
 - **Fix:** Reorder elements in `index.html` inside `#view-result article`. No JS change needed — `result.js` populates by element ID, not DOM order.
 - **Risk:** MEDIUM — DOM reorder. Test that sticky action bar still appears at bottom and that all IDs are present.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — elements reordered in `index.html`; product-summary and understood-panel changed to `section.recipe-block.recipe-accordion`; two `renderAccordion(…, false)` calls added in `result.js` after innerHTML population.
 
 ---
 
