@@ -77,7 +77,7 @@ function renderBadges(fallbackUsed) {
 
   const second = document.createElement("span");
   second.className = "badge warm";
-  second.textContent = fallbackUsed ? "MVP fallback" : "Local MVP";
+  second.textContent = fallbackUsed ? "Built-in recipe" : "On-device";
   row.appendChild(second);
 }
 
@@ -194,18 +194,16 @@ export function initResultView() {
       if (id) {
         showToast("Recipe saved.");
         window.location.hash = `#details/${id}`;
-      } else {
-        showToast("Recipe could not be saved. Please try again.");
-        saveBtn.textContent = "Save Recipe";
-        saveBtn.disabled = false;
-        saving = false;
+        return;
       }
+      showToast("Recipe could not be saved. Please try again.");
     } catch (err) {
       console.error("save recipe failed", err);
       showToast("Recipe could not be saved. Please try again.");
+    } finally {
+      saving = false;
       saveBtn.textContent = "Save Recipe";
       saveBtn.disabled = false;
-      saving = false;
     }
   };
 }

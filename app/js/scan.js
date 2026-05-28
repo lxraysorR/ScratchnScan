@@ -255,7 +255,7 @@ async function handleSubmit(event) {
   if (flowResult.status === "correction-needed") {
     showState("confirm");
     el("manual-friendly-error").hidden = false;
-    showError(flowResult.message, { allowRetry: true });
+    showError(flowResult.message);
     return;
   }
   if (flowResult.status === "error") {

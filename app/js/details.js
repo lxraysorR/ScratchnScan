@@ -116,7 +116,7 @@ export async function initDetailsView(id) {
   el("details-understood-panel").innerHTML = `<h3>What the app understood</h3>${understoodRows.join("")}`;
   el("details-quick-facts").innerHTML = `
     <div class="quick-fact"><span>Method</span><strong>${/(bake|air[- ]?fry)/i.test(stepsList.join(" ")) ? "Bake / air fry" : "Homemade"}</strong></div>
-    <div class="quick-fact"><span>Time</span><strong>${stepsList.length ? "35–50 min" : "Varies"}</strong></div>
+    <div class="quick-fact"><span>Time</span><strong>${(() => { const t = (record.scratchRecipe?.prepTimeMinutes || 0) + (record.scratchRecipe?.cookTimeMinutes || 0); return t > 0 ? `${t} min` : "Varies"; })()}</strong></div>
     <div class="quick-fact"><span>Base</span><strong>${(productContext.detectedIngredients?.[0] || productContext.category || "Pantry staples")}</strong></div>
   `;
 
