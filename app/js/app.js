@@ -1,6 +1,6 @@
 import { initScanView, applySample } from "./scan.js";
 import { getPopularItems } from "./api.js";
-import { renderPopularChips, STARTER_PANTRY_ITEMS } from "./popularChips.js";
+import { renderPopularChips, renderManualChips, STARTER_PANTRY_ITEMS } from "./popularChips.js";
 import { initPackageEntry, refreshBarcodeBanner } from "./packageEntry.js";
 import { initResultView } from "./result.js";
 import { initHistoryView } from "./history.js";
@@ -187,6 +187,7 @@ window.addEventListener("hashchange", route);
 wireGlobalActions();
 renderLabelLiteracyTips();
 renderPopularChips([]);
+renderManualChips();
 route();
 void loadPopularItems();
 

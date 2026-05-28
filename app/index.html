@@ -182,7 +182,7 @@
                   <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
                     <strong>Add front photo</strong>
                     <em>Front of the package</em>
-                    <img class="photo-thumb" alt="" hidden />
+                    <img class="photo-thumb" alt="" aria-hidden="true" hidden />
                   </button>
                   <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
                   <div class="photo-actions" data-photo-actions="front" hidden>
@@ -194,7 +194,7 @@
                   <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
                     <strong>Add back photo</strong>
                     <em>Back label with ingredients</em>
-                    <img class="photo-thumb" alt="" hidden />
+                    <img class="photo-thumb" alt="" aria-hidden="true" hidden />
                   </button>
                   <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
                   <div class="photo-actions" data-photo-actions="back" hidden>
@@ -241,13 +241,7 @@
               <h2>Popular starters</h2>
               <p>One tap prefills the form.</p>
             </div>
-            <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
-              <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
-              <button class="chip" type="button" data-sample="Oreos">Oreos</button>
-              <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
-              <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
-              <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
-            </div>
+            <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods"></div>
           </div>
         </section>
 
@@ -309,19 +303,9 @@
             <span class="eyebrow">ScratchnScan Plus</span>
             <h2 class="upgrade-title">Keep creating homemade swaps</h2>
             <p class="upgrade-body">You've used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
-            <div class="upgrade-offer">
-              <div class="upgrade-offer-row">
-                <strong>$4.99</strong>
-                <span>/ month</span>
-              </div>
-              <div class="upgrade-offer-row subtle">
-                <strong>$29.99</strong>
-                <span>/ year</span>
-              </div>
-              <p class="helper upgrade-offer-note">Placeholder pricing. No payment is collected today.</p>
-            </div>
+            <!-- TODO: Phase 2 — pricing tiers ($4.99/mo, $29.99/yr) go here -->
             <div class="form-actions">
-              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn">Upgrade coming soon</button>
+              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn" hidden>Upgrade coming soon</button>
               <button class="btn btn-ghost" type="button" data-go="history">View saved ideas</button>
               <button class="btn btn-ghost" type="button" data-go="manual/typed">Edit existing recipes</button>
             </div>

@@ -5,6 +5,14 @@
 
 export const STARTER_PANTRY_ITEMS = ["Cream Cheese", "Mayo", "Mustard", "Ketchup", "Tomato Sauce"];
 
+export const MANUAL_STARTER_ITEMS = [
+  "Doritos Cool Ranch",
+  "Oreos",
+  "Kraft Mac and Cheese",
+  "Pop-Tarts",
+  "Honey Nut Cheerios",
+];
+
 export function pickChipNames(items, limit = 5) {
   const seen = new Set();
   const picked = [];
@@ -17,6 +25,21 @@ export function pickChipNames(items, limit = 5) {
     if (picked.length >= limit) break;
   }
   return picked.length ? picked : STARTER_PANTRY_ITEMS.slice(0, limit);
+}
+
+export function renderManualChips(
+  container = (typeof document !== "undefined" ? document.getElementById("manual-samples") : null),
+) {
+  if (!container) return;
+  container.innerHTML = "";
+  for (const name of MANUAL_STARTER_ITEMS) {
+    const btn = container.ownerDocument.createElement("button");
+    btn.className = "chip";
+    btn.type = "button";
+    btn.dataset.sample = name;
+    btn.textContent = name;
+    container.appendChild(btn);
+  }
 }
 
 export function renderPopularChips(

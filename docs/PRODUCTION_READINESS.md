@@ -86,7 +86,8 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
 - **Fix:** In `scan.js` line 258 change to `showError(flowResult.message)`
   (drop `allowRetry: true`) so the "Try again" button stays hidden. The
   friendly card's targeted CTAs are the right recovery UX.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — removed `{ allowRetry: true }` from
+  `correction-needed` path in `scan.js` line 258.
 
 ### U-02 `[UX]` Hardcoded "35–50 min" quick fact shown for every recipe
 - **File:** `app/js/details.js` line 119
@@ -95,7 +96,8 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
 - **Fix:** Compute from `record.scratchRecipe.prepTimeMinutes +
   record.scratchRecipe.cookTimeMinutes`; fall back to the static string
   only when both are absent.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — time computed from `prepTimeMinutes + cookTimeMinutes`
+  in `details.js` line 119; falls back to "Varies" when both absent.
 
 ### U-03 `[UX]` "Upgrade coming soon" button is dead but visible in production HTML
 - **File:** `app/index.html` lines 321–325; `design-system/ui_kits/.../UpgradeScreen.jsx`
@@ -103,7 +105,8 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   button are rendered in the upgrade view. A real user would see this.
 - **Fix:** Add `hidden` to the upgrade action button and wrap pricing in a
   `<!-- TODO: Phase 2 -->` comment block until payment is wired.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — pricing block removed and replaced with Phase 2 TODO
+  comment; "Upgrade coming soon" button has `hidden` in `index.html`.
 
 ### U-04 `[UX]` "MVP fallback" badge text is internal jargon, not user copy
 - **File:** `app/js/result.js` lines 79–81
@@ -111,14 +114,16 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   and exposes internal labelling.
 - **Fix:** Replace with "Local recipe" or "Offline recipe" to be honest but
   user-friendly.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — "MVP fallback" → "Built-in recipe"; "Local MVP" →
+  "On-device" in `result.js` line 80.
 
 ### U-05 `[UX]` Missing `aria-hidden` on decorative image placeholders
 - **File:** `app/index.html` lines 185, 197, 362, 366
 - **Problem:** Hidden placeholder `<img>` elements with empty `alt` stay in
   the accessibility tree and create noise for screen readers.
 - **Fix:** Add `aria-hidden="true"` to decorative placeholder images.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `aria-hidden="true"` added to both photo-thumb
+  placeholder `<img>` elements in `index.html`.
 
 ### U-06 `[UX]` Sample product chips hardcoded in HTML instead of data-driven
 - **File:** `app/index.html` lines 244–250
@@ -126,14 +131,18 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   deploy.
 - **Fix:** Move the list to a JS constant (e.g., `popularChips.js`) and
   render them dynamically. This unblocks A/B testing the list later.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `MANUAL_STARTER_ITEMS` + `renderManualChips()`
+  added to `popularChips.js`; hardcoded buttons removed from `index.html`;
+  `renderManualChips()` called at boot in `app.js`.
 
 ### U-07 `[UX]` Saving flag never resets on error in result page
 - **File:** `app/js/result.js` lines 187–208
 - **Problem:** If saving throws, the `saving` flag stays `true` and the user
   can never trigger save again without reloading.
 - **Fix:** Wrap the save block in `try/finally { saving = false; }`.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — save handler in `result.js` refactored to
+  `try/catch/finally { saving = false; saveBtn reset; }` with early
+  `return` on success to skip the finally reset before navigation.
 
 ---
 
