@@ -1298,6 +1298,8 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
 .food-thumb svg { display: block; }
 
 /* RESPONSIVE: desktop preview */
+.desktop-promo { display: none; }
+
 @media (min-width: 720px) {
   body { padding: 24px 0; overflow: hidden; }
   .app {
@@ -1307,6 +1309,69 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
     height: calc(100dvh - 48px);
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Two-column desktop layout */
+@media (min-width: 960px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 0 48px;
+  }
+  .desktop-promo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 320px;
+    flex-shrink: 0;
+  }
+  .desktop-promo-eyebrow {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-allcaps);
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+  .desktop-promo-title {
+    margin: 0 0 16px;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: var(--lh-tight);
+    letter-spacing: var(--tracking-display);
+    color: var(--ink);
+  }
+  .desktop-promo-sub {
+    margin: 0 0 24px;
+    font-size: 15px;
+    line-height: var(--lh-relax);
+    color: var(--ink-soft);
+  }
+  .desktop-promo-features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .desktop-promo-features li {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    padding-left: 20px;
+    position: relative;
+  }
+  .desktop-promo-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    font-weight: 800;
   }
 }
 

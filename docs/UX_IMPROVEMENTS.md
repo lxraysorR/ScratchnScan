@@ -227,7 +227,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   └──────────────────────────────────────────────────────┘
   ```
 - **Risk:** LOW — additive CSS only, does not affect mobile or existing screens.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `.desktop-promo` aside added before `.app` in HTML (`aria-hidden="true"`); `display: none` on mobile; two-column flex layout activates at `min-width: 960px` with 320px promo column + existing phone-frame app. Headline, subtext, and three feature bullets with green checkmarks.
 
 ---
 
