@@ -233,6 +233,11 @@ async function putUsageState(state) {
 }
 
 export async function canGenerate() {
+  // DEV: free-creation cap disabled. Generation is never blocked while this
+  // early return is in place. To re-enable the 10-creation limit, delete the
+  // line below and restore the gate logic that follows it.
+  return true;
+  // eslint-disable-next-line no-unreachable
   const state = await getUsageState();
   if (state.isLocalPremiumUnlocked) return true;
   return state.successfulGenerationCount < state.freeGenerationLimit;
