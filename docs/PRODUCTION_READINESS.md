@@ -40,7 +40,10 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   the 10-generation cap entirely. The cap logic below it is dead code.
 - **Fix:** Remove the early return, restore the real guard, and re-run
   `node scripts/test_usage_meter.mjs`.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — early return and dev comment removed; real gate
+  restored. 8 new tests in `scripts/test_generation_cap.mjs` covering
+  fresh device, at-limit, over-limit, premium unlock, unlock revocation,
+  and dev reset. All pass.
 
 ### S-03 `[SECURITY]` CORS fallback accepts unknown origins
 - **File:** `src/worker.js` line 31
