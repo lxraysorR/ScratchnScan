@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" aria-label="ScratchnScan brand mark">
+  <defs>
+    <linearGradient id="bowl-grad" x1="6" y1="6" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff3bf"></stop>
+      <stop offset="1" stop-color="#caa85d"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M9 23h30c-1.3 10.3-7.2 17-15 17S10.3 33.3 9 23Z" fill="url(#bowl-grad)"></path>
+  <path d="M11 21c3.7-4.6 22.3-4.6 26 0" fill="none" stroke="#fff8dc" stroke-width="3" stroke-linecap="round"></path>
+  <path d="M30 9 21 18" stroke="#fff8dc" stroke-width="3.4" stroke-linecap="round"></path>
+  <circle cx="32" cy="8" r="3.4" fill="#caa85d"></circle>
+</svg>
