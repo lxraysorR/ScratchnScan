@@ -18,6 +18,74 @@
  */
 
 // ---------------------------------------------------------------------------
+// Rate limiting — in-memory sliding window per IP per route key.
+//
+// Scope: single Worker isolate. State is not shared across Cloudflare edge
+// nodes or across isolate restarts. This is sufficient to block accidental
+// hammering and single-origin abuse; replace with Durable Objects for
+// globally consistent enforcement.
+// ---------------------------------------------------------------------------
+
+const RATE_LIMITS = {
+  generate: { maxRequests: 5,  windowMs: 60_000 },
+  lookup:   { maxRequests: 20, windowMs: 60_000 },
+  popular:  { maxRequests: 60, windowMs: 60_000 },
+};
+
+// Map<"ip:routeKey", { count: number, windowStart: number }>
+const _rateBuckets = new Map();
+
+// Exported so tests can reset state between cases.
+export function resetRateLimits() {
+  _rateBuckets.clear();
+}
+
+function clientIp(request) {
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+    "unknown"
+  );
+}
+
+/**
+ * Returns null when the request is allowed, or a 429 Response when limited.
+ * @param {string} ip
+ * @param {"generate"|"lookup"|"popular"} routeKey
+ */
+function checkRateLimit(ip, routeKey) {
+  const limit = RATE_LIMITS[routeKey];
+  if (!limit) return null;
+
+  const key = `${ip}:${routeKey}`;
+  const now = Date.now();
+  const bucket = _rateBuckets.get(key);
+
+  if (!bucket || now - bucket.windowStart >= limit.windowMs) {
+    _rateBuckets.set(key, { count: 1, windowStart: now });
+    return null;
+  }
+
+  if (bucket.count < limit.maxRequests) {
+    bucket.count += 1;
+    return null;
+  }
+
+  const retryAfter = Math.ceil((limit.windowMs - (now - bucket.windowStart)) / 1000);
+  return new Response(
+    JSON.stringify({ ok: false, error: "Too many requests. Please wait a moment and try again.", retryAfter }),
+    {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(retryAfter),
+        "Cache-Control": "no-store",
+      },
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // CORS
 // ---------------------------------------------------------------------------
 const ALLOWED_ORIGINS = [
@@ -743,6 +811,7 @@ export default {
     const url = new URL(request.url);
     const { pathname } = url;
     const method = request.method;
+    const ip = clientIp(request);
 
     let response;
 
@@ -750,17 +819,17 @@ export default {
       if (pathname === "/api/health" && method === "GET") {
         response = handleHealth();
       } else if (pathname === "/api/popular-items" && method === "GET") {
-        response = await handlePopularItems(env);
+        response = checkRateLimit(ip, "popular") ?? await handlePopularItems(env);
       } else if (pathname === "/api/admin/status" && method === "GET") {
         response = handleAdminStatus(request, env);
       } else if (pathname === "/api/lookup-upc" && method === "POST") {
-        response = await handleLookupUpc(request, env);
+        response = checkRateLimit(ip, "lookup") ?? await handleLookupUpc(request, env);
       } else if (
         (pathname === "/api/generate-scratch-recipe" ||
           pathname === "/api/generate-homemade-version") &&
         method === "POST"
       ) {
-        response = await handleGenerateScratchRecipe(request, env);
+        response = checkRateLimit(ip, "generate") ?? await handleGenerateScratchRecipe(request, env);
       } else if (pathname.startsWith("/api/")) {
         response = json({ ok: false, error: "Not found" }, 404);
       } else if (env.ASSETS && typeof env.ASSETS.fetch === "function") {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
-const { default: worker } = await import(pathToFileURL(resolve('src/worker.js')).href);
+const { default: worker, resetRateLimits } = await import(pathToFileURL(resolve('src/worker.js')).href);
 
 // The worker emits structured console.log diagnostics on every request. They are
 // production logging, not under test, so silence them to keep test output readable.
@@ -76,6 +76,7 @@ async function test(name, fn) {
     throw err;
   } finally {
     restoreFetch();
+    resetRateLimits();
   }
 }
 
