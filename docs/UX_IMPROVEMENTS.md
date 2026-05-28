@@ -124,7 +124,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   ```
 - **Fix:** Update heading and body copy in the `#manual-friendly-error` div. Keep the two action buttons unchanged — they are already correct.
 - **Risk:** LOW — copy only.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — heading and body rewritten; buttons unchanged.
 
 ---
 
