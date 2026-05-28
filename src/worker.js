@@ -317,12 +317,22 @@ async function handleLookupUpc(request, env) {
 
   console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, step: "provider_call" }));
 
+  // Build the provider URL with URL/searchParams so the key is never embedded
+  // in a template literal (and therefore never accidentally captured in logs).
+  // X-Api-Key is sent as a header too; if SearchUPCData adds header-only auth
+  // in the future, the apikey query param can be dropped at that point.
+  const providerUrl = new URL("https://api.searchupcdata.com/api/v1");
+  providerUrl.searchParams.set("upc", upc);
+  providerUrl.searchParams.set("apikey", env.SEARCHUPCDATA_API_KEY);
+
   let apiRes;
   try {
-    apiRes = await fetch(
-      `https://api.searchupcdata.com/api/v1?upc=${encodeURIComponent(upc)}&apikey=${env.SEARCHUPCDATA_API_KEY}`,
-      { headers: { Accept: "application/json" } }
-    );
+    apiRes = await fetch(providerUrl.toString(), {
+      headers: {
+        Accept: "application/json",
+        "X-Api-Key": env.SEARCHUPCDATA_API_KEY,
+      },
+    });
   } catch {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_network_error" }));
     return json({ ok: false, error: "Lookup provider failed", providerStatus: 0 }, 502);
