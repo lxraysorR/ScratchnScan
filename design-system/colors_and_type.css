@@ -1,0 +1,226 @@
+/* =============================================================================
+   ScratchnScan Design Tokens
+   ----------------------------------------------------------------------------
+   The single source of truth for colors, typography, spacing, radii, shadows,
+   and motion. Lifted verbatim from the live app shell (app/styles.css) so
+   anything built against these tokens will sit cleanly alongside the product.
+
+   Usage:
+     <link rel="stylesheet" href="colors_and_type.css" />
+     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+  /* ── COLOR ──────────────────────────────────────────────────────────────── */
+
+  /* Page wash / surfaces (warm cream, never pure white) */
+  --bg:         #f4efe5;  /* page background */
+  --bg-warm:    #f8f1df;  /* warmer cream for inset panels */
+  --surface:    #fffdf7;  /* card surface */
+  --surface-2:  #f8f1df;  /* alt card / inset surface */
+
+  /* Ink (text & lines, warm-tinted to match cream) */
+  --ink:        #101916;  /* default text */
+  --ink-soft:   #2a3530;  /* secondary text */
+  --muted:      #66736d;  /* tertiary / helper text */
+  --line:       rgba(16, 25, 22, 0.10);
+  --line-soft:  rgba(16, 25, 22, 0.06);
+
+  /* Brand greens */
+  --green:      #0b2f27;  /* primary brand — deep forest */
+  --green-2:    #155442;  /* mid-green for gradient end */
+  --green-3:    #1f6b54;  /* hover / accent green */
+
+  /* Accent — gold / lime ("kitchen brass" + "fresh sprig") */
+  --lime:       #e6d79a;  /* lime cream — used inside the brand mark */
+  --gold:       #caa85d;  /* primary gold accent */
+  --gold-2:     #fff3bf;  /* light gold for premium gradients */
+
+  /* Semantic */
+  --orange:     #d99a32;  /* warning / scanline */
+  --red:        #b94232;  /* destructive / error */
+
+  /* ── SHADOWS (warm-tinted, never pure black) ───────────────────────────── */
+  --shadow-sm:  0 6px 16px rgba(16, 30, 22, 0.06);
+  --shadow-md:  0 12px 30px rgba(16, 30, 22, 0.08);
+  --shadow-lg:  0 22px 60px rgba(16, 30, 22, 0.14);
+
+  /* Colored shadows for filled buttons / brand glow */
+  --shadow-primary: 0 14px 30px rgba(11, 47, 39, 0.28);
+  --shadow-gold:    0 14px 30px rgba(202, 168, 93, 0.28);
+
+  /* ── RADII ──────────────────────────────────────────────────────────────── */
+  --radius-sm: 12px;  /* small chips, photo action buttons */
+  --radius-md: 16px;  /* inputs, alerts, default button */
+  --radius-lg: 22px;  /* content cards */
+  --radius-xl: 28px;  /* hero, form card, result card, upgrade */
+  --radius-pill: 999px;
+
+  /* ── SPACING (4-pt grid) ────────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+
+  /* Inner-card padding default */
+  --pad-card:   16px;
+  --pad-card-lg: 22px;
+
+  /* App-frame width */
+  --app-max: 480px;
+
+  /* ── MOTION ─────────────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-quick:   140ms;
+  --dur-base:    160ms;
+  --dur-screen:  240ms;
+  --dur-scan:    2200ms;
+  --dur-pulse:   1400ms;
+
+  /* ── SAFE AREAS ─────────────────────────────────────────────────────────── */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ── TYPE ───────────────────────────────────────────────────────────────── */
+  --font-sans:   "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:   ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Type scale — pulled from the live app */
+  --fs-display: 34px;   /* hero title at max */
+  --fs-h1:      26px;   /* result title */
+  --fs-h2:      21px;   /* section-head */
+  --fs-h3:      18px;   /* empty-state h3, upgrade title medium */
+  --fs-card:    15.5px; /* card titles */
+  --fs-body:    15px;
+  --fs-body-sm: 14.5px; /* result body, bullet list */
+  --fs-helper:  13px;
+  --fs-helper-sm: 12.5px;
+  --fs-eyebrow: 11.5px;
+  --fs-allcaps: 12px;
+
+  --lh-tight:   1.02;   /* display */
+  --lh-snug:    1.20;
+  --lh-body:    1.45;
+  --lh-relax:   1.55;
+
+  --tracking-display: -0.04em;
+  --tracking-h2:      -0.03em;
+  --tracking-card:    -0.02em;
+  --tracking-tight:   -0.005em;
+  --tracking-eyebrow:  0.01em;
+  --tracking-allcaps:  0.08em;
+}
+
+/* =============================================================================
+   SEMANTIC TYPE STYLES (utility classes you can drop onto elements)
+   ========================================================================== */
+
+.sns-display {
+  font-family: var(--font-sans);
+  font-size: clamp(28px, 8vw, var(--fs-display));
+  font-weight: 800;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-display);
+  color: #fffdf8;            /* default for hero (on dark green) */
+}
+
+.sns-h1 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h1);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.sns-h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h2);
+  font-weight: 800;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-h2);
+  color: var(--ink);
+}
+
+.sns-card-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-card);
+  font-weight: 800;
+  letter-spacing: var(--tracking-card);
+  color: var(--ink);
+}
+
+.sns-body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-relax);
+  color: var(--ink-soft);
+}
+
+.sns-helper {
+  font-family: var(--font-sans);
+  font-size: var(--fs-helper-sm);
+  font-weight: 500;
+  line-height: var(--lh-body);
+  color: var(--muted);
+}
+
+.sns-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.10);
+  font-family: var(--font-sans);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  color: var(--lime);
+  letter-spacing: var(--tracking-eyebrow);
+}
+
+.sns-section-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-allcaps);
+  font-weight: 800;
+  letter-spacing: var(--tracking-allcaps);
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.sns-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* =============================================================================
+   BASE — call .sns-base on a wrapper to opt into the warm body wash.
+   ========================================================================== */
+
+.sns-base {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(202, 168, 93, 0.22), transparent 28rem),
+    radial-gradient(circle at bottom right, rgba(21, 84, 66, 0.10), transparent 30rem),
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
