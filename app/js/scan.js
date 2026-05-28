@@ -253,9 +253,14 @@ async function handleSubmit(event) {
   });
 
   if (flowResult.status === "correction-needed") {
-    showState("confirm");
-    el("manual-friendly-error").hidden = false;
-    showError(flowResult.message);
+    if (inputMethod === "photos") {
+      showState("confirm");
+      el("manual-friendly-error").hidden = false;
+      showError(flowResult.message);
+    } else {
+      showState("entry");
+      showError(flowResult.message, { allowRetry: true });
+    }
     return;
   }
   if (flowResult.status === "error") {
