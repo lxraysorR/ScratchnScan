@@ -155,12 +155,12 @@ function wireGlobalActions() {
 
 }
 
-// Dev-only helpers — intentionally not surfaced in the customer UI.
+window.scratchnscan = { goto, showToast };
+
+// Dev-only helpers — only available on localhost to prevent console manipulation in production.
 // Use in DevTools: scratchnscan.dev.resetUsage() / scratchnscan.dev.unlockPremium(true)
-window.scratchnscan = {
-  goto,
-  showToast,
-  dev: {
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  window.scratchnscan.dev = {
     async resetUsage() {
       const state = await resetUsageForDev();
       await refreshUsageStrips();
@@ -176,8 +176,8 @@ window.scratchnscan = {
     async getUsage() {
       return getUsageState();
     },
-  },
-};
+  };
+}
 
 window.addEventListener("hashchange", route);
 

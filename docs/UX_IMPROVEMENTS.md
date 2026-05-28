@@ -268,7 +268,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   ```
   Remove `dev` helpers from the production `window.scratchnscan` object entirely.
 - **Risk:** LOW — no user-visible change; dev tools still work on local.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `window.scratchnscan` now only exposes `{ goto, showToast }` on production; `.dev` block is conditionally assigned only when `hostname === "localhost"` or `"127.0.0.1"`.
 
 ---
 
