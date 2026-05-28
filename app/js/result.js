@@ -82,7 +82,7 @@ export function initResultView() {
   const healthGoalEl = el("result-health-goal");
   if (healthGoalEl) healthGoalEl.textContent = (record.scratchRecipe.healthGoal || "Use simpler ingredients and keep flavor familiar.").trim();
 
-  const why = uniqNonEmpty(record.scratchRecipe.whyHealthier || record.scratchRecipe.whyCleaner || []);
+  const why = uniqNonEmpty(record.scratchRecipe.whyCleaner || record.scratchRecipe.whyHealthier || []);
   const whyBlock = el("result-why-block");
   const whyList = el("result-why");
   if (whyList && whyBlock) {

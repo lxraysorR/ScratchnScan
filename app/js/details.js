@@ -113,7 +113,7 @@ export async function initDetailsView(id) {
     goalEl.hidden = !healthGoal;
   }
 
-  const whyList = record.scratchRecipe?.whyHealthier || record.scratchRecipe?.whyCleaner || [];
+  const whyList = record.scratchRecipe?.whyCleaner || record.scratchRecipe?.whyHealthier || [];
   const whyBlock = el("details-why-block");
   const whyEl = el("details-why");
   if (whyEl && whyBlock) {

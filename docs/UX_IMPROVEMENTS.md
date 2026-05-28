@@ -92,7 +92,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   sub:      "Start with a barcode, package photos, typed details, or a popular example."
   ```
 - **Risk:** LOW — copy only, zero behavior change.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — eyebrow, h1, section h2, and section sub all updated in `index.html`.
 
 ---
 
@@ -186,7 +186,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - `details.js`: same
   - Worker AI prompt: ensure `whyCleaner` is the primary field name (not `whyHealthier`)
 - **Risk:** LOW for UI; MEDIUM for worker prompt — verify AI still returns the field correctly.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — both h3 labels in `index.html` updated; `generationController.js` now stores field as `whyCleaner` (with `whyLessProcessed` as fallback); `recipeGenerator.js` fallback recipes renamed from `whyHealthier` → `whyCleaner`; `result.js` and `details.js` read `whyCleaner || whyHealthier` for backward compat with existing saved records.
 
 ---
 
