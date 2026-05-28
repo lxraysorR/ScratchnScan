@@ -38,9 +38,21 @@ export function __setAiTimeoutMsForTest(ms) { aiTimeoutMs = ms; }
 export function __setDraftImagesForTest({ front = null, back = null } = {}) { draft.frontImagePreviewDataUrl = front; draft.backImagePreviewDataUrl = back; }
 
 function setMethod(method = "typed") {
-  inputMethod = method;
-  document.querySelectorAll("[data-method]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.method === method));
-  document.querySelectorAll("[data-method-panel]").forEach((p) => { p.hidden = p.dataset.methodPanel !== method; });
+  inputMethod = (method === "photos") ? "photos" : "typed";
+  document.querySelectorAll("[data-method-panel]").forEach((p) => { p.hidden = p.dataset.methodPanel !== inputMethod; });
+
+  const title = document.getElementById("manual-view-title");
+  const desc = document.getElementById("manual-view-desc");
+  if (title && desc) {
+    if (inputMethod === "photos") {
+      title.textContent = "Upload Package Photos";
+      desc.textContent = "Add front and back photos of the package. AI reads the ingredients and creates a homemade version from scratch.";
+    } else {
+      title.textContent = "Type Product Details";
+      desc.textContent = "Enter a product name and any preferences. We'll create a homemade alternative using real ingredients.";
+    }
+  }
+
   renderStartersVisibility();
 }
 
@@ -56,7 +68,7 @@ function hasEnoughInput() {
 function renderStartersVisibility() {
   const wrap = el("manual-starters-wrap");
   if (!wrap) return;
-  wrap.hidden = hasEnoughInput() || state !== "entry";
+  wrap.hidden = inputMethod !== "typed" || hasEnoughInput() || state !== "entry";
 }
 
 function renderConfirmCard() {
@@ -127,27 +139,39 @@ function wirePhotoControls() {
   }));
 }
 
-export async function initScanView() {
+export async function initScanView(mode = "typed") {
   if (!initialized) {
     wirePhotoControls();
     el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
     el("manual-continue-btn")?.addEventListener("click", () => {
-      if (!hasEnoughInput()) return showError("Add a product name, ingredient list, package photo, or starter first.");
+      if (!hasEnoughInput()) {
+        const msg = inputMethod === "photos"
+          ? "Add at least one package photo to continue."
+          : "Enter a product name or preference to continue.";
+        return showError(msg);
+      }
       renderConfirmCard();
       el("manual-confirm-card").hidden = false;
       showState("confirm");
     });
-    el("manual-clear-btn")?.addEventListener("click", () => { el("manual-lookup-form")?.reset(); draft.frontImagePreviewDataUrl = null; draft.backImagePreviewDataUrl = null; applyThumbToTile("front", null); applyThumbToTile("back", null); showState("entry"); renderStartersVisibility(); });
+    el("manual-clear-btn")?.addEventListener("click", () => {
+      el("manual-lookup-form")?.reset();
+      draft.frontImagePreviewDataUrl = null;
+      draft.backImagePreviewDataUrl = null;
+      applyThumbToTile("front", null);
+      applyThumbToTile("back", null);
+      showState("entry");
+      renderStartersVisibility();
+    });
     el("scan-retry-btn")?.addEventListener("click", () => el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true })));
     el("friendly-enter-name")?.addEventListener("click", () => { setMethod("typed"); showState("entry"); el("manual-friendly-error").hidden = true; });
     el("friendly-retry-photos")?.addEventListener("click", () => { setMethod("photos"); showState("entry"); el("manual-friendly-error").hidden = true; });
-    document.querySelectorAll("[data-method]").forEach((btn) => btn.addEventListener("click", () => setMethod(btn.dataset.method)));
-    ["product-name-input", "ingredients-input", "dietary-input", "barcode-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
+    ["product-name-input", "dietary-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
     initialized = true;
   }
   await refreshUsageStrips();
   showState("entry");
-  setMethod(inputMethod);
+  setMethod(mode);
   renderStartersVisibility();
 }
 

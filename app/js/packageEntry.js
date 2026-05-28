@@ -1,47 +1,46 @@
 /**
- * UI glue for the Scan / Package Entry screen.
+ * UI glue for the Scan screen.
  *
  * Owns:
- *   - the Scan package button (kicks off scannerService.startScan)
+ *   - the Start/Cancel scanner buttons
+ *   - the video element for web camera scanning
  *   - the scan-status area on the scan view
  *   - the captured-barcode banner on the manual entry view
  *   - the "Clear barcode" affordance on that banner
  */
 import {
   startScan,
-  isScannerAvailable,
+  cancelActiveScan,
   getDraftBarcode,
   clearDraftBarcode,
 } from "./scannerService.js";
-import { isNativePlatform } from "./platform.js";
 import { showToast } from "./app.js";
-import { normalizeProductContext } from "./productContext.js";
 
 let wired = false;
 
 function el(id) { return document.getElementById(id); }
 
 const STATUS_COPY = {
-  scanning: { tone: "info", text: "Opening scanner…" },
+  scanning: { tone: "info", text: "Opening camera…" },
   success: { tone: "success", text: "Barcode captured" },
   duplicate: { tone: "info", text: "Same barcode already captured" },
-  cancelled: { tone: "info", text: "Scan cancelled. You can try again or enter manually." },
+  cancelled: { tone: "info", text: "Scan cancelled. You can try again or type the product name." },
   busy: { tone: "info", text: "A scan is already in progress." },
   "permission-denied": {
     tone: "warn",
-    text: "Camera access is needed to scan a package. You can still enter the item manually.",
+    text: "Camera access is needed to scan. You can still type the product name.",
   },
   preparing: {
     tone: "info",
-    text: "Scanner is getting ready on this device. Please try again in a moment.",
+    text: "Scanner is getting ready. Please try again in a moment.",
   },
   unsupported: {
     tone: "warn",
-    text: "We could not start the scanner on this device. You can still type the product name or upload package photos.",
+    text: "Barcode scanning is not supported on this browser. Try Chrome or type the product name.",
   },
   error: {
     tone: "warn",
-    text: "We could not start the scanner on this device. You can still type the product name or upload package photos.",
+    text: "Could not start the scanner. You can still type the product name.",
   },
 };
 
@@ -67,6 +66,15 @@ function clearStatus() {
   delete status.dataset.tone;
 }
 
+function showScanCamera(active) {
+  const video = el("scan-video");
+  const placeholder = el("scan-frame-placeholder");
+  const scanLine = el("scan-line");
+  if (video) video.hidden = !active;
+  if (placeholder) placeholder.hidden = active;
+  if (scanLine) scanLine.style.display = active ? "" : "";
+}
+
 export function refreshBarcodeBanner() {
   const banner = el("draft-barcode");
   const value = el("draft-barcode-value");
@@ -83,37 +91,33 @@ export function refreshBarcodeBanner() {
 
 async function handleScanClick() {
   const button = el("scan-start-btn");
+  const cancelBtn = el("scan-cancel-btn");
   if (!button || button.disabled) return;
+
   button.disabled = true;
+  button.textContent = "Scanning…";
+  if (cancelBtn) cancelBtn.hidden = false;
   setStatus("scanning");
+  showScanCamera(true);
+
+  const videoEl = el("scan-video");
+
   try {
-    const result = await startScan();
+    const result = await startScan({ videoEl });
+
+    showScanCamera(false);
     setStatus(result.status);
 
     if (result.status === "success") {
-      const scannerContext = normalizeProductContext({
-        source: "scanner",
-        sourceBasis: ["barcode"],
-        sourceMetadata: {
-          barcode: result.barcode,
-          provider: "scanner",
-          lookupStatus: "pending",
-        },
-      });
-      try {
-        sessionStorage.setItem("scratchnscan:lastScannerContext", JSON.stringify(scannerContext));
-      } catch { /* ignore */ }
       refreshBarcodeBanner();
-      showToast("Barcode captured. Add product details or photos to continue.");
-      // Move user into the manual context screen so they can add details.
-      setTimeout(() => {
-        window.location.hash = "#manual";
-      }, 350);
+      showToast("Barcode captured. Generating homemade recipe…");
+      setTimeout(() => { window.location.hash = "#manual"; }, 350);
       return;
     }
 
     if (result.status === "duplicate") {
       refreshBarcodeBanner();
+      setTimeout(() => { window.location.hash = "#manual"; }, 350);
       return;
     }
 
@@ -122,41 +126,31 @@ async function handleScanClick() {
       result.status === "permission-denied" ||
       result.status === "error"
     ) {
-      // Native scanning is not available here. Show the honest fallback
-      // message, then route into manual/photo entry so Scan is never a dead
-      // action. No barcode was captured, so nothing counts as a generation.
-      showToast("We could not start the scanner on this device. You can still type the product name or upload package photos.");
-      setTimeout(() => {
-        window.location.hash = "#manual";
-      }, 700);
+      showToast(STATUS_COPY[result.status]?.text || "Scanner unavailable. Try typing the product name.");
     }
   } finally {
     button.disabled = false;
+    button.textContent = "Start scanner";
+    if (cancelBtn) cancelBtn.hidden = true;
+    showScanCamera(false);
   }
 }
 
-async function applyAvailabilityHint() {
-  const button = el("scan-start-btn");
-  if (!button) return;
-  if (isNativePlatform()) {
-    button.textContent = "Start scanner";
-    return;
-  }
-  const available = await isScannerAvailable();
-  if (!available) {
-    button.textContent = "Start scanner";
-    setStatus("unsupported");
-  }
+function handleCancelClick() {
+  cancelActiveScan();
 }
 
 export function initPackageEntry() {
   if (wired) {
     refreshBarcodeBanner();
+    clearStatus();
+    showScanCamera(false);
     return;
   }
   wired = true;
 
   el("scan-start-btn")?.addEventListener("click", handleScanClick);
+  el("scan-cancel-btn")?.addEventListener("click", handleCancelClick);
 
   el("draft-barcode-clear")?.addEventListener("click", () => {
     clearDraftBarcode();
@@ -170,6 +164,6 @@ export function initPackageEntry() {
   });
 
   clearStatus();
-  applyAvailabilityHint();
+  showScanCamera(false);
   refreshBarcodeBanner();
 }

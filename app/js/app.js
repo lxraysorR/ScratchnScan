@@ -57,7 +57,7 @@ async function route() {
 
   if (name === "manual") {
     showView("manual");
-    await initScanView(arg || "product");
+    await initScanView(arg || "typed");
     if (typeof refreshBarcodeBanner === "function") {
       refreshBarcodeBanner();
     }

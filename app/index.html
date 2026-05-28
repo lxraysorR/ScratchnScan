@@ -48,10 +48,10 @@
           <div class="hero">
             <span class="eyebrow">Homemade alternatives in seconds</span>
             <h1 class="hero-title">Pick how you want to start.</h1>
-            <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name and ingredients. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
+            <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
             <div class="hero-actions">
-              <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
-                              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
+              <button class="btn btn-primary" type="button" data-go="manual/typed">Create Homemade Version</button>
+              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
             </div>
             <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
           </div>
@@ -68,27 +68,27 @@
               </span>
               <span class="start-text">
                 <span class="start-card-title">Scan Barcode</span>
-                <span class="start-card-desc">Use the camera to identify a packaged food.</span>
+                <span class="start-card-desc">Use your camera to scan a product barcode.</span>
               </span>
               <span class="start-arrow" aria-hidden="true">›</span>
             </button>
-            <button class="start-card" type="button" data-go="manual">
+            <button class="start-card" type="button" data-go="manual/photos">
               <span class="start-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.6" /><path d="m4 17 5-5 4 4 3-3 4 4" /></svg>
               </span>
               <span class="start-text">
                 <span class="start-card-title">Upload Package Photos</span>
-                <span class="start-card-desc">Add front package and back label photos.</span>
+                <span class="start-card-desc">AI reads your package photos and builds the recipe.</span>
               </span>
               <span class="start-arrow" aria-hidden="true">›</span>
             </button>
-            <button class="start-card" type="button" data-go="manual">
+            <button class="start-card" type="button" data-go="manual/typed">
               <span class="start-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16z" /><path d="m14 5 4 4" /></svg>
               </span>
               <span class="start-text">
                 <span class="start-card-title">Type Product Details</span>
-                <span class="start-card-desc">Enter product name, ingredients, and preferences.</span>
+                <span class="start-card-desc">Enter a product name and any preferences.</span>
               </span>
               <span class="start-arrow" aria-hidden="true">›</span>
             </button>
@@ -119,61 +119,36 @@
           </div>
         </section>
 
-        <!-- SCAN PREVIEW -->
-        <section id="view-scan" class="screen" aria-label="Scan preview" hidden>
+        <!-- SCAN -->
+        <section id="view-scan" class="screen" aria-label="Scan barcode" hidden>
           <div class="section-head">
-            <h2>Scan a package</h2>
-            <p>Scanner is optional. You can type the product name instead.</p>
+            <h2>Scan a barcode</h2>
+            <p>Point your camera at the barcode on the back of the package.</p>
           </div>
 
           <div class="scan-card">
             <div class="scan-preview" aria-hidden="true">
-              <div class="scan-frame">
-                <span>Tap Scan package to open your camera</span>
+              <video id="scan-video" class="scan-video" autoplay muted playsinline hidden></video>
+              <div class="scan-frame" id="scan-frame-placeholder">
+                <span>Tap "Start scanner" to open your camera</span>
               </div>
-              <div class="scan-line"></div>
+              <div class="scan-line" id="scan-line"></div>
             </div>
             <div id="scan-status" hidden>ready</div>
             <div class="scan-actions">
               <button class="btn btn-primary" type="button" id="scan-start-btn">Start scanner</button>
-              <button class="btn btn-ghost" type="button" data-go="manual">Type product name</button>
-              <span hidden>Enter manually instead</span>
+              <button class="btn btn-ghost" type="button" id="scan-cancel-btn" hidden>Cancel</button>
+              <button class="btn btn-ghost" type="button" data-go="manual/typed">Type product name</button>
             </div>
-            <p class="helper">Camera scanner beta. Manual entry is always available.</p>
+            <p class="helper">Scanning uses your device camera. No data is sent until you generate a recipe.</p>
           </div>
-
-          <div class="section-head">
-            <h2>What happens after a scan</h2>
-            <p>The app reads the package, then generates a homemade alternative.</p>
-          </div>
-          <ul class="feature-list" role="list">
-            <li class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-              </span>
-              <div>
-                <h3>Identify the product</h3>
-                <p>Name, brand, category, and ingredient signals become the recipe context.</p>
-              </div>
-            </li>
-            <li class="feature-card">
-              <span class="feature-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a8 8 0 1 1 16 0" /><path d="M2 14h20l-2 7H4z" /></svg>
-              </span>
-              <div>
-                <h3>Generate the homemade version</h3>
-                <p>Ingredients, steps, and smart swaps tuned to your preference.</p>
-              </div>
-            </li>
-          </ul>
         </section>
 
         <!-- MANUAL -->
         <section id="view-manual" class="screen" aria-label="Package entry" hidden>
           <div class="section-head">
-            <h2>Make It From Scratch</h2>
-            <span hidden>Show us the package</span>
-            <p>Enter a product, scan a barcode, or add package photos. We’ll create a homemade version using real ingredients.</p>
+            <h2 id="manual-view-title">Make It From Scratch</h2>
+            <p id="manual-view-desc">Upload package photos or type the product name. We'll create a homemade version using real ingredients.</p>
           </div>
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
@@ -187,12 +162,8 @@
           </div>
 
           <form id="manual-lookup-form" class="form-card manual-flow" novalidate>
-            <div class="method-tabs" role="tablist" aria-label="Input method">
-              <button type="button" class="method-tab is-active" data-method="typed">Type product name</button>
-              <button type="button" class="method-tab" data-method="photos">Add package photos</button>
-              <button type="button" class="method-tab" data-method="barcode">Scan barcode</button>
-            </div>
 
+            <!-- TYPED mode -->
             <section data-method-panel="typed">
               <div class="field">
                 <label class="label" for="product-name-input">Product name</label>
@@ -204,12 +175,13 @@
               </div>
             </section>
 
+            <!-- PHOTOS mode -->
             <section data-method-panel="photos" hidden>
               <div class="photo-grid">
                 <div class="photo-slot" data-photo="front">
                   <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
                     <strong>Add front photo</strong>
-                    <em>Front photo helps identify the product</em>
+                    <em>Front of the package</em>
                     <img class="photo-thumb" alt="" hidden />
                   </button>
                   <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
@@ -221,7 +193,7 @@
                 <div class="photo-slot" data-photo="back">
                   <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
                     <strong>Add back photo</strong>
-                    <em>Back photo helps read ingredients or barcode</em>
+                    <em>Back label with ingredients</em>
                     <img class="photo-thumb" alt="" hidden />
                   </button>
                   <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
@@ -231,31 +203,12 @@
                   </div>
                 </div>
               </div>
+              <p class="helper">AI reads your photos and extracts the ingredients to build a homemade version from scratch.</p>
             </section>
 
-            <section data-method-panel="barcode" hidden>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="button" data-go="scan">Scan barcode</button>
-              </div>
-              <div class="field">
-                <label class="label" for="barcode-input">Manual barcode <span class="optional">(fallback)</span></label>
-                <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Type UPC / barcode" autocomplete="off" />
-              </div>
-            </section>
-
-            <details class="collapse-block">
-              <summary>Advanced details</summary>
-              <div class="field">
-                <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
-                <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste ingredients or notes for a better match."></textarea>
-              </div>
-            </details>
-
-            <details class="collapse-block">
-              <summary>Help</summary>
-              <div id="manual-photo-label-tip-slot"></div>
-              <div id="manual-ingredient-label-tip-slot"></div>
-            </details>
+            <!-- hidden inputs preserved for JS compatibility -->
+            <input id="barcode-input" type="hidden" />
+            <textarea id="ingredients-input" hidden></textarea>
 
             <section id="manual-confirm-card" class="review-card" hidden></section>
 
@@ -275,7 +228,7 @@
             <div class="form-actions">
               <button class="btn btn-primary" type="button" id="manual-continue-btn">Continue</button>
               <button id="scan-submit-btn" class="btn btn-primary" type="submit" hidden>Generate Homemade Version</button>
-              <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear form</button>
+              <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear</button>
             </div>
 
             <section id="manual-creating-state" hidden>
@@ -286,7 +239,7 @@
           <div id="manual-starters-wrap">
             <div class="section-head">
               <h2>Popular starters</h2>
-              <p>One tap prefills the form for demo speed.</p>
+              <p>One tap prefills the form.</p>
             </div>
             <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
               <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
@@ -297,6 +250,7 @@
             </div>
           </div>
         </section>
+
         <!-- RESULT -->
         <section id="view-result" class="screen" aria-label="Generated homemade recipe" hidden>
           <article class="result-card result-shell">
@@ -340,11 +294,11 @@
           <p class="usage-strip" id="result-usage-strip" aria-live="polite"></p>
 
           <div class="sticky-action-bar">
-            <button class="btn btn-ghost" type="button" data-go="manual">Edit details</button>
+            <button class="btn btn-ghost" type="button" data-go="manual/typed">Edit details</button>
             <button id="result-save-btn" class="btn btn-primary" type="button">Save Recipe</button>
           </div>
           <div class="form-actions secondary-actions">
-            <button class="btn btn-ghost" type="button" data-go="manual">Make Another</button>
+            <button class="btn btn-ghost" type="button" data-go="manual/typed">Make Another</button>
             <button class="btn btn-ghost" type="button" data-go="history">View History</button>
           </div>
         </section>
@@ -354,7 +308,7 @@
           <article class="upgrade-card">
             <span class="eyebrow">ScratchnScan Plus</span>
             <h2 class="upgrade-title">Keep creating homemade swaps</h2>
-            <p class="upgrade-body">You’ve used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
+            <p class="upgrade-body">You've used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
             <div class="upgrade-offer">
               <div class="upgrade-offer-row">
                 <strong>$4.99</strong>
@@ -369,7 +323,7 @@
             <div class="form-actions">
               <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn">Upgrade coming soon</button>
               <button class="btn btn-ghost" type="button" data-go="history">View saved ideas</button>
-              <button class="btn btn-ghost" type="button" data-go="manual">Edit existing recipes</button>
+              <button class="btn btn-ghost" type="button" data-go="manual/typed">Edit existing recipes</button>
             </div>
             <p class="disclaimer">No account or signup required. Your 10 free creations live on this device.</p>
           </article>
@@ -388,7 +342,7 @@
             </div>
             <h3>No saved recipes yet</h3>
             <p>Create your first homemade version.</p>
-            <button class="btn btn-primary" type="button" data-go="manual">Create first recipe</button>
+            <button class="btn btn-primary" type="button" data-go="manual/typed">Create first recipe</button>
           </div>
         </section>
 
@@ -474,7 +428,7 @@
           <span class="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l11-11-4-4L4 16z" /><path d="m14 5 4 4" /></svg>
           </span>
-          <span class="nav-label">Enter</span>
+          <span class="nav-label">Create</span>
         </button>
         <button class="nav-item" type="button" data-target="history">
           <span class="nav-icon" aria-hidden="true">
