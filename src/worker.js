@@ -712,7 +712,7 @@ async function handleGenerateScratchRecipe(request, env) {
   let geminiRes;
   try {
     geminiRes = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -804,7 +804,7 @@ async function handleGenerateScratchRecipe(request, env) {
     ok: true,
     recipe: validated.recipe,
     meta: {
-      model: "gemini-3.5-flash",
+      model: "gemini-2.0-flash",
       usedInputs: {
         productName: hasMeaningfulValue(productName),
         ingredients: hasMeaningfulValue(ingredients),
