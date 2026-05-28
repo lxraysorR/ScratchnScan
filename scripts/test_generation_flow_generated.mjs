@@ -227,7 +227,7 @@ for (const scenario of [
   global.sessionStorage = realSS; // restore
   ok("error clears loading state", loadingHidden());
   ok("error shows a friendly message", !$("scan-error").hidden && $("scan-error-msg").textContent.length > 0, $("scan-error-msg").textContent);
-  ok("error offers a retry button", $("scan-retry-btn").hidden === false);
+  ok("error hides retry button (retry only for photo upload failures)", $("scan-retry-btn").hidden === true);
   ok("error preserves user input", $("product-name-input").value === "Toaster Pastry");
   ok("error did not route to result", window.location.hash !== "#result", window.location.hash);
   ok("error path logs a diagnostic", consoleErrors.some((e) => /manual generation failed/.test(e)));
@@ -255,7 +255,7 @@ for (const scenario of [
   await sleep(300);
   ok("timeout clears loading state", loadingHidden());
   ok("timeout shows the 'taking longer' message", /taking longer/i.test($("scan-error-msg").textContent), $("scan-error-msg").textContent);
-  ok("timeout offers a retry button", $("scan-retry-btn").hidden === false);
+  ok("timeout hides retry button (retry only for photo upload failures)", $("scan-retry-btn").hidden === true);
   ok("timeout preserves user input", $("product-name-input").value === "Slow Snack");
   ok("timeout did not route to result", window.location.hash !== "#result", window.location.hash);
   scan.__setAiTimeoutMsForTest(25000); // restore default
