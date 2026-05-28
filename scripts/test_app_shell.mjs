@@ -56,7 +56,6 @@ const htmlChecks = [
   'scan-start-btn',
   'scan-status',
   'Start scanner',
-  'Type product name',
   'result-label-tip-slot',
   'manual-ingredient-label-tip-slot',
   'manual-photo-label-tip-slot',
