@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync('app/index.html', 'utf8');
 const tokens = [
   'Create Homemade Version',
-  'Show us the package',
+  'Upload Package Photos',
   'Front package',
   'Back label',
   'data-photo="front"',
@@ -14,14 +14,14 @@ const tokens = [
   'barcode-input',
   'draft-barcode',
   'draft-barcode-value',
-  'Saved ideas',
+  'Saved recipes',
 ];
 for (const token of tokens) {
   if (!html.includes(token)) throw new Error(`Missing UI token: ${token}`);
 }
 
 const historyJs = readFileSync('app/js/history.js', 'utf8');
-for (const token of ['toggleMvpFavorite', 'deleteMvpRecipe', 'View Details', 'window.confirm']) {
+for (const token of ['toggleMvpFavorite', 'deleteMvpRecipe', 'View Recipe', 'window.confirm']) {
   if (!historyJs.includes(token)) throw new Error(`Missing history behavior token: ${token}`);
 }
 

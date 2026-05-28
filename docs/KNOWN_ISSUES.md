@@ -73,6 +73,23 @@ All items below are tracked with full detail and fix guidance in
 
 ---
 
+## Resolved — Responsive layout (fixed 2026-05-28)
+
+All multi-column grid components now use mobile-first (1-column default) with
+`min-width` media queries. Global `overflow-x: hidden` and `min-width: 0`
+guards prevent horizontal overflow at 320–480px.
+
+Components fixed: `.scan-actions`, `.photo-grid`, `.photo-actions`,
+`.form-actions-inline`, `.sticky-action-bar`, `.quick-facts`, `.metric-row`,
+`.details-photo-row`, `.history-actions`, `.start-card`, `.wizard-stepper`,
+`.alert`, `.chip-row`, `.btn`, `.result-card`, `.bullet-list`, `.step-list`,
+`.product-summary-card`, `.understood-panel`.
+
+Regression coverage: `scripts/test_responsive_css_generated.mjs` (26 checks).
+Manual QA checklist: `docs/QA_CHECKLIST.md`.
+
+---
+
 ## Possible future improvements (non-blocking)
 
 - Add explicit in-UI label distinguishing deterministic fallback vs AI-backed recipe.
