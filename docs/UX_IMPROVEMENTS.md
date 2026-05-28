@@ -73,7 +73,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - `index.html` line 310: `"Edit existing recipes"` → `"Start another recipe"`
   - `usage.js` line 101: `"Free creations used. Upgrade coming soon."` → `"You've used your 10 free recipes. More coming."`
 - **Risk:** LOW — copy only, zero behavior change.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — all six copy changes applied across `index.html` and `usage.js`.
 
 ---
 
