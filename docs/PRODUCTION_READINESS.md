@@ -52,7 +52,11 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   cross-origin reads from unregistered domains.
 - **Fix:** Reject outright: `const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : null;`
   and return `403` if `allowed` is null.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `corsHeaders()` refactored into `getAllowedOrigin()`
+  + `corsHeaders(allowedOrigin)`. Unknown origins receive no
+  `Access-Control-Allow-Origin` header; OPTIONS preflights from unknown
+  origins return 403. `Vary: Origin` always set. 2 new tests + 1 updated
+  test in `test_worker_routes.mjs` (35 total, all pass).
 
 ### S-04 `[SECURITY]` SearchUPCData API key exposed in URL query param
 - **File:** `src/worker.js` line 255

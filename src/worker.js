@@ -94,12 +94,21 @@ const ALLOWED_ORIGINS = [
   "https://scratchnscan.layr-sor.workers.dev",
 ];
 
-function corsHeaders(request) {
+// Returns the request's Origin if it is in the allowlist, otherwise null.
+// A missing Origin header means same-origin or server-to-server — not a CORS
+// request, so null is correct there too.
+function getAllowedOrigin(request) {
   const origin = request.headers.get("Origin") ?? "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  if (!origin) return null;
+  return ALLOWED_ORIGINS.includes(origin) ? origin : null;
+}
 
+// Builds CORS response headers. Returns an empty object when allowedOrigin is
+// null so callers never set Access-Control-Allow-Origin for unknown origins.
+function corsHeaders(allowedOrigin) {
+  if (!allowedOrigin) return {};
   return {
-    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
@@ -107,10 +116,12 @@ function corsHeaders(request) {
 }
 
 function withCors(request, response) {
+  const allowedOrigin = getAllowedOrigin(request);
   const headers = new Headers(response.headers);
-  for (const [k, v] of Object.entries(corsHeaders(request))) {
+  for (const [k, v] of Object.entries(corsHeaders(allowedOrigin))) {
     headers.set(k, v);
   }
+  // Always vary on Origin so intermediate caches don't serve the wrong headers.
   headers.set("Vary", "Origin");
   return new Response(response.body, {
     status: response.status,
@@ -802,9 +813,15 @@ async function handleGenerateScratchRecipe(request, env) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
+      const allowedOrigin = getAllowedOrigin(request);
+      // Reject preflights from unknown origins explicitly. A missing Origin
+      // header is not a CORS preflight, so we let those through unchanged.
+      if (request.headers.get("Origin") && !allowedOrigin) {
+        return new Response(null, { status: 403 });
+      }
       return new Response(null, {
         status: 204,
-        headers: corsHeaders(request),
+        headers: corsHeaders(allowedOrigin),
       });
     }
 

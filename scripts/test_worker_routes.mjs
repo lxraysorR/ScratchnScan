@@ -513,13 +513,32 @@ await test('CORS: JSON routes echo allowed origin + Vary', async () => {
   assert.equal(res.headers.get('Vary'), 'Origin');
 });
 
-await test('CORS: disallowed origin falls back to default allowed origin', async () => {
+await test('CORS: unknown origin gets no Access-Control-Allow-Origin header', async () => {
   installFetch(() => { throw new Error('no network expected'); });
   const res = await worker.fetch(
     makeRequest('/api/health', { origin: 'https://evil.example.com' }),
     {},
   );
-  assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'http://localhost:5173');
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), null);
+  // Vary must still be set so caches know to vary by Origin.
+  assert.equal(res.headers.get('Vary'), 'Origin');
+});
+
+await test('OPTIONS: unknown origin preflight returns 403', async () => {
+  const res = await worker.fetch(
+    makeRequest('/api/health', { method: 'OPTIONS', origin: 'https://evil.example.com' }),
+    {},
+  );
+  assert.equal(res.status, 403);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), null);
+});
+
+await test('OPTIONS: no Origin header (non-CORS preflight) returns 204', async () => {
+  const res = await worker.fetch(
+    makeRequest('/api/health', { method: 'OPTIONS' }),
+    {},
+  );
+  assert.equal(res.status, 204);
 });
 
 // ===========================================================================
