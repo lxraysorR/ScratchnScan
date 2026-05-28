@@ -202,7 +202,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - Replace `btn-danger btn-small` Delete button with a low-emphasis text link or icon-only button with `aria-label="Delete recipe"`. Move below primary action row.
   - Add source badge: if `r.source === "photos"` → "Photo scan"; `"scan"` → "Barcode"; `"manual"` → "Typed"
 - **Risk:** MEDIUM — cosmetic card layout change. Verify click handlers remain on correct elements.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — recipe title is now h3, product name is "From: …" subtitle; source badge added (Photos/Barcode/Typed/Popular); "View Details" → "View Recipe"; Delete demoted to small muted underlined text link in its own row below primary actions.
 
 ---
 

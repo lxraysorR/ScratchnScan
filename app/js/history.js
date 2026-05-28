@@ -41,6 +41,14 @@ const STAR_OUTLINE_SVG = `
   </svg>
 `;
 
+function sourceLabel(source) {
+  if (!source) return "";
+  if (source === "photos" || source === "photo") return "Photos";
+  if (source === "scan" || source === "barcode" || source === "upc") return "Barcode";
+  if (source === "popular") return "Popular";
+  return "Typed";
+}
+
 export async function initHistoryView() {
   const records = await getMvpHistory();
   const list = el("history-list");
@@ -61,11 +69,14 @@ export async function initHistoryView() {
     li.className = "history-card";
     const fav = !!(r.favorite ?? r.isFavorite);
     const recipeTitle = r.recipeTitle || r.scratchRecipe?.title || "Homemade alternative";
+    const productName = r.productName || "";
     const date = formatDate(r.createdAt);
     const preferenceBadge = r.dietaryPreference
       ? `<span class="badge soft">${escapeHtml(r.dietaryPreference)}</span>` : "";
     const fallbackBadge = r.fallbackUsed
       ? `<span class="badge warm">Starter</span>` : `<span class="badge">AI</span>`;
+    const srcLabel = sourceLabel(r.source);
+    const sourceBadge = srcLabel ? `<span class="badge soft">${srcLabel}</span>` : "";
 
     const photoSrc = r.frontImagePreviewDataUrl || r.backImagePreviewDataUrl || "";
     const thumbInner = photoSrc
@@ -76,9 +87,10 @@ export async function initHistoryView() {
       <div class="history-top">
         <div class="${thumbClass}" aria-hidden="true">${thumbInner}</div>
         <div style="min-width:0; flex:1;">
-          <h3>${escapeHtml(r.productName || "Untitled")}</h3>
-          <p>${escapeHtml(recipeTitle)}</p>
+          <h3>${escapeHtml(recipeTitle)}</h3>
+          ${productName ? `<p class="history-product">From: ${escapeHtml(productName)}</p>` : ""}
           <div class="history-meta-row">
+            ${sourceBadge}
             ${fallbackBadge}
             ${preferenceBadge}
             ${date ? `<span class="badge soft">${escapeHtml(date)}</span>` : ""}
@@ -86,9 +98,11 @@ export async function initHistoryView() {
         </div>
       </div>
       <div class="history-actions">
-        <button class="btn btn-primary btn-small" type="button" data-action="view">View Details</button>
+        <button class="btn btn-primary btn-small" type="button" data-action="view">View Recipe</button>
         <button class="fav-btn ${fav ? "is-on" : ""}" type="button" data-action="fav" aria-pressed="${fav}" aria-label="${fav ? "Remove from favorites" : "Add to favorites"}">${fav ? STAR_SVG : STAR_OUTLINE_SVG}</button>
-        <button class="btn btn-danger btn-small" type="button" data-action="delete">Delete</button>
+      </div>
+      <div class="history-delete-row">
+        <button class="btn-delete-text" type="button" data-action="delete">Delete recipe</button>
       </div>
     `;
 
