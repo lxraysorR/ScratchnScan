@@ -193,9 +193,14 @@ await test('lookup-upc: 404 when provider has no usable product name', async () 
 });
 
 await test('lookup-upc: 200 + normalized product on success', async () => {
-  const calls = installFetch((url) => {
+  const calls = installFetch((url, opts) => {
     if (url.includes('searchupcdata.com')) {
       assert.match(url, /upc=012000001772/, 'forwards normalized upc to provider');
+      // API key must be in the X-Api-Key header — not hardcoded into a template string.
+      assert.equal(opts.headers?.['X-Api-Key'] ?? opts.headers?.get?.('X-Api-Key'), 'k',
+        'API key sent as X-Api-Key header');
+      // Query param kept for backward compat with SearchUPCData's current API.
+      assert.match(url, /apikey=k/, 'apikey still in query param for provider compat');
       return jsonResponse({ product_name: 'Test Ketchup', brand: 'Heinz', image: 'http://img/k.png' });
     }
     return new Response(null, { status: 204 }); // supabase log

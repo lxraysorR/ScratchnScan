@@ -59,12 +59,17 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
   test in `test_worker_routes.mjs` (35 total, all pass).
 
 ### S-04 `[SECURITY]` SearchUPCData API key exposed in URL query param
-- **File:** `src/worker.js` line 255
+- **File:** `src/worker.js` line 323
 - **Risk:** The key appears in Cloudflare access logs, browser referrer
   headers, and any caching layer.
 - **Fix:** Move to an `Authorization` header, or wrap the call in a proxy
   function that injects the key without leaking it in the URL.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — URL built with `URL` + `searchParams.set()` so
+  the key is never embedded in a template literal. Key also sent as
+  `X-Api-Key` header. Query param kept for backward compat with
+  SearchUPCData's current API; can be removed if they add header-only auth.
+  Existing success test updated to assert header presence; all 33 route
+  tests pass.
 
 ---
 
