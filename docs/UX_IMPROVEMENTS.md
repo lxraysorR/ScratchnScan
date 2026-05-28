@@ -107,7 +107,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - Wire the visible textarea to keep `#ingredients-input` in sync (or replace the hidden input with this one)
   - Do NOT change generation logic — the field feeds the existing `ingredientsText` pipeline
 - **Risk:** MEDIUM — adds visible UI, but the underlying field already exists and is already read by `productContext.js`.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — textarea moved into typed-mode panel with label, placeholder, and helper; `ingredients-input` added to starters-visibility input listener.
 
 ---
 

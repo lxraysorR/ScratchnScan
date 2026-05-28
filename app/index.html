@@ -170,6 +170,11 @@
                 <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Doritos Cool Ranch, Pink Salt Chips" autocomplete="off" />
               </div>
               <div class="field">
+                <label class="label" for="ingredients-input">Ingredients or package text <span class="optional">(optional)</span></label>
+                <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste the ingredients list from the back of the package." autocomplete="off"></textarea>
+                <p class="helper">More detail = more accurate homemade version.</p>
+              </div>
+              <div class="field">
                 <label class="label" for="dietary-input">Preference <span class="optional">(optional)</span></label>
                 <input id="dietary-input" class="input" type="text" placeholder="less sugar, dairy-free, no seed oils" autocomplete="off" />
               </div>
@@ -208,7 +213,6 @@
 
             <!-- hidden inputs preserved for JS compatibility -->
             <input id="barcode-input" type="hidden" />
-            <textarea id="ingredients-input" hidden></textarea>
 
             <section id="manual-confirm-card" class="review-card" hidden></section>
 

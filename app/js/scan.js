@@ -166,7 +166,7 @@ export async function initScanView(mode = "typed") {
     el("scan-retry-btn")?.addEventListener("click", () => el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true })));
     el("friendly-enter-name")?.addEventListener("click", () => { setMethod("typed"); showState("entry"); el("manual-friendly-error").hidden = true; });
     el("friendly-retry-photos")?.addEventListener("click", () => { setMethod("photos"); showState("entry"); el("manual-friendly-error").hidden = true; });
-    ["product-name-input", "dietary-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
+    ["product-name-input", "ingredients-input", "dietary-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
     initialized = true;
   }
   await refreshUsageStrips();
