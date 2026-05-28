@@ -5,12 +5,12 @@ import { resolve } from 'node:path';
 const generatorMod = await import(pathToFileURL(resolve('app/js/recipeGenerator.js')).href);
 const { generateHealthierScratchRecipe } = generatorMod;
 
-const requiredKeys = ['title', 'originalProductName', 'summary', 'healthGoal', 'whyHealthier', 'ingredients', 'steps', 'tips'];
+const requiredKeys = ['title', 'originalProductName', 'summary', 'healthGoal', 'whyCleaner', 'ingredients', 'steps', 'tips'];
 
 for (const name of ['Oreos', 'Doritos Cool Ranch', 'Kraft Mac and Cheese', 'Pop-Tarts', 'Unknown Snack Product']) {
   const r = generateHealthierScratchRecipe({ productName: name });
   for (const key of requiredKeys) assert.ok(key in r, `${name}: missing ${key}`);
-  assert.ok(Array.isArray(r.whyHealthier) && r.whyHealthier.length > 0, `${name}: whyHealthier`);
+  assert.ok(Array.isArray(r.whyCleaner) && r.whyCleaner.length > 0, `${name}: whyCleaner`);
 }
 
 assert.equal(generateHealthierScratchRecipe({ productName: 'Oreos' }).title, 'Healthier Homemade Chocolate Sandwich Cookies');
