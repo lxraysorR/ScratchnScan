@@ -28,7 +28,11 @@ Status values: `[ ]` Not Started · `[~]` In Progress · `[x]` Done · `[!]` Blo
 - **Fix:** Implement per-IP rate limiting via Cloudflare Durable Objects or
   Workers KV. Recommended limits: 20 req/min for lookups, 5 req/min for
   generation.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — sliding-window in-memory limiter added to
+  `src/worker.js`. Limits: generate 5/min, lookup 20/min, popular 60/min.
+  12 new tests in `scripts/test_worker_rate_limiting.mjs`.
+  Note: state is per-isolate; upgrade to Durable Objects for globally
+  consistent enforcement (tracked in BACKLOG.md).
 
 ### S-02 `[SECURITY]` Free generation cap is disabled in production code
 - **File:** `app/js/localDb.js` line 239
