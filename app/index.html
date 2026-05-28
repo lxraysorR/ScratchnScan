@@ -51,7 +51,7 @@
             <p class="hero-sub">Scan a barcode, upload the front and back of a package, or type the product name and ingredients. ScratchnScan turns it into a cleaner homemade version with real ingredients and clear steps.</p>
             <div class="hero-actions">
               <button class="btn btn-primary" type="button" data-go="manual">Create Homemade Version</button>
-              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
+                              <button class="btn btn-ghost-light" type="button" data-go="history">View Saved Recipes</button>
             </div>
             <p class="hero-usage" id="home-usage-strip">10 free homemade creations included on this device.</p>
           </div>
@@ -171,8 +171,9 @@
         <!-- MANUAL -->
         <section id="view-manual" class="screen" aria-label="Package entry" hidden>
           <div class="section-head">
-            <h2>Show us the package</h2>
-            <p>Add front and back package photos, or just type the item name and details below.</p>
+            <h2>Make It From Scratch</h2>
+            <span hidden>Show us the package</span>
+            <p>Enter a product, scan a barcode, or add package photos. We’ll create a homemade version using real ingredients.</p>
           </div>
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
@@ -185,93 +186,117 @@
             <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
           </div>
 
-          <form id="manual-lookup-form" class="form-card" novalidate>
-            <div class="photo-grid">
-              <div class="photo-slot" data-photo="front">
-                <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
-                  <span class="photo-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3" /><circle cx="12" cy="13" r="3.5" /><path d="M8 6V4h8v2" /></svg>
-                  </span>
-                  <strong>Front package</strong>
-                  <em>Tap to add a photo — we'll read the product name for you</em>
-                  <img class="photo-thumb" alt="" hidden />
-                </button>
-                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
-                <div class="photo-actions" data-photo-actions="front" hidden>
-                  <button type="button" class="photo-action-btn" data-photo-replace="front">Replace</button>
-                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="front">Remove</button>
+          <form id="manual-lookup-form" class="form-card manual-flow" novalidate>
+            <div class="method-tabs" role="tablist" aria-label="Input method">
+              <button type="button" class="method-tab is-active" data-method="typed">Type product name</button>
+              <button type="button" class="method-tab" data-method="photos">Add package photos</button>
+              <button type="button" class="method-tab" data-method="barcode">Scan barcode</button>
+            </div>
+
+            <section data-method-panel="typed">
+              <div class="field">
+                <label class="label" for="product-name-input">Product name</label>
+                <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Doritos Cool Ranch, Pink Salt Chips" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label class="label" for="dietary-input">Preference <span class="optional">(optional)</span></label>
+                <input id="dietary-input" class="input" type="text" placeholder="less sugar, dairy-free, no seed oils" autocomplete="off" />
+              </div>
+            </section>
+
+            <section data-method-panel="photos" hidden>
+              <div class="photo-grid">
+                <div class="photo-slot" data-photo="front">
+                  <button class="photo-tile" type="button" data-photo-trigger="front" aria-label="Add front package photo">
+                    <strong>Add front photo</strong>
+                    <em>Front photo helps identify the product</em>
+                    <img class="photo-thumb" alt="" hidden />
+                  </button>
+                  <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="front" hidden />
+                  <div class="photo-actions" data-photo-actions="front" hidden>
+                    <button type="button" class="photo-action-btn" data-photo-replace="front">Replace</button>
+                    <button type="button" class="photo-action-btn is-danger" data-photo-remove="front">Remove</button>
+                  </div>
+                </div>
+                <div class="photo-slot" data-photo="back">
+                  <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
+                    <strong>Add back photo</strong>
+                    <em>Back photo helps read ingredients or barcode</em>
+                    <img class="photo-thumb" alt="" hidden />
+                  </button>
+                  <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
+                  <div class="photo-actions" data-photo-actions="back" hidden>
+                    <button type="button" class="photo-action-btn" data-photo-replace="back">Replace</button>
+                    <button type="button" class="photo-action-btn is-danger" data-photo-remove="back">Remove</button>
+                  </div>
                 </div>
               </div>
-              <div class="photo-slot" data-photo="back">
-                <button class="photo-tile" type="button" data-photo-trigger="back" aria-label="Add back label photo">
-                  <span class="photo-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>
-                  </span>
-                  <strong>Back label</strong>
-                  <em>Tap to add a photo — we'll read the ingredients for you</em>
-                  <img class="photo-thumb" alt="" hidden />
-                </button>
-                <input class="photo-input" type="file" accept="image/*" capture="environment" data-photo-input="back" hidden />
-                <div class="photo-actions" data-photo-actions="back" hidden>
-                  <button type="button" class="photo-action-btn" data-photo-replace="back">Replace</button>
-                  <button type="button" class="photo-action-btn is-danger" data-photo-remove="back">Remove</button>
-                </div>
+            </section>
+
+            <section data-method-panel="barcode" hidden>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="button" data-go="scan">Scan barcode</button>
               </div>
-            </div>
+              <div class="field">
+                <label class="label" for="barcode-input">Manual barcode <span class="optional">(fallback)</span></label>
+                <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Type UPC / barcode" autocomplete="off" />
+              </div>
+            </section>
 
-            <div id="manual-photo-label-tip-slot"></div>
+            <details class="collapse-block">
+              <summary>Advanced details</summary>
+              <div class="field">
+                <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
+                <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste ingredients or notes for a better match."></textarea>
+              </div>
+            </details>
 
-            <div class="field">
-              <label class="label" for="product-name-input">Product name <span class="optional">(or add a photo above)</span></label>
-              <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Kraft Mac and Cheese, Pop-Tarts" autocomplete="off" />
-              <p class="helper">Add a package photo above and we'll fill this in, or type a packaged food name.</p>
-            </div>
+            <details class="collapse-block">
+              <summary>Help</summary>
+              <div id="manual-photo-label-tip-slot"></div>
+              <div id="manual-ingredient-label-tip-slot"></div>
+            </details>
 
-            <div class="field">
-              <label class="label" for="ingredients-input">Ingredients or label notes <span class="optional">(optional)</span></label>
-              <textarea id="ingredients-input" class="input" rows="3" placeholder="Optional: paste the ingredients list to get a closer match."></textarea>
-            </div>
+            <section id="manual-confirm-card" class="review-card" hidden></section>
 
-            <div id="manual-ingredient-label-tip-slot"></div>
-
-            <div class="field">
-              <label class="label" for="dietary-input">Preference</label>
-              <input id="dietary-input" class="input" type="text" placeholder="Example: dairy-free, less sugar, no seed oils" autocomplete="off" />
-            </div>
-
-            <div class="field">
-              <label class="label" for="barcode-input">Optional UPC / barcode</label>
-              <input id="barcode-input" class="input" type="text" inputmode="numeric" placeholder="Use scanned barcode or type one manually" autocomplete="off" />
+            <div id="manual-friendly-error" class="alert alert-info" hidden>
+              <p>We could not identify this product with confidence. You can still continue by entering the product name.</p>
+              <div class="form-actions form-actions-inline">
+                <button type="button" class="btn btn-ghost" id="friendly-enter-name">Enter product name</button>
+                <button type="button" class="btn btn-ghost" id="friendly-retry-photos">Try photos again</button>
+              </div>
             </div>
 
             <div id="scan-error" class="alert alert-error" role="alert" hidden>
               <p id="scan-error-msg"></p>
               <button id="scan-retry-btn" class="btn btn-ghost btn-small" type="button" hidden>Try again</button>
             </div>
-            <div id="scan-loading" class="alert alert-info" role="status" aria-live="polite" hidden>
-              <span class="spinner" aria-hidden="true"></span>
-              <span>Creating your homemade version…</span>
-            </div>
 
             <div class="form-actions">
-              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Generate Homemade Version</button>
+              <button class="btn btn-primary" type="button" id="manual-continue-btn">Continue</button>
+              <button id="scan-submit-btn" class="btn btn-primary" type="submit" hidden>Generate Homemade Version</button>
               <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear form</button>
             </div>
+
+            <section id="manual-creating-state" hidden>
+              <div class="review-card"><h3>Creating your homemade version...</h3><div id="scan-loading" class="alert alert-info" role="status" aria-live="polite"></div></div>
+            </section>
           </form>
 
-          <div class="section-head">
-            <h2>Popular starters</h2>
-            <p>One tap prefills the form for demo speed.</p>
-          </div>
-          <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
-            <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
-            <button class="chip" type="button" data-sample="Oreos">Oreos</button>
-            <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
-            <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
-            <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
+          <div id="manual-starters-wrap">
+            <div class="section-head">
+              <h2>Popular starters</h2>
+              <p>One tap prefills the form for demo speed.</p>
+            </div>
+            <div class="chip-row" id="manual-samples" aria-label="Popular packaged foods">
+              <button class="chip" type="button" data-sample="Doritos Cool Ranch">Doritos Cool Ranch</button>
+              <button class="chip" type="button" data-sample="Oreos">Oreos</button>
+              <button class="chip" type="button" data-sample="Kraft Mac and Cheese">Kraft Mac and Cheese</button>
+              <button class="chip" type="button" data-sample="Pop-Tarts">Pop-Tarts</button>
+              <button class="chip" type="button" data-sample="Honey Nut Cheerios">Honey Nut Cheerios</button>
+            </div>
           </div>
         </section>
-
         <!-- RESULT -->
         <section id="view-result" class="screen" aria-label="Generated homemade recipe" hidden>
           <article class="result-card result-shell">
