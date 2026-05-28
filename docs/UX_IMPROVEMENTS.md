@@ -284,7 +284,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   - Remove the dead `#upgrade-coming-soon-btn` click listener from `app.js` line 148–150 (button is `hidden`, listener fires on nothing).
   - For the hackathon/demo URL, add `?demo=1` support that bypasses the cap entirely (dev-only bypass, not production bypass) — one-line guard in `canGenerate()`.
 - **Risk:** MEDIUM — touches usage logic. Guard with hostname/param check; no behavior change on production hostname.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — upgrade screen copy rewritten ("You've hit the free limit"); hidden `upgrade-coming-soon-btn` removed; "Start another recipe" ghost CTA removed; `#dev-reset-btn` added (hidden by default, shown only on localhost or `?demo=1`); `canGenerate()` bypasses cap when `?demo=1` present; dead click listener removed from `app.js`.
 
 ---
 

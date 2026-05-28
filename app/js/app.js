@@ -145,10 +145,6 @@ function wireGlobalActions() {
     showToast(`${name} sample loaded`);
   });
 
-  document.getElementById("upgrade-coming-soon-btn")?.addEventListener("click", () => {
-    showToast("Upgrade is coming soon. No payment is collected today.");
-  });
-
   document.getElementById("topbar-action")?.addEventListener("click", () => {
     showToast("More options coming after MVP polish");
   });
@@ -185,6 +181,20 @@ window.addEventListener("hashchange", route);
 // always respond even if IndexedDB init is slow, fails, or is blocked by
 // another open tab during an upgrade.
 wireGlobalActions();
+
+// Show dev-reset button on localhost or ?demo=1 so reviewers can clear the usage cap.
+const isDemo = location.hostname === "localhost" || location.hostname === "127.0.0.1"
+  || new URLSearchParams(location.search).has("demo");
+if (isDemo) {
+  const devResetLink = document.getElementById("dev-reset-link");
+  if (devResetLink) devResetLink.hidden = false;
+  document.getElementById("dev-reset-btn")?.addEventListener("click", async () => {
+    await resetUsageForDev();
+    await refreshUsageStrips();
+    showToast("Usage reset — ready to demo.");
+    window.location.hash = "#home";
+  });
+}
 renderLabelLiteracyTips();
 renderPopularChips([]);
 renderManualChips();

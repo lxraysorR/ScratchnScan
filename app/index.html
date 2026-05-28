@@ -318,14 +318,15 @@
         <section id="view-upgrade" class="screen" aria-label="Upgrade ScratchnScan" hidden>
           <article class="upgrade-card">
             <span class="eyebrow">ScratchnScan Plus</span>
-            <h2 class="upgrade-title">Keep creating homemade versions</h2>
-            <p class="upgrade-body">You've used your 10 free ScratchnScan creations. Upgrade to keep turning packaged foods into homemade recipes.</p>
+            <h2 class="upgrade-title">You've hit the free limit</h2>
+            <p class="upgrade-body">Paid tier is coming soon — no payment needed today. Browse the recipes you've already saved.</p>
             <!-- TODO: Phase 2 — pricing tiers ($4.99/mo, $29.99/yr) go here -->
             <div class="form-actions">
-              <button class="btn btn-gold" type="button" id="upgrade-coming-soon-btn" hidden>Upgrade coming soon</button>
               <button class="btn btn-ghost" type="button" data-go="history">View saved recipes</button>
-              <button class="btn btn-ghost" type="button" data-go="manual/typed">Start another recipe</button>
             </div>
+            <p id="dev-reset-link" class="dev-reset-link" hidden>
+              <button type="button" id="dev-reset-btn" class="btn-link">Reset for demo</button>
+            </p>
             <p class="disclaimer">No account or signup required. Your 10 free creations live on this device.</p>
           </article>
         </section>

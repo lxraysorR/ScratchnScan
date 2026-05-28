@@ -1225,6 +1225,10 @@ textarea.input { resize: vertical; min-height: 96px; line-height: 1.45; }
   line-height: 1.5;
 }
 
+.dev-reset-link { margin: 0; text-align: center; }
+.btn-link { background: none; border: none; padding: 0; cursor: pointer; font-size: 13px; color: var(--muted); text-decoration: underline; }
+.btn-link:hover { color: var(--ink); }
+
 .upgrade-offer {
   margin-top: 8px;
   padding: 16px 18px;
