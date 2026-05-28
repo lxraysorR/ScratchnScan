@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64" aria-label="ScratchnScan wordmark">
+  <defs>
+    <linearGradient id="wm-tile" x1="0" y1="0" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#155442"></stop>
+      <stop offset="1" stop-color="#071d18"></stop>
+    </linearGradient>
+    <linearGradient id="wm-bowl" x1="12" y1="12" x2="46" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff3bf"></stop>
+      <stop offset="1" stop-color="#caa85d"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#wm-tile)"></rect>
+  <path d="M16 29h28c-1.3 9.6-6.8 16-14 16S17.3 38.6 16 29Z" fill="url(#wm-bowl)"></path>
+  <path d="M18 27c3.5-4.3 21-4.3 24.5 0" fill="none" stroke="#fff8dc" stroke-width="2.8" stroke-linecap="round"></path>
+  <path d="M36 16 28 24" stroke="#fff8dc" stroke-width="3.2" stroke-linecap="round"></path>
+  <circle cx="38" cy="15" r="3.2" fill="#caa85d"></circle>
+  <text x="76" y="34" font-family="Inter, sans-serif" font-weight="800" font-size="24" letter-spacing="-0.02em" fill="#0b2f27">ScratchnScan</text>
+  <text x="76" y="50" font-family="Inter, sans-serif" font-weight="500" font-size="11" letter-spacing="0.01em" fill="#66736d">Scan it. Scratch-make it.</text>
+</svg>
