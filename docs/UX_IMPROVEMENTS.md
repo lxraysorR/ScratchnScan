@@ -253,7 +253,7 @@ Work through **one item per session** in the order shown. Each prompt is labeled
   ```
   Both `result.js` and `details.js` import from there.
 - **Risk:** MEDIUM — refactor; must not change any rendered output. Write before/after snapshot tests first.
-- **Status:** `[ ]`
+- **Status:** `[x]` Done — `resultComponents.js` created with 6 exported helpers; `result.js` and `details.js` import from it. Also fixed a latent bug: `details.js` was not escaping `productContext.productName` and `productContext.claims` in the understood panel. All regression tests pass.
 
 ---
 
