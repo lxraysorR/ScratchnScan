@@ -124,8 +124,9 @@ function wireGlobalActions() {
   document.querySelectorAll("[data-scroll]").forEach((el) => {
     el.addEventListener("click", () => {
       const target = document.getElementById(el.dataset.scroll);
-      if (typeof target?.scrollIntoView === "function") {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const scrollContainer = document.getElementById("main-content");
+      if (target && scrollContainer) {
+        scrollContainer.scrollTo({ top: target.offsetTop - 12, behavior: "smooth" });
       }
     });
   });
