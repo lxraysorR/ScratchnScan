@@ -115,6 +115,70 @@ function parseInlineImage(value) {
   return { mimeType: match[1], data: match[2] };
 }
 
+async function handleLookupUpc(req, res) {
+  let body;
+  try {
+    const raw = await new Promise((resolve, reject) => {
+      let chunks = "";
+      req.on("data", (d) => { chunks += d; });
+      req.on("end", () => resolve(chunks));
+      req.on("error", reject);
+    });
+    body = JSON.parse(raw);
+  } catch {
+    return jsonRes(res, 400, { ok: false, error: "Request body must be valid JSON" });
+  }
+
+  const upc = String(body?.upc ?? "").replace(/[\s\-]/g, "");
+  const VALID_LENGTHS = new Set([8, 12, 13, 14]);
+
+  if (!upc || !/^\d+$/.test(upc) || !VALID_LENGTHS.has(upc.length)) {
+    return jsonRes(res, 400, { ok: false, error: "Invalid UPC" });
+  }
+
+  let apiRes;
+  try {
+    apiRes = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(upc)}.json`, {
+      headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" },
+    });
+  } catch (err) {
+    console.error("Open Food Facts network error:", err.message);
+    return jsonRes(res, 502, { ok: false, error: "Lookup provider failed" });
+  }
+
+  if (!apiRes.ok) {
+    return jsonRes(res, 502, { ok: false, error: "Lookup provider failed", providerStatus: apiRes.status });
+  }
+
+  let data;
+  try {
+    data = await apiRes.json();
+  } catch {
+    return jsonRes(res, 502, { ok: false, error: "Lookup provider returned invalid data" });
+  }
+
+  if (data?.status !== 1) {
+    return jsonRes(res, 404, { ok: false, error: "Product not found" });
+  }
+
+  const p = data.product;
+  const category = p?.categories_tags?.[0]?.replace(/^en:/, "") ?? null;
+  const product = {
+    upc,
+    name: p?.product_name_en ?? p?.product_name ?? null,
+    brand: p?.brands ?? null,
+    category,
+    ingredients: p?.ingredients_text_en ?? p?.ingredients_text ?? null,
+    imageUrl: p?.image_front_url ?? p?.image_url ?? null,
+  };
+
+  if (!product.name) {
+    return jsonRes(res, 404, { ok: false, error: "Product not found" });
+  }
+
+  return jsonRes(res, 200, { ok: true, product });
+}
+
 async function handleGenerateRecipe(req, res) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -214,6 +278,10 @@ createServer(async (req, res) => {
 
   if ((req.method === "POST") && (urlPath === "/api/generate-scratch-recipe" || urlPath === "/api/generate-homemade-version")) {
     return handleGenerateRecipe(req, res);
+  }
+
+  if (req.method === "POST" && urlPath === "/api/lookup-upc") {
+    return handleLookupUpc(req, res);
   }
 
   if (urlPath === "/api/popular-items") {

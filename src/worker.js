@@ -321,28 +321,14 @@ async function handleLookupUpc(request, env) {
     return json({ ok: false, error: "Invalid UPC" }, 400);
   }
 
-  if (!env.SEARCHUPCDATA_API_KEY) {
-    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "missing_key" }));
-    return json({ ok: false, error: "Search provider is not configured" }, 500);
-  }
-
   console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, step: "provider_call" }));
 
-  // Build the provider URL with URL/searchParams so the key is never embedded
-  // in a template literal (and therefore never accidentally captured in logs).
-  // X-Api-Key is sent as a header too; if SearchUPCData adds header-only auth
-  // in the future, the apikey query param can be dropped at that point.
-  const providerUrl = new URL("https://api.searchupcdata.com/api/v1");
-  providerUrl.searchParams.set("upc", upc);
-  providerUrl.searchParams.set("apikey", env.SEARCHUPCDATA_API_KEY);
+  const providerUrl = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(upc)}.json`;
 
   let apiRes;
   try {
-    apiRes = await fetch(providerUrl.toString(), {
-      headers: {
-        Accept: "application/json",
-        "X-Api-Key": env.SEARCHUPCDATA_API_KEY,
-      },
+    apiRes = await fetch(providerUrl, {
+      headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" },
     });
   } catch {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_network_error" }));
@@ -350,13 +336,7 @@ async function handleLookupUpc(request, env) {
   }
 
   if (!apiRes.ok) {
-    console.log(JSON.stringify({
-      reqId,
-      path: "/api/lookup-upc",
-      upc,
-      error: "provider_error",
-      providerStatus: apiRes.status,
-    }));
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_error", providerStatus: apiRes.status }));
     return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
   }
 
@@ -365,10 +345,15 @@ async function handleLookupUpc(request, env) {
     raw = await apiRes.json();
   } catch {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_invalid_json" }));
-    return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
+    return json({ ok: false, error: "Lookup provider failed" }, 502);
   }
 
-  const product = normalizeUpcData(raw, upc);
+  if (raw?.status !== 1) {
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, result: "not_found" }));
+    return json({ ok: false, error: "Product not found" }, 404);
+  }
+
+  const product = normalizeUpcData(raw.product, upc);
 
   if (!product.name) {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, result: "not_found" }));
@@ -382,13 +367,14 @@ async function handleLookupUpc(request, env) {
 
 export function normalizeUpcData(raw, upc) {
   const item = Array.isArray(raw) ? raw[0] : raw;
+  const category = item?.categories_tags?.[0]?.replace(/^en:/, "") ?? item?.category ?? null;
   return {
     upc,
-    name: item?.product_name ?? item?.title ?? item?.name ?? null,
-    brand: item?.brand ?? item?.manufacturer ?? null,
-    category: item?.category ?? null,
-    ingredients: item?.ingredients ?? null,
-    imageUrl: item?.image ?? item?.images?.[0] ?? null,
+    name: item?.product_name_en ?? item?.product_name ?? item?.title ?? item?.name ?? null,
+    brand: item?.brands ?? item?.brand ?? item?.manufacturer ?? null,
+    category,
+    ingredients: item?.ingredients_text_en ?? item?.ingredients_text ?? item?.ingredients ?? null,
+    imageUrl: item?.image_front_url ?? item?.image_url ?? item?.image ?? item?.images?.[0] ?? null,
   };
 }
 
