@@ -9,7 +9,7 @@ const ROOT = join(__dirname, "..", "app");
 const PORT = 5000;
 const HOST = "0.0.0.0";
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const MIME = {
@@ -220,24 +220,45 @@ async function handleGenerateRecipe(req, res) {
   if (frontImage) userParts.push({ inlineData: { mimeType: frontImage.mimeType, data: frontImage.data } });
   if (backImage) userParts.push({ inlineData: { mimeType: backImage.mimeType, data: backImage.data } });
 
+  const geminiRequestBody = JSON.stringify({
+    contents: [{ role: "user", parts: userParts }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.4,
+      maxOutputTokens: 2048,
+      thinkingConfig: { thinkingBudget: 0 },
+    },
+  });
+
+  const RETRYABLE = new Set([429, 500, 502, 503, 504]);
   let geminiRes;
-  try {
-    geminiRes = await fetch(GEMINI_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: userParts }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.4, maxOutputTokens: 2048 },
-      }),
-    });
-  } catch (err) {
-    console.error("Gemini network error:", err.message);
-    return jsonRes(res, 502, { ok: false, error: "AI provider unavailable" });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    try {
+      geminiRes = await fetch(GEMINI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: geminiRequestBody,
+      });
+    } catch (err) {
+      console.error("Gemini network error:", err.message);
+      if (attempt === 2) return jsonRes(res, 502, { ok: false, error: "AI provider unavailable" });
+      continue;
+    }
+    if (!RETRYABLE.has(geminiRes.status)) break;
+    const errText = await geminiRes.text().catch(() => "");
+    console.error(`Gemini attempt ${attempt + 1} failed: ${geminiRes.status}`, errText.slice(0, 200));
+    if (attempt === 2) {
+      const userMsg = geminiRes.status === 503
+        ? "AI service is temporarily busy — please try again in a moment."
+        : "AI provider returned an error";
+      return jsonRes(res, 502, { ok: false, error: userMsg });
+    }
   }
 
   if (!geminiRes.ok) {
     const errText = await geminiRes.text().catch(() => "");
-    console.error("Gemini error response:", geminiRes.status, errText.slice(0, 300));
+    console.error("Gemini final error:", geminiRes.status, errText.slice(0, 300));
     return jsonRes(res, 502, { ok: false, error: "AI provider returned an error" });
   }
 
@@ -249,7 +270,7 @@ async function handleGenerateRecipe(req, res) {
   }
 
   const parts = geminiBody?.candidates?.[0]?.content?.parts ?? [];
-  const rawText = parts.map((p) => p.text ?? "").join("").trim();
+  const rawText = parts.filter((p) => !p.thought).map((p) => p.text ?? "").join("").trim();
   if (!rawText) {
     return jsonRes(res, 502, { ok: false, error: "AI provider returned an empty response" });
   }
