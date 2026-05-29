@@ -8,6 +8,25 @@ import {
 } from './localDb.js';
 
 const MEDIA_BUCKET = 'scratch-recipe-media';
+const GUEST_SESSION_KEY = 'scratchnscan:guestSessionId';
+
+// Returns a stable per-device guest session ID. Generated once with
+// crypto.randomUUID() and persisted in localStorage so it survives page
+// reloads. Each device gets its own ID, preventing Supabase Storage path
+// collisions between users who all shared the old hardcoded 'guest' default.
+function getGuestSessionId() {
+  try {
+    const stored = localStorage.getItem(GUEST_SESSION_KEY);
+    if (stored) return stored;
+    const id = crypto.randomUUID();
+    localStorage.setItem(GUEST_SESSION_KEY, id);
+    return id;
+  } catch {
+    // localStorage unavailable (private browsing, SSR, tests) — fall back to
+    // a per-call UUID. Not persistent but still unique per path.
+    return crypto.randomUUID();
+  }
+}
 
 function hasSupabaseConfig() {
   // Only read from build-time env vars (Vite). globalThis/window fallbacks are
@@ -19,9 +38,10 @@ function hasSupabaseConfig() {
   return Boolean(url && anon);
 }
 
-function buildMediaRef({ role, recipeId, guestSessionId = 'guest', ext = 'jpg' }) {
+function buildMediaRef({ role, recipeId, guestSessionId, ext = 'jpg' }) {
   const safeRole = role || 'thumbnail';
-  const path = `guests/${guestSessionId}/drafts/${recipeId}/${safeRole}.${ext}`;
+  const sessionId = guestSessionId || getGuestSessionId();
+  const path = `guests/${sessionId}/drafts/${recipeId}/${safeRole}.${ext}`;
   return { role: safeRole, storageBucket: MEDIA_BUCKET, storagePath: path };
 }
 
