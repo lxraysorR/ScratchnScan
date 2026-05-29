@@ -270,16 +270,23 @@ export function extractGeminiText(geminiBody) {
     .trim();
 }
 
+// 4 MB decoded limit — base64 encoding inflates by ~4/3, so the character
+// ceiling is 4 * 1024 * 1024 * (4/3) ≈ 5,592,405 chars.
+const MAX_IMAGE_BASE64_CHARS = 5_592_405;
+
 // Accept only well-formed base64 image data URLs (what the frontend sends after
 // compressing a captured photo). Returns the mime type + bare base64 payload
 // Gemini's inlineData part expects, or null when the value isn't a usable image.
 export function parseInlineImage(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
+  // Reject oversized payloads before running the regex to avoid ReDoS risk.
+  if (raw.length > MAX_IMAGE_BASE64_CHARS + 100) return null;
   const match = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i.exec(raw);
   if (!match) return null;
   const data = match[2].replace(/\s+/g, "");
   if (!data) return null;
+  if (data.length > MAX_IMAGE_BASE64_CHARS) return null;
   return { mimeType: match[1].toLowerCase(), data };
 }
 
