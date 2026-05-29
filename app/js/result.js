@@ -45,7 +45,15 @@ function renderBadges(fallbackUsed) {
 
 export function initResultView() {
   const sessionRecord = sessionStorage.getItem("scratchnscan:lastGenerated");
-  const parsed = sessionRecord ? JSON.parse(sessionRecord) : null;
+  let parsed = null;
+  if (sessionRecord) {
+    try {
+      parsed = JSON.parse(sessionRecord);
+    } catch {
+      // Corrupted session data — fall through to in-memory record.
+      sessionStorage.removeItem("scratchnscan:lastGenerated");
+    }
+  }
   const record = parsed || lastGeneratedRecord;
   if (!record || !record.scratchRecipe) {
     window.location.hash = "#manual";
