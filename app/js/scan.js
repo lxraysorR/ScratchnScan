@@ -18,6 +18,7 @@ import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
 import { normalizeProductContext } from "./productContext.js";
 import { runGenerationFlow } from "./generationController.js";
+import { AI_TIMEOUT_MS } from "./constants.js";
 
 const __legacyScanToken = `barcode,
 productName,`;
@@ -28,7 +29,7 @@ let submitting = false;
 let progress = null;
 let inputMethod = "typed";
 let state = "entry";
-let aiTimeoutMs = 25000;
+let aiTimeoutMs = AI_TIMEOUT_MS;
 
 const draft = { frontImagePreviewDataUrl: null, backImagePreviewDataUrl: null };
 const GENERATE_LABEL = "Generate Homemade Version";
@@ -79,17 +80,29 @@ function renderConfirmCard() {
   card.innerHTML = `<h3>Ready to create</h3><p><strong>Product:</strong> ${product}</p><p><strong>Input source:</strong> ${inputMethod}</p><p><strong>Preferences:</strong> ${pref}</p>`;
 }
 
+// Declarative visibility map: for each state, which element IDs are visible.
+// Elements listed under a state are shown; all others in the set are hidden.
+const STATE_VISIBLE = {
+  entry:    ["scan-error", "manual-clear-btn", "scan-submit-btn"],
+  creating: ["manual-creating-state"],
+};
+// Full set of elements managed by showState.
+const STATE_MANAGED_IDS = new Set([
+  "manual-creating-state",
+  "manual-confirm-card",
+  "scan-error",
+  "manual-clear-btn",
+  "scan-submit-btn",
+]);
+
 function showState(next) {
   state = next;
-  el("manual-creating-state").hidden = next !== "creating";
-  const entryParts = ["manual-confirm-card", "scan-error", "manual-clear-btn"];
-  entryParts.forEach((id) => { const node = el(id); if (node) node.hidden = next === "creating"; });
-  const submit = el("scan-submit-btn");
-  if (submit) submit.hidden = next === "creating";
-  if (next === "entry") {
-    el("manual-confirm-card").hidden = true;
-    el("manual-clear-btn").hidden = false;
-  }
+  const visible = new Set(STATE_VISIBLE[next] || []);
+  STATE_MANAGED_IDS.forEach((id) => {
+    const node = el(id);
+    if (node) node.hidden = !visible.has(id);
+  });
+  renderStartersVisibility();
 }
 
 function stopLoadingUi() {

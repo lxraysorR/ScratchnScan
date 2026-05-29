@@ -160,6 +160,14 @@ export function toDisplayName(normalized, fallbackRaw = "") {
     .join(" ");
 }
 
+// Wraps a fetch call with an AbortController timeout (ms).
+// Throws a DOMException with name "TimeoutError" if the deadline is exceeded.
+function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function supabaseRequest(env, path, options = {}) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
   const url = `${env.SUPABASE_URL.replace(/\/$/, "")}${path}`;
@@ -270,16 +278,23 @@ export function extractGeminiText(geminiBody) {
     .trim();
 }
 
+// 4 MB decoded limit — base64 encoding inflates by ~4/3, so the character
+// ceiling is 4 * 1024 * 1024 * (4/3) ≈ 5,592,405 chars.
+const MAX_IMAGE_BASE64_CHARS = 5_592_405;
+
 // Accept only well-formed base64 image data URLs (what the frontend sends after
 // compressing a captured photo). Returns the mime type + bare base64 payload
 // Gemini's inlineData part expects, or null when the value isn't a usable image.
 export function parseInlineImage(value) {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
+  // Reject oversized payloads before running the regex to avoid ReDoS risk.
+  if (raw.length > MAX_IMAGE_BASE64_CHARS + 100) return null;
   const match = /^data:(image\/[a-z0-9.+-]+);base64,([a-z0-9+/=\s]+)$/i.exec(raw);
   if (!match) return null;
   const data = match[2].replace(/\s+/g, "");
   if (!data) return null;
+  if (data.length > MAX_IMAGE_BASE64_CHARS) return null;
   return { mimeType: match[1].toLowerCase(), data };
 }
 
@@ -327,17 +342,20 @@ async function handleLookupUpc(request, env) {
 
   let apiRes;
   try {
-    apiRes = await fetch(providerUrl, {
-      headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" },
-    });
-  } catch {
-    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_network_error" }));
-    return json({ ok: false, error: "Lookup provider failed", providerStatus: 0 }, 502);
+    apiRes = await fetchWithTimeout(
+      providerUrl,
+      { headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" } },
+      25_000,
+    );
+  } catch (err) {
+    const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: isTimeout ? "provider_timeout" : "provider_network_error" }));
+    return json({ ok: false, error: isTimeout ? "Lookup provider timed out" : "Lookup provider failed" }, 502);
   }
 
   if (!apiRes.ok) {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_error", providerStatus: apiRes.status }));
-    return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
+    return json({ ok: false, error: "Lookup provider failed" }, 502);
   }
 
   let raw;
@@ -697,7 +715,7 @@ async function handleGenerateScratchRecipe(request, env) {
 
   let geminiRes;
   try {
-    geminiRes = await fetch(
+    geminiRes = await fetchWithTimeout(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
@@ -719,16 +737,18 @@ async function handleGenerateScratchRecipe(request, env) {
             maxOutputTokens: 2048,
           },
         }),
-      }
+      },
+      30_000,
     );
   } catch (err) {
+    const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
     console.log(JSON.stringify({
       reqId,
       path: "/api/generate-scratch-recipe",
-      error: "provider_network_error",
+      error: isTimeout ? "provider_timeout" : "provider_network_error",
       message: err instanceof Error ? err.message : String(err),
     }));
-    return json({ ok: false, error: "AI provider unavailable" }, 502);
+    return json({ ok: false, error: isTimeout ? "AI provider timed out" : "AI provider unavailable" }, 502);
   }
 
   if (!geminiRes.ok) {
@@ -770,14 +790,13 @@ async function handleGenerateScratchRecipe(request, env) {
 
   const validated = validateAiContract(recipe);
   if (!validated.ok) {
-    return json(
-      {
-        ok: false,
-        error: "AI response failed validation",
-        details: validated.errors,
-      },
-      502
-    );
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/generate-scratch-recipe",
+      error: "ai_contract_validation_failed",
+      details: validated.errors,
+    }));
+    return json({ ok: false, error: "AI provider returned an unexpected response" }, 502);
   }
 
   void logRequestEvent(env, {

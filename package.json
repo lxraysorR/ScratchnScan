@@ -14,14 +14,14 @@
     "agent:next": "node scripts/agent-next-task.js",
     "qa:smoke": "node scripts/qa-smoke.js",
     "check:syntax": "node scripts/check-js-syntax.mjs",
-    "qa:flow": "npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
+    "qa:flow": "npm audit --audit-level=moderate && npm run check:syntax && npm test && npm run qa:smoke && npm run app:status && npm run agent:next && npm run build"
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.5",
-    "jsdom": "^29.1.1",
-    "wrangler": "^4.88.0"
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "29.1.1",
+    "wrangler": "4.95.0"
   },
   "dependencies": {
-    "@capacitor-mlkit/barcode-scanning": "^7.5.0"
+    "@capacitor-mlkit/barcode-scanning": "7.5.0"
   }
 }

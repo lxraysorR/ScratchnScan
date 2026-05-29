@@ -4,6 +4,8 @@
 const WORKER_BASE =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SCAN_SCRATCH_API_BASE) || "";
 
+import { AI_TIMEOUT_MS } from "./constants.js";
+
 async function postJson(path, payload) {
   let res;
   try {
@@ -47,7 +49,7 @@ export async function lookupUpc(upc) {
   return postJson("/api/lookup-upc", { upc });
 }
 
-export async function generateScratchRecipe(payload, { timeoutMs = 25000 } = {}) {
+export async function generateScratchRecipe(payload, { timeoutMs = AI_TIMEOUT_MS } = {}) {
   // Guard the only network call in the generate flow: without a timeout a
   // hung/slow Worker leaves the `await` pending forever and the UI never exits
   // its loading state. AbortController bounds the request (and its body read).

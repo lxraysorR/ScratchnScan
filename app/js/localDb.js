@@ -218,9 +218,11 @@ export async function getUsageState() {
     null,
     "getUsageState",
   );
-  const merged = { ...defaultUsageState(), ...(stored || {}) };
-  // Always enforce the canonical limit if it drifts.
-  merged.freeGenerationLimit = FREE_GENERATION_LIMIT;
+  // Spread stored fields over defaults but never let a persisted
+  // freeGenerationLimit override the canonical constant — the code-defined
+  // FREE_GENERATION_LIMIT is always authoritative.
+  const { freeGenerationLimit: _ignored, ...storedRest } = stored || {};
+  const merged = { ...defaultUsageState(), ...storedRest };
   return merged;
 }
 
