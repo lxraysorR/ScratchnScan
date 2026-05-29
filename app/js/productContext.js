@@ -1,4 +1,20 @@
 function cleanText(v) { return String(v || "").trim(); }
+
+// Maximum character lengths for fields sent to the AI. Prevents oversized
+// prompts from exhausting token budgets or being used for prompt injection.
+const MAX_LENGTHS = {
+  productName: 120,
+  brand: 80,
+  flavor: 80,
+  category: 80,
+  packageText: 1000,
+  ingredientsText: 1000,
+  userPreferences: 300,
+};
+
+function truncate(str, max) {
+  return str.length > max ? str.slice(0, max) : str;
+}
 function asArray(v) {
   if (!Array.isArray(v)) return [];
   const out = [];
@@ -59,12 +75,12 @@ export function normalizeProductContext(input = {}, options = {}) {
   const sourceBasis = asArray(root.sourceBasis || options.sourceBasis || []);
 
   const ctx = {
-    productName,
-    brand: cleanText(root.brand),
-    flavor: cleanText(root.flavor),
-    category,
-    packageText: cleanText(root.packageText),
-    ingredientsText: cleanText(root.ingredientsText || root.inputIngredients || root.ingredients),
+    productName: truncate(productName, MAX_LENGTHS.productName),
+    brand: truncate(cleanText(root.brand), MAX_LENGTHS.brand),
+    flavor: truncate(cleanText(root.flavor), MAX_LENGTHS.flavor),
+    category: truncate(category, MAX_LENGTHS.category),
+    packageText: truncate(cleanText(root.packageText), MAX_LENGTHS.packageText),
+    ingredientsText: truncate(cleanText(root.ingredientsText || root.inputIngredients || root.ingredients), MAX_LENGTHS.ingredientsText),
     detectedIngredients: asArray(root.detectedIngredients),
     nutritionFacts: root.nutritionFacts && typeof root.nutritionFacts === "object" ? root.nutritionFacts : null,
     claims: asArray(root.claims),
@@ -73,7 +89,7 @@ export function normalizeProductContext(input = {}, options = {}) {
     source: ["manual", "photo", "scanner", "ai", "popular", "fallback", "unknown"].includes(source) ? source : "unknown",
     sourceBasis,
     sourceMetadata: (root.sourceMetadata && typeof root.sourceMetadata === "object") ? root.sourceMetadata : {},
-    userPreferences: cleanText(root.userPreferences || root.dietaryPreference || root.notes),
+    userPreferences: truncate(cleanText(root.userPreferences || root.dietaryPreference || root.notes), MAX_LENGTHS.userPreferences),
     originalInput: input && typeof input === "object" ? input : {},
     createdAt: cleanText(root.createdAt) || now,
     updatedAt: now,
