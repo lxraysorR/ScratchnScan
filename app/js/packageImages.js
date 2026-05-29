@@ -6,6 +6,20 @@
 const MAX_EDGE = 720;
 const JPEG_QUALITY = 0.78;
 
+// Explicit allowlist of safe raster formats. SVG is intentionally excluded —
+// it can embed scripts and is an XSS vector when set as an img src or drawn
+// onto a canvas that is later read back.
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+  "image/gif",
+]);
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -25,8 +39,8 @@ function loadImage(dataUrl) {
 }
 
 export async function compressImageFile(file) {
-  if (!file || !file.type || !file.type.startsWith("image/")) {
-    throw new Error("Not an image file");
+  if (!file || !file.type || !ALLOWED_IMAGE_TYPES.has(file.type.toLowerCase())) {
+    throw new Error("Unsupported file type. Please use a JPG, PNG, WebP, or HEIC photo.");
   }
   const rawDataUrl = await readFileAsDataUrl(file);
   let img;
