@@ -350,12 +350,12 @@ async function handleLookupUpc(request, env) {
   } catch (err) {
     const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: isTimeout ? "provider_timeout" : "provider_network_error" }));
-    return json({ ok: false, error: isTimeout ? "Lookup provider timed out" : "Lookup provider failed", providerStatus: 0 }, 502);
+    return json({ ok: false, error: isTimeout ? "Lookup provider timed out" : "Lookup provider failed" }, 502);
   }
 
   if (!apiRes.ok) {
     console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_error", providerStatus: apiRes.status }));
-    return json({ ok: false, error: "Lookup provider failed", providerStatus: apiRes.status }, 502);
+    return json({ ok: false, error: "Lookup provider failed" }, 502);
   }
 
   let raw;
@@ -790,14 +790,13 @@ async function handleGenerateScratchRecipe(request, env) {
 
   const validated = validateAiContract(recipe);
   if (!validated.ok) {
-    return json(
-      {
-        ok: false,
-        error: "AI response failed validation",
-        details: validated.errors,
-      },
-      502
-    );
+    console.log(JSON.stringify({
+      reqId,
+      path: "/api/generate-scratch-recipe",
+      error: "ai_contract_validation_failed",
+      details: validated.errors,
+    }));
+    return json({ ok: false, error: "AI provider returned an unexpected response" }, 502);
   }
 
   void logRequestEvent(env, {
