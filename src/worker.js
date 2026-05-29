@@ -160,6 +160,14 @@ export function toDisplayName(normalized, fallbackRaw = "") {
     .join(" ");
 }
 
+// Wraps a fetch call with an AbortController timeout (ms).
+// Throws a DOMException with name "TimeoutError" if the deadline is exceeded.
+function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new DOMException("Timeout", "TimeoutError")), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function supabaseRequest(env, path, options = {}) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
   const url = `${env.SUPABASE_URL.replace(/\/$/, "")}${path}`;
@@ -334,12 +342,15 @@ async function handleLookupUpc(request, env) {
 
   let apiRes;
   try {
-    apiRes = await fetch(providerUrl, {
-      headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" },
-    });
-  } catch {
-    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: "provider_network_error" }));
-    return json({ ok: false, error: "Lookup provider failed", providerStatus: 0 }, 502);
+    apiRes = await fetchWithTimeout(
+      providerUrl,
+      { headers: { "User-Agent": "ScratchnScan/1.0 (homemade-recipe-helper)" } },
+      25_000,
+    );
+  } catch (err) {
+    const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
+    console.log(JSON.stringify({ reqId, path: "/api/lookup-upc", upc, error: isTimeout ? "provider_timeout" : "provider_network_error" }));
+    return json({ ok: false, error: isTimeout ? "Lookup provider timed out" : "Lookup provider failed", providerStatus: 0 }, 502);
   }
 
   if (!apiRes.ok) {
@@ -704,7 +715,7 @@ async function handleGenerateScratchRecipe(request, env) {
 
   let geminiRes;
   try {
-    geminiRes = await fetch(
+    geminiRes = await fetchWithTimeout(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       {
         method: "POST",
@@ -726,16 +737,18 @@ async function handleGenerateScratchRecipe(request, env) {
             maxOutputTokens: 2048,
           },
         }),
-      }
+      },
+      30_000,
     );
   } catch (err) {
+    const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
     console.log(JSON.stringify({
       reqId,
       path: "/api/generate-scratch-recipe",
-      error: "provider_network_error",
+      error: isTimeout ? "provider_timeout" : "provider_network_error",
       message: err instanceof Error ? err.message : String(err),
     }));
-    return json({ ok: false, error: "AI provider unavailable" }, 502);
+    return json({ ok: false, error: isTimeout ? "AI provider timed out" : "AI provider unavailable" }, 502);
   }
 
   if (!geminiRes.ok) {
