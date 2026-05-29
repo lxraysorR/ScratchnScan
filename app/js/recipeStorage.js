@@ -10,9 +10,12 @@ import {
 const MEDIA_BUCKET = 'scratch-recipe-media';
 
 function hasSupabaseConfig() {
+  // Only read from build-time env vars (Vite). globalThis/window fallbacks are
+  // intentionally removed — runtime globals can be read or tampered with by any
+  // script on the page, including XSS payloads.
   const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
-  const url = env.VITE_SUPABASE_URL || globalThis.SUPABASE_URL;
-  const anon = env.VITE_SUPABASE_ANON_KEY || globalThis.SUPABASE_ANON_KEY;
+  const url = env.VITE_SUPABASE_URL;
+  const anon = env.VITE_SUPABASE_ANON_KEY;
   return Boolean(url && anon);
 }
 
