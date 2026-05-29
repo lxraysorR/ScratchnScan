@@ -28,6 +28,23 @@ function sanitizePlaceholders(items = []) {
     (x) => !/(?:base|flavor|seasoning) ingredient|placeholder/i.test(x),
   );
 }
+
+// Clears listEl and appends one <li> per item.
+function renderList(listEl, items) {
+  listEl.innerHTML = "";
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    listEl.appendChild(li);
+  }
+}
+
+// Renders items into listEl and shows/hides the surrounding blockEl.
+function renderListBlock(blockEl, listEl, items) {
+  if (!listEl || !blockEl) return;
+  renderList(listEl, items);
+  blockEl.hidden = items.length === 0;
+}
 function renderBadges(fallbackUsed) {
   const row = el("result-badges");
   if (!row) return;
@@ -93,46 +110,18 @@ export function initResultView() {
   const why = uniqNonEmpty(record.scratchRecipe.whyCleaner || record.scratchRecipe.whyHealthier || []);
   const whyBlock = el("result-why-block");
   const whyList = el("result-why");
-  if (whyList && whyBlock) {
-    whyList.innerHTML = "";
-    if (why.length) {
-      for (const item of why) {
-        const li = document.createElement("li"); li.textContent = item; whyList.appendChild(li);
-      }
-      whyBlock.hidden = false;
-    } else {
-      whyBlock.hidden = true;
-    }
-  }
+  renderListBlock(whyBlock, whyList, why);
   el("result-note").textContent = fallbackUsed
     ? "This is a starter suggestion built from common ingredients. Tweak to taste. General food info only, not medical advice."
     : "Generated from the configured AI provider. Tweak to taste. General food info only, not medical advice.";
 
-  const ingredients = el("result-homemade-ingredients");
-  ingredients.innerHTML = "";
-  for (const item of sanitizePlaceholders(record.scratchRecipe.ingredients || [])) {
-    const li = document.createElement("li"); li.textContent = item; ingredients.appendChild(li);
-  }
-  const steps = el("result-homemade-steps");
-  steps.innerHTML = "";
-  for (const item of uniqNonEmpty(record.scratchRecipe.steps || [])) {
-    const li = document.createElement("li"); li.textContent = item; steps.appendChild(li);
-  }
+  renderList(el("result-homemade-ingredients"), sanitizePlaceholders(record.scratchRecipe.ingredients || []));
+  renderList(el("result-homemade-steps"), uniqNonEmpty(record.scratchRecipe.steps || []));
 
   const tips = uniqNonEmpty(record.scratchRecipe.tips || record.recipeTips || []);
   const tipsBlock = el("result-tips-block");
   const tipsList = el("result-tips");
-  if (tipsList && tipsBlock) {
-    tipsList.innerHTML = "";
-    if (tips.length) {
-      for (const tip of tips) {
-        const li = document.createElement("li"); li.textContent = tip; tipsList.appendChild(li);
-      }
-      tipsBlock.hidden = false;
-    } else {
-      tipsBlock.hidden = true;
-    }
-  }
+  renderListBlock(tipsBlock, tipsList, tips);
   renderAccordion(el("result-why-block"), false);
   renderAccordion(el("result-tips-block"), false);
   renderAccordion(el("result-homemade-ingredients")?.closest(".recipe-block"), true);
