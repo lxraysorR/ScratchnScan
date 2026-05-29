@@ -27,6 +27,7 @@ export function usageCopyFromState(state) {
   if (!state) {
     return {
       text: `${FREE_GENERATION_LIMIT} free homemade creations included`,
+      homeText: `${FREE_GENERATION_LIMIT} free homemade creations included on this device.`,
       tone: "ok",
       remaining: FREE_GENERATION_LIMIT,
       blocked: false,
@@ -35,6 +36,7 @@ export function usageCopyFromState(state) {
   if (state.isLocalPremiumUnlocked) {
     return {
       text: "Developer unlock active — unlimited creations on this device",
+      homeText: "Developer unlock active. Unlimited creations on this device.",
       tone: "unlocked",
       remaining: Infinity,
       blocked: false,
@@ -44,6 +46,7 @@ export function usageCopyFromState(state) {
   if (remaining <= 0) {
     return {
       text: "You’ve used your 10 free creations. Upgrade to keep going.",
+      homeText: "You’ve used your 10 free recipes. More coming soon.",
       tone: "blocked",
       remaining: 0,
       blocked: true,
@@ -52,6 +55,7 @@ export function usageCopyFromState(state) {
   if (remaining === 1) {
     return {
       text: "1 free creation left",
+      homeText: `1 of ${FREE_GENERATION_LIMIT} free creations left on this device.`,
       tone: "warn",
       remaining,
       blocked: false,
@@ -60,6 +64,7 @@ export function usageCopyFromState(state) {
   if (remaining <= 3) {
     return {
       text: `${remaining} free creations left`,
+      homeText: `${remaining} of ${FREE_GENERATION_LIMIT} free creations left on this device.`,
       tone: "warn",
       remaining,
       blocked: false,
@@ -67,6 +72,7 @@ export function usageCopyFromState(state) {
   }
   return {
     text: `${remaining} free creations left`,
+    homeText: `${remaining} of ${FREE_GENERATION_LIMIT} free creations left on this device.`,
     tone: "ok",
     remaining,
     blocked: false,
@@ -94,16 +100,6 @@ export async function refreshUsageStrips() {
     applyUsageCopyToStrip(el, copy);
   });
   const homeStrip = document.getElementById("home-usage-strip");
-  if (homeStrip) {
-    if (state.isLocalPremiumUnlocked) {
-      homeStrip.textContent = "Developer unlock active. Unlimited creations on this device.";
-    } else if (copy.blocked) {
-      homeStrip.textContent = "You've used your 10 free recipes. More coming soon.";
-    } else if (state.successfulGenerationCount === 0) {
-      homeStrip.textContent = `${FREE_GENERATION_LIMIT} free homemade creations included on this device.`;
-    } else {
-      homeStrip.textContent = `${copy.remaining} of ${FREE_GENERATION_LIMIT} free creations left on this device.`;
-    }
-  }
+  if (homeStrip) homeStrip.textContent = copy.homeText;
   return { state, copy };
 }
