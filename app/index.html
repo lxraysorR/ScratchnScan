@@ -149,7 +149,6 @@
             <div class="scan-actions">
               <button class="btn btn-primary" type="button" id="scan-start-btn">Start scanner</button>
               <button class="btn btn-ghost" type="button" id="scan-cancel-btn" hidden>Cancel</button>
-              <button class="btn btn-ghost" type="button" data-go="manual/typed">Type product name</button>
             </div>
             <p class="helper">Scanning uses your device camera. No data is sent until you generate a recipe.</p>
           </div>
@@ -164,32 +163,15 @@
 
           <p class="usage-strip" id="manual-usage-strip" aria-live="polite"></p>
 
-          <div id="draft-barcode" class="alert alert-info" role="status" aria-live="polite" hidden>
-            <div>
-              <strong>Captured barcode:</strong>
-              <span id="draft-barcode-value"></span>
-            </div>
-            <button id="draft-barcode-clear" class="btn btn-ghost btn-small" type="button">Clear barcode</button>
-          </div>
-
           <form id="manual-lookup-form" class="form-card manual-flow" novalidate>
 
             <!-- TYPED mode -->
             <section data-method-panel="typed">
               <div class="field">
-                <label class="label" for="product-name-input">Product name</label>
+                <label class="label" for="product-name-input">Product name <span class="req">*</span></label>
                 <input id="product-name-input" class="input" type="text" placeholder="Example: Oreos, Doritos Cool Ranch, Pink Salt Chips" autocomplete="off" />
               </div>
-              <div class="field">
-                <label class="label" for="ingredients-input">Ingredients or package text <span class="optional">(optional)</span></label>
-                <textarea id="ingredients-input" class="input" rows="3" placeholder="Paste the ingredients list from the back of the package." autocomplete="off"></textarea>
-                <p class="helper">More detail = more accurate homemade version.</p>
-              </div>
               <div id="manual-ingredient-label-tip-slot"></div>
-              <div class="field">
-                <label class="label" for="dietary-input">Preference <span class="optional">(optional)</span></label>
-                <input id="dietary-input" class="input" type="text" placeholder="less sugar, dairy-free, no seed oils" autocomplete="off" />
-              </div>
             </section>
 
             <!-- PHOTOS mode -->
@@ -226,17 +208,11 @@
 
             <!-- hidden inputs preserved for JS compatibility -->
             <input id="barcode-input" type="hidden" />
+            <input id="ingredients-input" type="hidden" />
+            <input id="dietary-input" type="hidden" />
 
             <section id="manual-confirm-card" class="review-card" hidden></section>
 
-            <div id="manual-friendly-error" class="alert alert-info" hidden>
-              <strong>Help us confirm this package</strong>
-              <p>We found some label details but need a little more to create the best homemade version. Add the product name or ingredient list below.</p>
-              <div class="form-actions form-actions-inline">
-                <button type="button" class="btn btn-ghost" id="friendly-enter-name">Enter product name</button>
-                <button type="button" class="btn btn-ghost" id="friendly-retry-photos">Try photos again</button>
-              </div>
-            </div>
 
             <div id="scan-error" class="alert alert-error" role="alert" hidden>
               <p id="scan-error-msg"></p>
@@ -244,8 +220,7 @@
             </div>
 
             <div class="form-actions">
-              <button class="btn btn-primary" type="button" id="manual-continue-btn">Continue</button>
-              <button id="scan-submit-btn" class="btn btn-primary" type="submit" hidden>Generate Homemade Version</button>
+              <button id="scan-submit-btn" class="btn btn-primary" type="submit">Generate Homemade Version</button>
               <button id="manual-clear-btn" class="btn btn-ghost" type="button">Clear</button>
             </div>
 

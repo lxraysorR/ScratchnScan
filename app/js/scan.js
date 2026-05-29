@@ -82,14 +82,12 @@ function renderConfirmCard() {
 function showState(next) {
   state = next;
   el("manual-creating-state").hidden = next !== "creating";
-  const entryParts = ["manual-confirm-card", "manual-friendly-error", "scan-error", "manual-continue-btn", "manual-clear-btn"];
+  const entryParts = ["manual-confirm-card", "scan-error", "manual-clear-btn"];
   entryParts.forEach((id) => { const node = el(id); if (node) node.hidden = next === "creating"; });
   const submit = el("scan-submit-btn");
-  if (submit) submit.hidden = next !== "confirm";
+  if (submit) submit.hidden = next === "creating";
   if (next === "entry") {
     el("manual-confirm-card").hidden = true;
-    submit.hidden = true;
-    el("manual-continue-btn").hidden = false;
     el("manual-clear-btn").hidden = false;
   }
 }
@@ -117,7 +115,7 @@ async function handlePhotoSelected(which, file) {
     if (which === "back") draft.backImagePreviewDataUrl = dataUrl;
     applyThumbToTile(which, dataUrl);
     renderStartersVisibility();
-  } catch (err) { showToast(err?.message || "Could not use that photo. Try another."); }
+  } catch (err) { showError(err?.message || "Could not use that photo. Try another.", { allowRetry: true }); }
 }
 
 function wirePhotoControls() {
@@ -143,17 +141,6 @@ export async function initScanView(mode = "typed") {
   if (!initialized) {
     wirePhotoControls();
     el("manual-lookup-form")?.addEventListener("submit", handleSubmit);
-    el("manual-continue-btn")?.addEventListener("click", () => {
-      if (!hasEnoughInput()) {
-        const msg = inputMethod === "photos"
-          ? "Add at least one package photo to continue."
-          : "Enter a product name or preference to continue.";
-        return showError(msg);
-      }
-      renderConfirmCard();
-      el("manual-confirm-card").hidden = false;
-      showState("confirm");
-    });
     el("manual-clear-btn")?.addEventListener("click", () => {
       el("manual-lookup-form")?.reset();
       draft.frontImagePreviewDataUrl = null;
@@ -164,8 +151,6 @@ export async function initScanView(mode = "typed") {
       renderStartersVisibility();
     });
     el("scan-retry-btn")?.addEventListener("click", () => el("manual-lookup-form")?.dispatchEvent(new Event("submit", { cancelable: true })));
-    el("friendly-enter-name")?.addEventListener("click", () => { setMethod("typed"); showState("entry"); el("manual-friendly-error").hidden = true; });
-    el("friendly-retry-photos")?.addEventListener("click", () => { setMethod("photos"); showState("entry"); el("manual-friendly-error").hidden = true; });
     ["product-name-input", "ingredients-input", "dietary-input"].forEach((id) => el(id)?.addEventListener("input", renderStartersVisibility));
     initialized = true;
   }
@@ -213,7 +198,6 @@ async function handleSubmit(event) {
   event.preventDefault();
   if (submitting) return;
   el("scan-error").hidden = true;
-  el("manual-friendly-error").hidden = true;
 
   let productName = (el("product-name-input")?.value || "").trim();
   const inputIngredients = (el("ingredients-input")?.value || "").trim();
@@ -253,14 +237,13 @@ async function handleSubmit(event) {
   });
 
   if (flowResult.status === "correction-needed") {
-    showState("confirm");
-    el("manual-friendly-error").hidden = false;
+    showState("entry");
     showError(flowResult.message);
     return;
   }
   if (flowResult.status === "error") {
     showState("entry");
-    showError(flowResult.message, { allowRetry: true });
+    showError(flowResult.message);
     if (flowResult.errorCode !== "timeout") console.error("manual generation failed", flowResult);
   }
 }

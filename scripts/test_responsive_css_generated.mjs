@@ -160,17 +160,10 @@ test('.start-card text column uses minmax(0, 1fr)', () => {
 
 // ── .chip-row ────────────────────────────────────────────────────────────────
 
-test('.chip-row uses flex-wrap: nowrap for horizontal scroll', () => {
+test('.chip-row uses flex-wrap: wrap so all chips are visible', () => {
   assert.ok(
-    /\.chip-row\s*\{[^}]*flex-wrap:\s*nowrap/.test(css),
-    '.chip-row must have flex-wrap: nowrap'
-  );
-});
-
-test('.chip-row has overflow-x: auto', () => {
-  assert.ok(
-    /\.chip-row\s*\{[^}]*overflow-x:\s*auto/.test(css),
-    '.chip-row must have overflow-x: auto'
+    /\.chip-row\s*\{[^}]*flex-wrap:\s*wrap/.test(css),
+    '.chip-row must have flex-wrap: wrap'
   );
 });
 
