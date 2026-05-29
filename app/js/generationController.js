@@ -9,7 +9,7 @@ import { AI_TIMEOUT_MS } from "./constants.js";
 const DEFAULT_TIMEOUT_MESSAGE = "This is taking longer than expected. Please try again or add more product details.";
 const DEFAULT_CORRECTION_MESSAGE = "We could not confidently identify this product from the photo. Please confirm the product name or add the ingredient list, then try again.";
 
-function buildTipsFromAiRecipe(aiRecipe) {
+export function buildTipsFromAiRecipe(aiRecipe) {
   const tips = [];
   for (const tip of aiRecipe?.tips || []) {
     if (tip) tips.push(String(tip));
