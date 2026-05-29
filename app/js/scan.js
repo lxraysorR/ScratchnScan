@@ -18,6 +18,7 @@ import { refreshBarcodeBanner } from "./packageEntry.js";
 import { applyThumbToTile } from "./photoTiles.js";
 import { normalizeProductContext } from "./productContext.js";
 import { runGenerationFlow } from "./generationController.js";
+import { AI_TIMEOUT_MS } from "./constants.js";
 
 const __legacyScanToken = `barcode,
 productName,`;
@@ -28,7 +29,7 @@ let submitting = false;
 let progress = null;
 let inputMethod = "typed";
 let state = "entry";
-let aiTimeoutMs = 25000;
+let aiTimeoutMs = AI_TIMEOUT_MS;
 
 const draft = { frontImagePreviewDataUrl: null, backImagePreviewDataUrl: null };
 const GENERATE_LABEL = "Generate Homemade Version";

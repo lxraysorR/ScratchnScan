@@ -4,6 +4,7 @@ import {
   needsManualCorrection,
   contextToRecipeInput,
 } from "./productContext.js";
+import { AI_TIMEOUT_MS } from "./constants.js";
 
 const DEFAULT_TIMEOUT_MESSAGE = "This is taking longer than expected. Please try again or add more product details.";
 const DEFAULT_CORRECTION_MESSAGE = "We could not confidently identify this product from the photo. Please confirm the product name or add the ingredient list, then try again.";
@@ -76,7 +77,7 @@ export async function runGenerationFlow({ input, photos, services, callbacks = {
     onSessionRecord,
   } = callbacks;
 
-  const timeoutMs = options.timeoutMs ?? 25000;
+  const timeoutMs = options.timeoutMs ?? AI_TIMEOUT_MS;
   const hasPhoto = !!photos.frontImagePreviewDataUrl || !!photos.backImagePreviewDataUrl;
   const hasTypedContext = Boolean(input.productName || input.inputIngredients || input.dietaryPreference);
 
