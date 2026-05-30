@@ -71,14 +71,38 @@ export function cancelActiveScan() {
 // ---------------------------------------------------------------------------
 let zxingReader = null;
 
+// Safari and Firefox have no native BarcodeDetector, so we load ZXing at
+// runtime. We try more than one CDN because a single host can be blocked,
+// rate-limited, or (in esm.sh's case) serve a browser-targeted build that
+// fails to evaluate — any of which would otherwise leave Safari with no
+// scanner at all even though the fallback exists.
+const ZXING_CDN_URLS = [
+  "https://esm.sh/@zxing/browser@0.2.0",
+  "https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.0/+esm",
+];
+
 async function loadZXingReader() {
   if (zxingReader) return zxingReader;
-  // esm.sh bundles the full package and its deps into one ES module
-  const { BrowserMultiFormatReader } = await import(
-    "https://esm.sh/@zxing/browser@0.2.0"
-  );
-  zxingReader = new BrowserMultiFormatReader();
-  return zxingReader;
+  let lastError = null;
+  for (const url of ZXING_CDN_URLS) {
+    try {
+      const mod = await import(url);
+      const BrowserMultiFormatReader =
+        mod.BrowserMultiFormatReader || mod.default?.BrowserMultiFormatReader;
+      if (typeof BrowserMultiFormatReader !== "function") {
+        throw new Error("BrowserMultiFormatReader export missing");
+      }
+      zxingReader = new BrowserMultiFormatReader();
+      return zxingReader;
+    } catch (err) {
+      lastError = err;
+      console.warn(
+        `[ScratchnScan] ZXing load failed from ${url}:`,
+        err?.message || err,
+      );
+    }
+  }
+  throw lastError || new Error("ZXing unavailable");
 }
 
 async function startWebScanZXing(stream, videoEl) {
@@ -89,7 +113,9 @@ async function startWebScanZXing(stream, videoEl) {
     console.error("[ScratchnScan] ZXing failed to load:", err);
     stream.getTracks().forEach((t) => t.stop());
     if (videoEl) { videoEl.srcObject = null; videoEl.hidden = true; }
-    return { status: "unsupported", barcode: null };
+    // A failed CDN load is a recoverable error, not a hard browser limitation,
+    // so surface it as such instead of telling the user to switch browsers.
+    return { status: "error", reason: "scanner-load-failed", barcode: null };
   }
 
   return new Promise(async (resolve) => {
@@ -221,6 +247,13 @@ async function startWebScan(videoEl) {
 
   if (videoEl) {
     videoEl.srcObject = stream;
+    // iOS Safari refuses to play an inline camera stream unless the element is
+    // muted and explicitly marked playsinline; without this the feed never
+    // produces frames for ZXing to decode.
+    videoEl.muted = true;
+    videoEl.setAttribute("muted", "");
+    videoEl.playsInline = true;
+    videoEl.setAttribute("playsinline", "");
     videoEl.hidden = false;
     try { await videoEl.play(); } catch { /* autoplay may already be running */ }
   }

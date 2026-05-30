@@ -36,7 +36,7 @@ const STATUS_COPY = {
   },
   unsupported: {
     tone: "warn",
-    text: "Barcode scanning is not supported on this browser. Try Chrome or type the product name.",
+    text: "Camera scanning isn't available here. Make sure you're on a secure (https) connection, or type the product name.",
   },
   error: {
     tone: "warn",
