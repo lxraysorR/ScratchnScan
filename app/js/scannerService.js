@@ -75,7 +75,7 @@ async function loadZXingReader() {
   if (zxingReader) return zxingReader;
   // esm.sh bundles the full package and its deps into one ES module
   const { BrowserMultiFormatReader } = await import(
-    "https://esm.sh/@zxing/browser@0.1.5"
+    "https://esm.sh/@zxing/browser@0.2.0"
   );
   zxingReader = new BrowserMultiFormatReader();
   return zxingReader;
