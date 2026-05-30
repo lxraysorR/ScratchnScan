@@ -22,6 +22,26 @@ import * as coordinator from "./scanCoordinator.js";
 export const SCAN_DRAFT_KEY = "scratchnscan:draftBarcode";
 
 let activeScanAbort = null;
+let polyfillLoadAttempted = false;
+
+async function ensureBarcodeDetector() {
+  if ("BarcodeDetector" in window) return true;
+  if (polyfillLoadAttempted) return "BarcodeDetector" in window;
+  polyfillLoadAttempted = true;
+  try {
+    const mod = await import(
+      "https://cdn.jsdelivr.net/npm/@undecaf/barcode-detector-polyfill@0.9.21/dist/es/index.js"
+    );
+    const Poly = mod.BarcodeDetector ?? mod.default;
+    if (typeof Poly === "function") {
+      window.BarcodeDetector = Poly;
+      return true;
+    }
+  } catch {
+    /* polyfill failed to load — continue to native-only path */
+  }
+  return false;
+}
 
 export function normalizeBarcode(value) {
   if (value === null || value === undefined) return "";
@@ -30,7 +50,9 @@ export function normalizeBarcode(value) {
 
 export async function isScannerAvailable() {
   if (!isNativePlatform()) {
-    return !!(navigator.mediaDevices?.getUserMedia && ("BarcodeDetector" in window));
+    if (!navigator.mediaDevices?.getUserMedia) return false;
+    await ensureBarcodeDetector();
+    return "BarcodeDetector" in window;
   }
   try {
     return await adapter.isSupported();
@@ -87,6 +109,8 @@ async function startWebScan(videoEl) {
     videoEl.hidden = false;
     try { await videoEl.play(); } catch { /* autoplay may already be running */ }
   }
+
+  await ensureBarcodeDetector();
 
   if (!("BarcodeDetector" in window)) {
     stream.getTracks().forEach((t) => t.stop());
