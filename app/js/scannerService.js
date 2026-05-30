@@ -2,7 +2,7 @@
  * Scanner service: the single API the UI uses to start a barcode scan.
  *
  * On native (Capacitor) platforms: uses MLKit barcode scanning.
- * On web: uses BarcodeDetector API with camera stream.
+ * On web: uses BarcodeDetector API (Chrome/Edge) or ZXing JS (Safari/Firefox).
  *
  * Resolves to one of these statuses so the UI can render a single,
  * predictable message for each branch:
@@ -22,26 +22,6 @@ import * as coordinator from "./scanCoordinator.js";
 export const SCAN_DRAFT_KEY = "scratchnscan:draftBarcode";
 
 let activeScanAbort = null;
-let polyfillLoadAttempted = false;
-
-async function ensureBarcodeDetector() {
-  if ("BarcodeDetector" in window) return true;
-  if (polyfillLoadAttempted) return "BarcodeDetector" in window;
-  polyfillLoadAttempted = true;
-  try {
-    const mod = await import(
-      "https://cdn.jsdelivr.net/npm/@undecaf/barcode-detector-polyfill@0.9.21/dist/es/index.js"
-    );
-    const Poly = mod.BarcodeDetector ?? mod.default;
-    if (typeof Poly === "function") {
-      window.BarcodeDetector = Poly;
-      return true;
-    }
-  } catch {
-    /* polyfill failed to load — continue to native-only path */
-  }
-  return false;
-}
 
 export function normalizeBarcode(value) {
   if (value === null || value === undefined) return "";
@@ -50,9 +30,8 @@ export function normalizeBarcode(value) {
 
 export async function isScannerAvailable() {
   if (!isNativePlatform()) {
-    if (!navigator.mediaDevices?.getUserMedia) return false;
-    await ensureBarcodeDetector();
-    return "BarcodeDetector" in window;
+    // Camera access is all we need — ZXing is our universal fallback
+    return !!navigator.mediaDevices?.getUserMedia;
   }
   try {
     return await adapter.isSupported();
@@ -87,46 +66,81 @@ export function cancelActiveScan() {
   }
 }
 
-async function startWebScan(videoEl) {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    return { status: "unsupported", barcode: null };
-  }
+// ---------------------------------------------------------------------------
+// ZXing-based scanner — Safari / Firefox fallback (pure JS, no WASM needed)
+// ---------------------------------------------------------------------------
+let zxingReader = null;
 
-  let stream;
+async function loadZXingReader() {
+  if (zxingReader) return zxingReader;
+  // esm.sh bundles the full package and its deps into one ES module
+  const { BrowserMultiFormatReader } = await import(
+    "https://esm.sh/@zxing/browser@0.1.5"
+  );
+  zxingReader = new BrowserMultiFormatReader();
+  return zxingReader;
+}
+
+async function startWebScanZXing(stream, videoEl) {
+  let reader;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-    });
+    reader = await loadZXingReader();
   } catch (err) {
-    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-      return { status: "permission-denied", barcode: null };
-    }
-    return { status: "error", reason: err.message, barcode: null };
-  }
-
-  if (videoEl) {
-    videoEl.srcObject = stream;
-    videoEl.hidden = false;
-    try { await videoEl.play(); } catch { /* autoplay may already be running */ }
-  }
-
-  await ensureBarcodeDetector();
-
-  if (!("BarcodeDetector" in window)) {
+    console.error("[ScratchnScan] ZXing failed to load:", err);
     stream.getTracks().forEach((t) => t.stop());
     if (videoEl) { videoEl.srcObject = null; videoEl.hidden = true; }
     return { status: "unsupported", barcode: null };
   }
 
+  return new Promise(async (resolve) => {
+    let done = false;
+    let controls;
+
+    const stop = (result) => {
+      if (done) return;
+      done = true;
+      activeScanAbort = null;
+      try { controls?.stop(); } catch { /* ignore */ }
+      stream.getTracks().forEach((t) => t.stop());
+      if (videoEl) { videoEl.srcObject = null; videoEl.hidden = true; }
+      resolve(result);
+    };
+
+    activeScanAbort = () => stop({ status: "cancelled", barcode: null });
+
+    try {
+      controls = await reader.decodeFromStream(stream, videoEl, (result, err) => {
+        if (!result) return;
+        const raw = result.getText();
+        const normalized = normalizeBarcode(raw);
+        if (!normalized) return;
+        if (!coordinator.shouldAcceptBarcode(normalized)) {
+          stop({ status: "duplicate", barcode: normalized });
+        } else {
+          setDraftBarcode(normalized);
+          stop({ status: "success", barcode: normalized, format: null });
+        }
+      });
+    } catch (err) {
+      stop({ status: "error", reason: err.message, barcode: null });
+      return;
+    }
+
+    setTimeout(() => stop({ status: "cancelled", barcode: null }), 30_000);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Native BarcodeDetector scanner — Chrome / Edge fast path
+// ---------------------------------------------------------------------------
+async function startWebScanNative(stream, videoEl) {
   let detector;
   try {
     detector = new BarcodeDetector({
       formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf", "codabar"],
     });
   } catch {
-    stream.getTracks().forEach((t) => t.stop());
-    if (videoEl) { videoEl.srcObject = null; videoEl.hidden = true; }
-    return { status: "unsupported", barcode: null };
+    return null; // signal caller to fall back
   }
 
   const detectionSrc = videoEl || (() => {
@@ -181,8 +195,46 @@ async function startWebScan(videoEl) {
       detectionSrc.addEventListener("loadeddata", () => requestAnimationFrame(tick), { once: true });
     }
 
-    setTimeout(() => stop({ status: "cancelled", barcode: null }), 30000);
+    setTimeout(() => stop({ status: "cancelled", barcode: null }), 30_000);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Main web scan entry — picks the right engine automatically
+// ---------------------------------------------------------------------------
+async function startWebScan(videoEl) {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return { status: "unsupported", barcode: null };
+  }
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+  } catch (err) {
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      return { status: "permission-denied", barcode: null };
+    }
+    return { status: "error", reason: err.message, barcode: null };
+  }
+
+  if (videoEl) {
+    videoEl.srcObject = stream;
+    videoEl.hidden = false;
+    try { await videoEl.play(); } catch { /* autoplay may already be running */ }
+  }
+
+  // Chrome / Edge: use native BarcodeDetector (fastest)
+  if ("BarcodeDetector" in window) {
+    const result = await startWebScanNative(stream, videoEl);
+    if (result !== null) return result;
+    // null means BarcodeDetector constructor threw — fall through to ZXing
+  }
+
+  // Safari / Firefox / everything else: use ZXing (pure JS)
+  console.log("[ScratchnScan] Using ZXing scanner (no native BarcodeDetector)");
+  return startWebScanZXing(stream, videoEl);
 }
 
 export async function startScan({ videoEl = null } = {}) {
